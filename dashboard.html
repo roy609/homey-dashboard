@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Thuis</title>
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 60 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 61 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -204,6 +204,23 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .md-speelt { color:var(--purple); font-weight:600; }
 .md-rij .mz-vol input[type=range] { accent-color:var(--purple); }
 #klimaatPaneel .modal { max-width:560px; }
+.tile.uitgeklapt { border-color:var(--amber-border); }
+.tile.storing .t-state { color:var(--red); }
+.st-paneel { grid-column:1 / -1; gap:10px; }
+.st-kop { display:flex; align-items:center; gap:12px; }
+.st-kop b { display:block; font-size:var(--fs-md); }
+.st-kop small { display:block; font-size:var(--fs-sm); color:var(--text-muted); }
+.st-bat { display:flex; align-items:center; gap:8px; font-size:var(--fs-sm); color:var(--text-secondary); }
+.st-bat i { width:56px; height:8px; border-radius:6px; background:var(--bg-inset); overflow:hidden; display:block; }
+.st-bat b { display:block; height:100%; background:var(--green); }
+.st-fout { font-size:var(--fs-sm); color:var(--red); background:var(--red-dim); border-radius:8px; padding:6px 10px; }
+.st-acties { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.st-knop { min-height:48px; border-radius:12px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-primary);
+  display:flex; align-items:center; justify-content:center; gap:8px; font:inherit; font-weight:700; cursor:pointer; }
+.st-knop.primair { background:var(--green); border-color:var(--green); color:#06210F; }
+.st-knop.on { border-color:var(--amber-border); background:var(--amber-dim); color:var(--amber); }
+.st-knop[disabled], .st-seg button[disabled] { opacity:.45; cursor:default; }
+.st-scenes { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:6px; }
 .cam-noot { font-size:var(--fs-sm); color:var(--text-muted); margin:12px 2px 0; }
 .cam-groot .cam-groot-kader { width:min(96vw, calc(88vh * 16 / 9)); background:var(--bg-nav); border-radius:var(--r); overflow:hidden; border:1px solid var(--border2); }
 .cam-groot-kop { display:flex; align-items:center; gap:12px; padding:8px 8px 8px 16px; font-weight:700; }
@@ -818,7 +835,7 @@ const CONFIG = {
     { id:'51095063-ad0c-49b3-8bef-8df71af85139', naam:'Radio Beneden',   soort:'schakelaar', icoon:'radio' },
     { id:'42b12708-a915-4d6d-9c4e-6c75276bbcbd', naam:'Radio Boven',     soort:'schakelaar', icoon:'radio' },
     { id:'75d83bdd-6e22-4e11-8d12-51328495fd64', naam:'Visite',          soort:'schakelaar', icoon:'users' },
-    { id:'b2ac63c1-495c-4c28-9a46-2018fd6880da', naam:'Robovac',         soort:'status',     icoon:'vacuum' },
+    { id:'4e5db254-7e95-4884-ba36-537fe6029ff3', naam:'Stofzuiger',      soort:'stofzuiger', icoon:'vacuum' },   // "Robotstofzuiger" (eufy)
   ],
   // Gordijnen woonkamer: één kaart voor links en rechts samen
   gordijnen: {
@@ -922,9 +939,12 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '60';
+const DASHBOARD_VERSIE = '61';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'61', datum:'27-10-2026', punten:[
+    'Nieuwe tegel "Stofzuiger" (de eufy Robotstofzuiger) op het hoofdscherm; de oude Robovac-tegel is weg.',
+    'Tik op de tegel om uit te klappen: start/stop, spot, naar dock, zuigkracht en (als de app ze heeft) programma\'s.' ] },
   { v:'60', datum:'27-10-2026', punten:[
     'Onderaan het menu staan nu versie, datum en tijd van publiceren.',
     'Tik erop voor dit overzicht van de laatste aanpassingen.' ] },
@@ -939,7 +959,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '27-10-2026 21:20';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '27-10-2026 21:47';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -1080,6 +1100,8 @@ const DEMO_RAW = {
   'f234fcbe-944a-4503-9d42-200d12abbf63':['Gordijn rechts','curtain',Z.woon,{windowcoverings_set:.75,measure_battery:49}],
   'b2b09f64-59be-4eb7-ab7e-6ec23f6ae66c':['Gordijn links','curtain',Z.woon,{windowcoverings_set:0,measure_battery:18}],
   'b2ac63c1-495c-4c28-9a46-2018fd6880da':['Robovac stofzuiger','vacuumcleaner',Z.woon,{vacuumcleaner_state:'charging',measure_battery:99},false],
+  '4e5db254-7e95-4884-ba36-537fe6029ff3':['Robotstofzuiger','vacuumcleaner',Z.woon,{vacuumcleaner_state:'charging',measure_battery:100,measure_docked:true,
+    measure_work_status:'Charging',measure_error:'none',action_clean_speed:'standard',measure_work_mode:'auto'}],
   '89bd8240-0bcd-41ce-a021-05a589436030':['Airco Woonkamer','thermostat',Z.woon,{measure_temperature:23.7,target_temperature:23}],
   '61e4912b-8c24-4f88-8d46-c789313efdc2':['Airco Slaapkamer','thermostat',Z.thuis,{measure_temperature:23.6,target_temperature:19}],
   '32b29831-27fd-4b9d-9010-32fd40e6210e':['Infrarood spiegel','thermostat',Z.thuis,{measure_temperature:21,target_temperature:0,onoff:true},false],
@@ -1305,6 +1327,12 @@ function tegelHtml(t){
     klasse += ' readonly';
     const pos = cap(d,'windowcoverings_set'), bat = cap(d,'measure_battery');
     staat = (typeof pos === 'number' ? Math.round(pos * 100) + '%' : '–') + (typeof bat === 'number' && bat < 25 ? ` · batterij ${bat}%` : '');
+  } else if(t.soort === 'stofzuiger'){
+    klasse += stofOpen ? ' on uitgeklapt' : '';
+    const bat = cap(d,'measure_battery'), fout = cap(d,'measure_error');
+    staat = stofStatus(d) + (typeof bat === 'number' ? ` · ${bat}%` : '');
+    if(fout && !/^(none|no_error|geen)$/i.test(fout)) { staat = 'Storing'; klasse += ' storing'; }
+    rechts = `<div class="pwr">${ic(stofOpen ? 'up' : 'down')}</div>`;
   } else if(t.soort === 'status'){
     klasse += ' readonly';
     const s = cap(d,'vacuumcleaner_state');
@@ -1315,7 +1343,54 @@ function tegelHtml(t){
     <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">${esc(staat)}</div></div></div>`;
 }
 function tekenTegels(){ if(gordijnSleept) return;   // niet verversen terwijl je een gordijn versleept
-  $('tegels').innerHTML = CONFIG.tegels.map(tegelHtml).join('') + '<div class="gordijn-plek" id="gordijnKaart"></div>'; tekenGordijnen(); }
+  $('tegels').innerHTML = CONFIG.tegels.map(tegelHtml).join('') + (stofOpen ? stofPaneelHtml() : '') + '<div class="gordijn-plek" id="gordijnKaart"></div>'; tekenGordijnen(); }
+
+/* ── Stofzuiger: compacte tegel die uitklapt met alle keuzes ── */
+let stofOpen = false;
+const stofTegel = () => CONFIG.tegels.find(t => t.soort === 'stofzuiger');
+const STOF_STATUS = { charging:'Laadt', docked:'In dock', cleaning:'Zuigt', spot_cleaning:'Spot', stopped:'Gestopt' };
+function stofStatus(d){
+  const s = cap(d,'vacuumcleaner_state');
+  return STOF_STATUS[s] || cap(d,'measure_work_status') || s || '–';
+}
+/* Keuzes uit de capability zelf (titels van de app), anders een standaardlijst */
+function capKeuzes(d, k, standaard = []){
+  const v = d.capabilitiesObj?.[k]?.values;
+  if(Array.isArray(v) && v.length) return v.map(x => ({ id:x.id, label:(typeof x.title === 'object' ? (x.title.nl || x.title.en) : x.title) || x.id }));
+  return standaard.map(([id, label]) => ({ id, label }));
+}
+function stofPaneelHtml(){
+  const t = stofTegel(), d = t && dev(t.id); if(!d) return '';
+  const offline = d.available === false, s = cap(d,'vacuumcleaner_state'), bezig = /cleaning/.test(s || '');
+  const bat = cap(d,'measure_battery'), fout = cap(d,'measure_error');
+  const knop = (waarde, icoon, label, extra = '') => `<button class="st-knop ${extra}" data-stof="${waarde}" ${offline ? 'disabled' : ''}>${ic(icoon)}<span>${label}</span></button>`;
+  const snelheid = heeft(d,'action_clean_speed') ? capKeuzes(d, 'action_clean_speed', [['quiet','Stil'],['standard','Normaal'],['turbo','Turbo'],['max','Max']]) : [];
+  const huidigeSnelheid = String(cap(d,'action_clean_speed') ?? '').toLowerCase();
+  const scenes = heeft(d,'action_scenes') ? capKeuzes(d, 'action_scenes') : [];
+  return `<div class="card st-paneel">
+    <div class="st-kop"><div class="grow"><b>${esc(d.name.trim())}</b>
+      <small>${offline ? '<span class="warn">Niet bereikbaar</span>' : esc(stofStatus(d))}${cap(d,'measure_docked') === true && !/In dock|Laadt/.test(stofStatus(d)) ? ' · in dock' : ''}${
+        cap(d,'measure_work_mode') ? ' · modus ' + esc(cap(d,'measure_work_mode')) : ''}</small></div>
+      ${typeof bat === 'number' ? `<div class="st-bat"><span>${bat}%</span><i><b style="width:${Math.max(0, Math.min(100, bat))}%"></b></i></div>` : ''}</div>
+    ${fout && !/^(none|no_error|geen)$/i.test(fout) ? `<div class="st-fout">Storing: ${esc(fout)}</div>` : ''}
+    <div class="st-acties">
+      ${bezig ? knop('stopped', 'pauze', 'Stop', 'on') : knop('cleaning', 'play', 'Start', 'primair')}
+      ${knop('spot_cleaning', 'vacuum', 'Spot', s === 'spot_cleaning' ? 'on' : '')}
+      ${knop('docked', 'home', 'Naar dock', /docked|charging/.test(s || '') ? 'on' : '')}
+    </div>
+    ${snelheid.length ? `<div class="sec-label" style="margin:4px 2px 0">Zuigkracht</div>
+      <div class="segment st-seg">${snelheid.map(o => `<button class="${String(o.id).toLowerCase() === huidigeSnelheid ? 'on' : ''}" data-stofcap="action_clean_speed" data-stofval="${esc(String(o.id))}" ${offline ? 'disabled' : ''}>${esc(o.label)}</button>`).join('')}</div>` : ''}
+    ${scenes.length ? `<div class="sec-label" style="margin:4px 2px 0">Programma's</div>
+      <div class="st-scenes">${scenes.map(o => `<button class="g-stand" data-stofcap="action_scenes" data-stofval="${esc(String(o.id))}" ${offline ? 'disabled' : ''}>${esc(o.label)}</button>`).join('')}</div>` : ''}
+  </div>`;
+}
+async function stofOpdracht(capNaam, waarde){
+  const t = stofTegel(), d = t && dev(t.id); if(!d) return;
+  const c = d.capabilitiesObj[capNaam], oud = c && c.value;
+  if(c) c.value = waarde; tekenTegels();
+  const ok = await opdracht(() => zetCap(d.id, capNaam, waarde));
+  if(!ok && c){ c.value = oud; tekenTegels(); }
+}
 
 /* ═════════════════════════════════════════════
    GORDIJNEN — venster met de huidige stand, kies links/rechts/beide, dan een stand of de schuif
@@ -2736,6 +2811,7 @@ async function opdracht(fn, demoFn){
 }
 
 async function klikTegel(el){
+  if(el.dataset.soort === 'stofzuiger'){ stofOpen = !stofOpen; return tekenTegels(); }
   const id = el.dataset.tegel, soort = el.dataset.soort, d = dev(id);
   if(!d || d.available === false || soort === 'gordijn' || soort === 'status') return;
   el.classList.add('busy');
@@ -2850,6 +2926,8 @@ document.addEventListener('click', e => {
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
+  const st = e.target.closest('[data-stof]'); if(st) return stofOpdracht('vacuumcleaner_state', st.dataset.stof);
+  const stc = e.target.closest('[data-stofcap]'); if(stc) return stofOpdracht(stc.dataset.stofcap, stc.dataset.stofval);
   const sp = e.target.closest('[data-sysdetail],[data-sys-sluit],[data-sys-achter]');
   if(sp){
     if(sp.dataset.sysdetail) return openSysDetail(sp.dataset.sysdetail);
