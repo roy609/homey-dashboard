@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Thuis</title>
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 58 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 59 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -183,6 +183,17 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .mz-vol span { font-size:var(--fs-sm); color:var(--text-muted); min-width:38px; text-align:right; }
 .klim-aan { width:var(--tap); height:var(--tap); border-radius:12px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-muted); display:grid; place-items:center; cursor:pointer; flex-shrink:0; }
 .klim-aan.on { color:var(--amber); border-color:var(--amber-border); background:var(--amber-dim); }
+.klim-aan.on.md { color:var(--purple); border-color:var(--purple); background:rgba(167,139,250,.14); }
+.mini-sub { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+.mini-licht { color:var(--text-muted); font-weight:500; }
+.mini-sub .aan-amber { color:var(--amber); font-weight:600; }
+#mediaPaneel .modal { max-width:560px; }
+.md-rij { padding:10px 12px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); display:flex; flex-direction:column; gap:6px; }
+.md-rij.aan { border-color:rgba(167,139,250,.45); }
+.md-rij b { display:block; font-size:var(--fs-md); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.md-rij small { display:block; font-size:var(--fs-sm); color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.md-speelt { color:var(--purple); font-weight:600; }
+.md-rij .mz-vol input[type=range] { accent-color:var(--purple); }
 #klimaatPaneel .modal { max-width:560px; }
 .cam-noot { font-size:var(--fs-sm); color:var(--text-muted); margin:12px 2px 0; }
 .cam-groot .cam-groot-kader { width:min(96vw, calc(88vh * 16 / 9)); background:var(--bg-nav); border-radius:var(--r); overflow:hidden; border:1px solid var(--border2); }
@@ -320,7 +331,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 @keyframes aftel { from { stroke-dashoffset:0; } to { stroke-dashoffset:100; } }
 .g-bediening .segment button { min-height:34px; font-size:var(--fs-sm) !important; }
 .g-body { display:grid; grid-template-columns:1fr; gap:12px; }
-.g-raam { position:relative; height:84px; border-radius:10px; border:2px solid var(--border2); overflow:hidden; background:var(--bg-inset); }
+.g-raam { position:relative; height:104px; border-radius:10px; border:2px solid var(--border2); overflow:hidden; background:var(--bg-inset); }
 .g-buiten { position:absolute; inset:8px 0 0 0; }
 .g-stijl { position:absolute; top:0; bottom:0; left:50%; width:12px; margin-left:-6px;     /* middenstijl van de schuifpui */
   background:linear-gradient(90deg, var(--border2), var(--bg-nav) 30%, var(--bg-nav) 70%, var(--border2));
@@ -329,22 +340,36 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
     linear-gradient(90deg, transparent calc(25% - 1px), var(--border2) calc(25% - 1px), var(--border2) calc(25% + 1px), transparent calc(25% + 1px),
                            transparent calc(75% - 1px), var(--border2) calc(75% - 1px), var(--border2) calc(75% + 1px), transparent calc(75% + 1px)),
     linear-gradient(180deg, rgba(84,191,240,.20), rgba(84,191,240,.05) 60%, rgba(34,197,94,.12)); }
-.g-roede { position:absolute; left:0; right:0; top:0; height:8px; background:var(--border2); z-index:3; }
-.g-doek { position:absolute; top:8px; bottom:0; z-index:2; cursor:pointer; transition:width .9s cubic-bezier(.4,0,.2,1);
-  background:repeating-linear-gradient(90deg, rgba(167,139,250,.30) 0 7px, rgba(167,139,250,.18) 7px 14px);
-  border:1px solid rgba(167,139,250,.35); }
-.g-doek.links { left:0; border-left:none; border-radius:0 6px 0 0; }
-.g-doek.rechts { right:0; border-right:none; border-radius:6px 0 0 0; }
-.g-doek.gekozen { background:repeating-linear-gradient(90deg, rgba(222,201,170,.62) 0 7px, rgba(222,201,170,.42) 7px 14px); border-color:rgba(222,201,170,.75); }
+.g-roede { position:absolute; left:0; right:0; top:0; height:8px; z-index:3;           /* plafondrail */
+  background:linear-gradient(180deg, #5B6170, #3A3F4A 60%, #2A2E36); box-shadow:0 2px 3px rgba(0,0,0,.35); }
+/* Beige wave-gordijnen: een vast aantal golven per gordijn, zodat de plooien dichter op elkaar komen als het gordijn open is */
+.g-doek { --g1:#CDB794; --g2:#DCC8A6; --g3:#AE946C; --g4:#927853;
+  position:absolute; top:8px; bottom:0; z-index:2; cursor:pointer; transition:width .9s cubic-bezier(.4,0,.2,1), filter .3s;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 22%, rgba(0,0,0,0) 70%, rgba(60,40,15,.16)),        /* licht van boven, iets donker onderaan */
+    repeating-linear-gradient(0deg, rgba(90,70,40,.035) 0 1px, transparent 1px 3px),                                          /* fijne linnenstructuur */
+    linear-gradient(90deg, var(--g4) 0%, var(--g3) 12%, var(--g1) 30%, var(--g2) 45%, var(--g1) 58%, var(--g3) 78%, var(--g4) 100%);
+  background-size:100% 100%, 100% 100%, calc(100% / 7) 100%;
+  background-repeat:no-repeat, repeat, repeat-x;
+  filter:saturate(.75) brightness(.72); }
+.g-doek::before { content:''; position:absolute; left:0; right:0; top:-2px; height:6px;                                       /* golfkop onder de rail */
+  background:radial-gradient(ellipse at 50% 100%, rgba(0,0,0,.16) 0 45%, transparent 52%) 0 0 / calc(100% / 7) 100% repeat-x; }
+.g-doek::after { content:''; position:absolute; top:0; bottom:0; width:10px; pointer-events:none; }                           /* schaduw aan de voorrand */
+.g-doek.links::after { right:-10px; background:linear-gradient(90deg, rgba(0,0,0,.28), transparent); }
+.g-doek.rechts::after { left:-10px; background:linear-gradient(270deg, rgba(0,0,0,.28), transparent); }
+.g-doek.links { left:0; border-radius:0 3px 0 0; }
+.g-doek.rechts { right:0; border-radius:3px 0 0 0; }
+.g-doek.gekozen { filter:none; }
 .g-lbl { position:absolute; bottom:6px; z-index:4; font-size:var(--fs-sm); font-weight:800; padding:2px 8px; border-radius:100px;
   background:var(--bg-nav); color:var(--text-primary); cursor:pointer; }
 .g-lbl.links { left:6px; } .g-lbl.rechts { right:6px; }
 .g-raam { cursor:ew-resize; touch-action:none; user-select:none; }
-.g-greep { position:absolute; top:50%; width:5px; height:34px; margin-top:-17px; border-radius:4px; background:var(--text-secondary); opacity:.75; }
+.g-greep { position:absolute; top:50%; width:4px; height:30px; margin-top:-15px; border-radius:4px; background:rgba(255,255,255,.55); box-shadow:0 0 0 1px rgba(90,70,40,.25); opacity:.8; }
 .g-doek.links .g-greep { right:4px; } .g-doek.rechts .g-greep { left:4px; }
-.g-doek.gekozen .g-greep { background:#F3E6D2; opacity:1; }
-[data-theme="light"] .g-doek.gekozen { background:repeating-linear-gradient(90deg, rgba(196,168,128,.72) 0 7px, rgba(196,168,128,.52) 7px 14px); border-color:#B89A70; }
-[data-theme="light"] .g-doek.gekozen .g-greep { background:#8A6E4B; }
+.g-doek.gekozen .g-greep { opacity:1; }
+[data-theme="light"] .g-doek { filter:saturate(.8) brightness(.9); }
+[data-theme="light"] .g-doek.gekozen { filter:none; }
+[data-theme="light"] .g-roede { background:linear-gradient(180deg, #9CA3AF, #6B7280); }
 .g-hint { position:absolute; left:50%; top:auto; bottom:8px; background:var(--bg-nav); padding:1px 8px; border-radius:100px; opacity:.85; transform:translateX(-50%); z-index:1; font-size:var(--fs-micro); font-weight:600;
   color:var(--text-muted); white-space:nowrap; pointer-events:none; }
 .g-bediening { display:flex; flex-direction:column; gap:8px; }
@@ -708,6 +733,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="mediaPaneel">
+  <div class="modal lp" role="dialog" aria-label="Media">
+    <div class="lp-kop">
+      <div class="ico purple" data-icon="music"></div>
+      <div class="grow"><h2>Media</h2><div class="card-sub" id="mdSub"></div></div>
+      <button class="lp-knop" data-md-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst" id="mdLijst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="sysPaneel" data-sys-achter="1">
   <div class="modal lp" role="dialog" aria-label="Details">
     <div class="lp-kop">
@@ -866,7 +902,7 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '58';
+const DASHBOARD_VERSIE = '59';
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -1013,7 +1049,9 @@ const DEMO_RAW = {
   'l4':['Kast keuken L','light',Z.keuken,{onoff:true,dim:.3}],
   'l5':['Eettafel 1','light',Z.woon,{onoff:false,dim:.58}],
   'l6':['Salontafel 1','light',Z.woon,{onoff:false,dim:.58}],
-  's1':['KPN Woonkamer','speaker',Z.woon,{speaker_playing:true}],
+  's1':['KPN Woonkamer','speaker',Z.woon,{speaker_playing:true,speaker_artist:'NPO Radio 2',speaker_track:'Demo-uitzending',volume_set:.4}],
+  'demo-gh':['Google Home Woonkamer','speaker',Z.woon,{speaker_playing:false,speaker_artist:'',speaker_track:'Idle',volume_set:.37}],
+  'demo-tv':['📺 TV','tv',Z.woon,{onoff:true,volume_mute:false}],
   'ecdfa27d-22f0-4ceb-a4d1-226732cee970':['Bewegingssensor overkapping','sensor',Z.achter,{alarm_motion:true}],
   '7581033f-e9b9-4f1e-aa84-afdd33d9acb2':['Overstek 4','light',Z.achter,{onoff:true,dim:1,light_mode:'color',light_hue:.12,light_saturation:.87}],
   '246c448e-cc41-4f2b-9e49-232870020d2b':['Overstek 1','light',Z.achter,{onoff:true,dim:1,light_mode:'color',light_hue:.13,light_saturation:.8}],
@@ -1091,9 +1129,10 @@ const gem = arr => { const a = arr.filter(v => typeof v === 'number'); return a.
 /* ═════════════════════════════════════════════
    TEKENEN
 ═════════════════════════════════════════════ */
-function miniKaart(icoon, kleur, titel, waarde, actie){
+function miniKaart(icoon, kleur, titel, waarde, actie, sub){
   return `<div class="card ${actie ? 'klikbaar' : ''}" ${actie ? `data-actie="${actie}" role="button"` : ''}><div class="row"><div class="ico ${kleur}">${ic(icoon)}</div>
-    <div class="grow"><div class="card-title">${esc(titel)}</div><div class="card-sub" style="color:var(--text-primary);font-weight:600">${waarde}</div></div>${actie ? `<span class="pijltje">${ic('rechts')}</span>` : ''}</div></div>`;
+    <div class="grow"><div class="card-title">${esc(titel)}</div><div class="card-sub" style="color:var(--text-primary);font-weight:600">${waarde}</div>
+      ${sub ? `<div class="mini-sub">${sub}</div>` : ''}</div>${actie ? `<span class="pijltje">${ic('rechts')}</span>` : ''}</div></div>`;
 }
 
 function tekenLinks(){
@@ -1111,10 +1150,14 @@ function tekenLinks(){
   const beweging = alle.some(d => cap(d,'alarm_motion') === true);
   const lampenAan = alle.filter(d => d.class === 'light' && cap(d,'onoff') === true && !CONFIG.nietTellen.includes(d.id)).length;
   $('huisKaarten').innerHTML =
-    miniKaart('thermo','amber','Klimaat', (t != null ? `${nl(t)}° | ${Math.round(h ?? 0)}%` : '–'), 'klimaat') +
-    miniKaart('music','purple','Muziek', spelen ? `${spelen} speelt af` : 'Stil') +
+    (() => { const S = klimaatSamenvatting();
+      return miniKaart('thermo', S.aan ? 'amber' : '', 'Klimaat', t != null ? `${nl(t)}°${h != null ? ` <span class="mini-licht">${Math.round(h)}%</span>` : ''}` : '–', 'klimaat',
+        S.aan ? `<b class="aan-amber">${S.aan} van ${S.totaal} aan</b>` : `Alles uit · ${S.totaal} apparaten`); })() +
+    (() => { const M = mediaSamenvatting();
+      return miniKaart('music', M.speelt || M.aan ? 'purple' : '', 'Media', M.speelt ? `${M.speelt} ${M.speelt === 1 ? 'speelt' : 'spelen'} af` : M.aan ? `${M.aan} aan` : 'Stil', 'media',
+        `${M.totaal} apparaten`); })() +
     miniKaart('run','blue','Beweging', beweging ? 'Actief' : 'Rustig') +
-    miniKaart('bulb','amber','Lampen', lampenAan === 1 ? '1 staat aan' : `${lampenAan} staan aan`, 'lampen');
+    miniKaart('bulb','amber','Lampen', `${lampenAan} aan`, 'lampen');
 
   // Energie: verbruik en opwek in één kaart
   const p1 = dev(CONFIG.apparaten.p1), zon = dev(CONFIG.apparaten.zon);
@@ -1441,6 +1484,59 @@ function tekenKlimaatPaneel(){
     return kaarten ? `<div class="sec-label" style="margin:10px 2px 6px">${esc(r)}</div><div class="col" style="gap:10px">${kaarten}</div>` : '';
   }).join('') || '<span class="leeg">Geen klimaatapparaten gevonden</span>';
 }
+/* ── Mediapaneel: speakers, tv's en radio's per ruimte ── */
+let mdOpen = false, mdSleept = false;
+const isMedia = d => ['speaker','tv','amplifier'].includes(d.class) || (/radio/i.test(d.name) && heeft(d,'onoff'));
+function mediaLijst(){ return Object.values(DEVS).filter(isMedia); }
+const mediaSpeelt = d => cap(d,'speaker_playing') === true;
+const mediaAan = d => !heeft(d,'speaker_playing') && cap(d,'onoff') === true;
+function mediaSamenvatting(){
+  const l = mediaLijst();
+  return { totaal:l.length, speelt:l.filter(mediaSpeelt).length, aan:l.filter(mediaAan).length };
+}
+function mediaRij(d){
+  const offline = d.available === false, speelt = mediaSpeelt(d), aan = mediaAan(d);
+  const nu = [cap(d,'speaker_artist'), cap(d,'speaker_track')].filter(v => v && !/^(idle|homey)$/i.test(v)).join(' – ');
+  const status = offline ? '<span class="warn">Onbereikbaar</span>' : speelt ? `<span class="md-speelt">▶ ${esc(nu || 'Speelt af')}</span>`
+    : heeft(d,'speaker_playing') ? (nu ? `Gepauzeerd · ${esc(nu)}` : 'Stil') : typeof cap(d,'onoff') === 'boolean' ? (aan ? 'Staat aan' : 'Staat uit') : '–';
+  const vol = cap(d,'volume_set');
+  const icoon = d.class === 'tv' ? 'laptop' : d.class === 'amplifier' || /radio/i.test(d.name) ? 'radio' : 'music';
+  return `<div class="md-rij ${speelt || aan ? 'aan' : ''}">
+    <div class="row"><div class="ico ${speelt || aan ? 'purple' : ''}">${ic(icoon)}</div>
+      <div class="grow" style="min-width:0"><b>${esc(d.name.trim())}</b><small>${status}</small></div>
+      ${!offline && heeft(d,'speaker_playing') ? `<button class="klim-aan ${speelt ? 'on md' : ''}" data-mdplay="${esc(d.id)}" aria-label="${speelt ? 'Pauze' : 'Afspelen'}">${ic(speelt ? 'pauze' : 'play')}</button>` : ''}
+      ${!offline && !heeft(d,'speaker_playing') && typeof cap(d,'onoff') === 'boolean' ? `<button class="klim-aan ${aan ? 'on md' : ''}" data-tegel="${esc(d.id)}" data-soort="schakelaar" aria-label="Aan/uit">${ic('power')}</button>` : ''}
+    </div>
+    ${!offline && typeof vol === 'number' ? `<div class="mz-vol">${ic('volume')}<input type="range" min="0" max="100" value="${Math.round(vol * 100)}" data-mdvol="${esc(d.id)}" aria-label="Volume ${esc(d.name)}"><span>${Math.round(vol * 100)}%</span></div>` : ''}
+  </div>`;
+}
+function tekenMediaPaneel(){
+  if(mdSleept) return;
+  const l = mediaLijst(), M = mediaSamenvatting();
+  $('mdSub').textContent = `${M.speelt} ${M.speelt === 1 ? 'speelt' : 'spelen'} af${M.aan ? ` · ${M.aan} aan` : ''} · ${M.totaal} apparaten`;
+  const groep = d => /groep/i.test(d.name) ? 'Speakergroepen' : (zoneNaam(d.zone) || 'Overig');
+  const namen = [...new Set(l.map(groep))].sort((a, b) => (a === 'Speakergroepen') - (b === 'Speakergroepen') || a.localeCompare(b, 'nl', { numeric:true }));
+  const nu = l.filter(d => mediaSpeelt(d) || mediaAan(d));
+  $('mdLijst').innerHTML = (nu.length ? `<div class="sec-label" style="margin:10px 2px 6px">Nu actief</div><div class="col" style="gap:8px">${nu.map(mediaRij).join('')}</div>` : '')
+    + namen.map(n => `<div class="sec-label" style="margin:14px 2px 6px">${esc(n)}</div><div class="col" style="gap:8px">${
+        l.filter(d => groep(d) === n).sort((a, b) => a.name.localeCompare(b.name, 'nl')).map(mediaRij).join('')}</div>`).join('')
+    || '<span class="leeg">Geen media-apparaten gevonden</span>';
+}
+function openMedia(){ mdOpen = true; $('mediaPaneel').classList.add('on'); tekenMediaPaneel(); $('mdLijst').scrollTop = 0; }
+function sluitMedia(){ mdOpen = false; $('mediaPaneel').classList.remove('on'); }
+async function mediaPlay(id){
+  const d = dev(id); if(!d) return;
+  const nieuw = !mediaSpeelt(d), c = d.capabilitiesObj.speaker_playing; c.value = nieuw; tekenMediaPaneel(); tekenLinks();
+  const ok = await opdracht(() => zetCap(id, 'speaker_playing', nieuw));
+  if(!ok){ c.value = !nieuw; tekenMediaPaneel(); tekenLinks(); }
+}
+async function mediaVolume(id, pct){
+  const d = dev(id); if(!d) return;
+  const oud = cap(d,'volume_set'); d.capabilitiesObj.volume_set.value = pct / 100;
+  const ok = await opdracht(() => zetCap(id, 'volume_set', pct / 100));
+  if(!ok){ d.capabilitiesObj.volume_set.value = oud; tekenMediaPaneel(); }
+}
+
 function openKlimaat(){ klOpen = true; $('klimaatPaneel').classList.add('on'); tekenKlimaatPaneel(); $('klLijst').scrollTop = 0; }
 function sluitKlimaat(){ klOpen = false; $('klimaatPaneel').classList.remove('on'); }
 async function zetModus(id, modus){
@@ -2572,7 +2668,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenCameras(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenCameras(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -2699,6 +2795,8 @@ async function bewaarVar(){
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
+  if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
+  const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
   const sp = e.target.closest('[data-sysdetail],[data-sys-sluit],[data-sys-achter]');
   if(sp){
     if(sp.dataset.sysdetail) return openSysDetail(sp.dataset.sysdetail);
@@ -2733,12 +2831,13 @@ document.addEventListener('click', e => {
   if(t.dataset.acmode) return zetModus(t.dataset.ac, t.dataset.acmode);
   if(t.dataset.temp)  return temperatuur(t.dataset.temp, parseFloat(t.dataset.stap));
   if(t.dataset.page)  return goPage(t.dataset.page, t);
-  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat,
+  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat, 'media':openMedia,
      'sluit':closeCfg, 'opslaan':saveCfg, 'lampen':openLampen, 'zone-aanuit':zoneAanUit,
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && klOpen) return sluitKlimaat();
+  if(e.key === 'Escape' && mdOpen) return sluitMedia();
   if(e.key === 'Escape' && camGrootId) return sluitCam();
   if(e.key === 'Escape' && spOpen) return sluitSysDetail();
   if(e.key === 'Escape' && lpOpen) return lpZone ? (lpZone = null, tekenLampPaneel()) : sluitLampen();
@@ -2748,10 +2847,12 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('input',  e => {
   if(e.target.id === 'zoneDim') sleeptSlider = true;
+  if(e.target.dataset.mdvol){ mdSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
   if(e.target.id === 'muziekVol'){ mzSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
 });
 document.addEventListener('change', e => {
   if(e.target.id === 'zoneDim'){ sleeptSlider = false; zoneDimmen(+e.target.value); }
+  if(e.target.dataset.mdvol){ mdSleept = false; mediaVolume(e.target.dataset.mdvol, +e.target.value); }
   if(e.target.id === 'muziekVol'){ mzSleept = false; muziekVolume(+e.target.value); }
 });
 
