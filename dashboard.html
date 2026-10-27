@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Thuis</title>
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 61 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 62 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -223,6 +223,14 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .st-scenes { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:6px; }
 .cam-noot { font-size:var(--fs-sm); color:var(--text-muted); margin:12px 2px 0; }
 .cam-groot .cam-groot-kader { width:min(96vw, calc(88vh * 16 / 9)); background:var(--bg-nav); border-radius:var(--r); overflow:hidden; border:1px solid var(--border2); }
+.cam-melding { display:flex; align-items:center; gap:10px; padding:10px 16px; background:var(--blue-dim); color:var(--text-primary); border-bottom:1px solid var(--border2); }
+.cam-melding svg { width:22px; height:22px; }
+.cam-melding b { font-size:1.05rem; }
+.cam-melding span { margin-left:auto; font-size:var(--fs-sm); color:var(--text-muted); }
+.cam-melding.aanbellen { background:linear-gradient(90deg, rgba(245,165,36,.35), var(--amber-dim)); }
+.cam-melding.aanbellen svg { color:var(--amber); animation:bel 1s ease-in-out 3; }
+.cam-melding.persoon { background:linear-gradient(90deg, rgba(242,84,91,.28), var(--red-dim)); }
+@keyframes bel { 0%,100% { transform:rotate(0) } 25% { transform:rotate(-14deg) } 75% { transform:rotate(14deg) } }
 .cam-groot-kop { display:flex; align-items:center; gap:12px; padding:8px 8px 8px 16px; font-weight:700; }
 .cam-groot-kop #camGrootNaam { flex:1; }
 .cam-groot-kop .cam-tijd { font-weight:500; font-size:var(--fs-sm); color:var(--text-muted); }
@@ -715,6 +723,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 
 <div class="overlay cam-groot" id="camGroot" data-cam-sluit="1">
   <div class="cam-groot-kader">
+    <div class="cam-melding" id="camMelding" hidden></div>
     <div class="cam-groot-kop"><span id="camGrootNaam">Camera</span><span class="cam-tijd" id="camGrootTijd"></span><span id="camGrootSnap"></span>
       <button class="lp-knop" data-cam-sluit="1" aria-label="Sluiten"><span class="ic" data-icon="kruis"></span></button></div>
     <div class="cam-beeld groot" id="camGrootBeeld"></div>
@@ -876,6 +885,19 @@ const CONFIG = {
     { id:'bc002a04-2df3-439a-a62c-dfb102835d67', naam:'Airco Slaapkamer' },  // "slaapkamer" in Homey
     { id:'32b29831-27fd-4b9d-9010-32fd40e6210e', naam:'Infrarood spiegel' },
   ],
+  // Pop-up met het camerabeeld bij een melding van een eufy-camera of de deurbel.
+  // Soorten: aanbellen, persoon, beweging, dier, voertuig, geluid, huilen
+  cameraMeldingen: {
+    aan: true,
+    sluitNaSec: 60,                 // pop-up sluit vanzelf na zoveel seconden (tik ergens om eerder te sluiten)
+    rustSec: 45,                    // zelfde camera niet vaker dan eens per zoveel seconden (aanbellen gaat altijd voor)
+    snapshotBijAanbellen: true,     // bij aanbellen meteen een nieuw beeld laten maken (eufy geeft bij aanbellen zelf geen beeld)
+    perCamera: {
+      'ce27dfac-b72d-4e66-9e02-a7d7091c0be9': ['aanbellen','persoon','beweging','dier','voertuig'],   // Deurbel 2
+      'e1567935-2b7f-42b1-bf6d-c891bb57ade2': ['persoon','huilen','geluid'],                          // Woonkamer (binnen: geen gewone beweging)
+      '6f3b6527-77ac-4a65-adac-d3a06d192b8e': ['persoon','beweging','dier','voertuig'],               // Camera achtertuin
+    },
+  },
   // Klimaatpaneel (tik op "Klimaat" linksboven): alle apparaten voor verwarmen en koelen, per ruimte
   klimaatPaneel: [
     { id:'e2f02bdd-56ae-4d56-808b-ca8cca2e02cf', naam:'Thermostaat (Honeywell)', ruimte:'Woonkamer', icoon:'thermo' },
@@ -939,9 +961,13 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '61';
+const DASHBOARD_VERSIE = '62';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'62', datum:'27-10-2026', punten:[
+    'Pop-up met het camerabeeld als een eufy-camera of de deurbel iets meldt: aanbellen, persoon, beweging, dier of voertuig.',
+    'Bij aanbellen een zacht belgeluid en meteen een nieuwe snapshot van de deurbel.',
+    'De pop-up sluit na 60 seconden vanzelf of met een tik.' ] },
   { v:'61', datum:'27-10-2026', punten:[
     'Nieuwe tegel "Stofzuiger" (de eufy Robotstofzuiger) op het hoofdscherm; de oude Robovac-tegel is weg.',
     'Tik op de tegel om uit te klappen: start/stop, spot, naar dock, zuigkracht en (als de app ze heeft) programma\'s.' ] },
@@ -959,7 +985,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '27-10-2026 21:47';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '27-10-2026 22:00';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -3227,7 +3253,88 @@ async function camRonde(){
 function startCamera(){ tekenCameras(); camRonde(); }
 function stopCamera(){ clearTimeout(camLus); camLus = null; }
 function openCam(id){ camGrootId = id; $('camGroot').classList.add('on'); tekenCamGroot(); camRonde(); }
-function sluitCam(){ camGrootId = null; $('camGroot').classList.remove('on'); if($('page-camera').classList.contains('on')) camRonde(); else stopCamera(); }
+function sluitCam(){
+  camGrootId = null; $('camGroot').classList.remove('on'); $('camMelding').hidden = true; clearTimeout(camPopupTimer);
+  if($('page-camera').classList.contains('on')) camRonde(); else stopCamera();
+}
+
+/* ── Meldingen van de camera's: bij aanbellen, persoon, beweging … het beeld als pop-up ── */
+const CAM_SIGNALEN = [            // [capability, soort, tekst, prioriteit]
+  ['NTFY_PRESS_DOORBELL',      'aanbellen', 'Er wordt aangebeld',  5],
+  ['NTFY_KNOWN_FACE_DETECTION','persoon',   null,                  4],   // tekst = naam van de bekende persoon
+  ['NTFY_FACE_DETECTION',      'persoon',   'Persoon gezien',      4],
+  ['NTFY_LOITERING_DETECTION', 'persoon',   'Iemand blijft staan', 4],
+  ['NTFY_CRYING_DETECTED',     'huilen',    'Huilen gehoord',      3],
+  ['NTFY_VEHICLE_DETECTED',    'voertuig',  'Voertuig gezien',     2],
+  ['NTFY_PET_DETECTED',        'dier',      'Dier gezien',         2],
+  ['NTFY_SOUND_DETECTED',      'geluid',    'Geluid gehoord',      2],
+  ['NTFY_MOTION_DETECTION',    'beweging',  'Beweging',            1],
+  ['alarm_motion',             'beweging',  'Beweging',            1],
+];
+let camVorige = null, camPopupTimer = null;
+const camLaatstePopup = {};
+function camMeldingen(){
+  const M = CONFIG.cameraMeldingen; if(!M || !M.aan || DEMO()) return;
+  const nu = {};
+  for(const id of Object.keys(M.perCamera)){
+    const d = DEVS[id]; if(!d) continue;
+    nu[id] = { stempel:camStempel(d) };
+    for(const [k] of CAM_SIGNALEN) nu[id][k] = cap(d, k);
+  }
+  const vorige = camVorige; camVorige = nu;
+  if(!vorige) return;                                            // eerste keer: alleen onthouden
+  let beste = null;
+  for(const [id, st] of Object.entries(nu)){
+    const oud = vorige[id]; if(!oud) continue;
+    const soorten = M.perCamera[id] || [];
+    for(const [k, soort, tekst, prio] of CAM_SIGNALEN){
+      if(!soorten.includes(soort)) continue;
+      const v = st[k], w = oud[k];
+      const nieuw = k === 'NTFY_KNOWN_FACE_DETECTION' ? (v && v !== w) : (v === true && w !== true);
+      if(nieuw && (!beste || prio > beste.prio)) beste = { id, prio, soort, tekst:tekst || `${v} gezien` };
+    }
+    // nieuw gebeurtenisbeeld zonder los signaal: als beweging behandelen
+    if(!beste && st.stempel && oud.stempel && st.stempel !== oud.stempel && soorten.includes('beweging'))
+      beste = { id, prio:1, soort:'beweging', tekst:'Nieuwe gebeurtenis' };
+  }
+  if(beste) toonCamPopup(beste);
+}
+function toonCamPopup(m){
+  const M = CONFIG.cameraMeldingen, nu = Date.now();
+  if(m.soort !== 'aanbellen' && nu - (camLaatstePopup[m.id] || 0) < M.rustSec * 1000) return;
+  if(camGrootId && camGrootId !== m.id && m.soort !== 'aanbellen') return;   // er staat al een andere camera open
+  camLaatstePopup[m.id] = nu;
+  try { if(window.fully){ fully.turnScreenOn(); } } catch(e){}               // Fully Kiosk: scherm aan (als de JavaScript-koppeling aan staat)
+  const el = $('camMelding');
+  el.className = 'cam-melding ' + m.soort; el.hidden = false;
+  el.innerHTML = `${ic(m.soort === 'aanbellen' ? 'door' : m.soort === 'persoon' ? 'users' : 'camera')}<b>${esc(m.tekst)}</b><span>${esc(DEVS[m.id]?.name || '')} · ${tijdStr(nu)}</span>`;
+  if(m.soort === 'aanbellen'){
+    dingDong();
+    const d = DEVS[m.id];
+    if(M.snapshotBijAanbellen && d && heeft(d,'CMD_SNAPSHOT') && d.available !== false){
+      snapStatus[m.id] = 'bezig';
+      zetCap(m.id, 'CMD_SNAPSHOT', true)
+        .then(() => { snapStatus[m.id] = 'ok'; [3000, 8000, 15000].forEach(ms => setTimeout(verversApparaten, ms)); })
+        .catch(e => { snapStatus[m.id] = 'fout:' + e.message; })
+        .finally(() => { if(camGrootId === m.id) tekenCamGroot(); setTimeout(() => { delete snapStatus[m.id]; if(camGrootId === m.id) tekenCamGroot(); }, 8000); });
+    }
+  }
+  openCam(m.id);
+  clearTimeout(camPopupTimer);
+  camPopupTimer = setTimeout(() => { if(camGrootId === m.id) sluitCam(); }, M.sluitNaSec * 1000);
+}
+/* Zacht belgeluid (alleen als de browser geluid toestaat) */
+function dingDong(){
+  try {
+    const A = new (window.AudioContext || window.webkitAudioContext)();
+    [[880, 0], [660, .45]].forEach(([f, t]) => {
+      const o = A.createOscillator(), g = A.createGain(); o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, A.currentTime + t); g.gain.exponentialRampToValueAtTime(.25, A.currentTime + t + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, A.currentTime + t + .6);
+      o.connect(g).connect(A.destination); o.start(A.currentTime + t); o.stop(A.currentTime + t + .65);
+    });
+  } catch(e){}
+}
 document.addEventListener('visibilitychange', () => { if(!document.hidden) camRonde(); });
 
 /* ═════════════════════════════════════════════
@@ -3245,6 +3352,7 @@ async function verversApparaten(){
   }
   try {
     DEVS = await homey('/api/manager/devices/device') || {};
+    try { camMeldingen(); } catch(e){}
     status('ok', 'Verbonden met Homey'); bereikNoteer(true);
     tekenAlles();
   } catch(e){
