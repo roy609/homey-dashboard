@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Thuis</title>
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 59 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 60 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -67,7 +67,16 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .nav-item.active .ic { background:var(--amber-dim); color:var(--amber); }
 .sidebar.collapsed .nav-label { display:none; }
 .nav-spacer { flex:1; }
-.nav-versie { font-size:10px; color:var(--text-muted); text-align:center; padding:2px 0 6px; opacity:.7; }
+.nav-versie { cursor:pointer; border-radius:8px; }
+.nav-versie:active { background:var(--bg-inset); }
+#nieuwPaneel .modal { max-width:540px; }
+.nw-blok { padding:12px 14px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); margin-bottom:10px; }
+.nw-blok.nieuwste { border-color:var(--blue); background:linear-gradient(180deg, var(--blue-dim), var(--bg-inset)); }
+.nw-kop { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.nw-kop span { font-size:var(--fs-sm); color:var(--text-muted); }
+.nw-kop em { font-style:normal; font-size:var(--fs-micro); font-weight:700; color:var(--blue); margin-left:auto; text-transform:uppercase; letter-spacing:.5px; }
+.nw-blok ul { margin:8px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:4px; font-size:var(--fs-sm); color:var(--text-secondary); }
+.nav-versie { font-size:10px; line-height:1.3; color:var(--text-muted); text-align:center; padding:2px 0 6px; opacity:.75; white-space:nowrap; }
 
 /* Inhoud */
 .main { flex:1; overflow-y:auto; padding:20px 22px; background:var(--mesh-bg); }
@@ -570,7 +579,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <div class="nav-spacer"></div>
   <div class="nav-item" data-actie="thema"><span class="ic" data-icon="moon"></span><span class="nav-label">Donker / licht</span></div>
   <div class="nav-item" data-actie="instellingen"><span class="ic" data-icon="gear"></span><span class="nav-label">Instellingen</span></div>
-  <div class="nav-versie" id="navVersie" title="Dashboardversie">v–</div>
+  <div class="nav-versie" id="navVersie" data-actie="nieuw" role="button" title="Dashboardversie">v–</div>
 </nav>
 
 <main class="main">
@@ -744,6 +753,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="nieuwPaneel">
+  <div class="modal lp" role="dialog" aria-label="Wat is er nieuw">
+    <div class="lp-kop">
+      <div class="ico blue" data-icon="pakket"></div>
+      <div class="grow"><h2>Wat is er nieuw</h2><div class="card-sub" id="nwSub"></div></div>
+      <button class="lp-knop" data-nw-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst" id="nwLijst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="sysPaneel" data-sys-achter="1">
   <div class="modal lp" role="dialog" aria-label="Details">
     <div class="lp-kop">
@@ -902,7 +922,24 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '59';
+const DASHBOARD_VERSIE = '60';
+/* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
+const WIJZIGINGEN = [
+  { v:'60', datum:'27-10-2026', punten:[
+    'Onderaan het menu staan nu versie, datum en tijd van publiceren.',
+    'Tik erop voor dit overzicht van de laatste aanpassingen.' ] },
+  { v:'59', datum:'27-10-2026', punten:[
+    'Kaart "Muziek" heet nu "Media"; een tik opent alle speakers, tv\'s en radio\'s per ruimte, met afspelen/pauze, aan/uit en volume.',
+    'Kaart "Klimaat" toont hoeveel apparaten aan staan.',
+    'Kaart "Lampen" ingekort, zodat de tekst past.',
+    'Gordijnen lijken nu op de beige wave-gordijnen, met plooien die meeschuiven.' ] },
+  { v:'58', datum:'27-10-2026', punten:[
+    'Kaart "Thuis" heet nu "Klimaat"; een tik opent thermostaat, airco\'s en de infrarood spiegel per ruimte.' ] },
+  { v:'57', datum:'27-10-2026', punten:[ 'Versienummer zichtbaar onderaan het menu.' ] },
+  { v:'56', datum:'27-10-2026', punten:[
+    'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
+];
+const DASHBOARD_DATUM = '27-10-2026 21:20';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -915,7 +952,10 @@ async function checkNieuweVersie(){
   } catch(e){ /* geen internet: gewoon doordraaien */ }
 }
 setInterval(checkNieuweVersie, 5 * 60000);
-{ const el = document.getElementById('navVersie'); if(el) el.textContent = 'v' + DASHBOARD_VERSIE + (window.__VIA_LADER ? '' : ' lokaal'); }
+{ const el = document.getElementById('navVersie');
+  if(el){ const [dag, tijd] = DASHBOARD_DATUM.split(' ');
+    el.innerHTML = `v${DASHBOARD_VERSIE}${window.__VIA_LADER ? '' : ' lokaal'}<br>${dag.slice(0, 5)} ${tijd}`;
+    el.title = `Dashboardversie ${DASHBOARD_VERSIE}, gepubliceerd ${DASHBOARD_DATUM}`; } }
 const LS_KEY = 'dashboard_cfg';
 let CFG = { host:'', token:'' };
 try { CFG = { ...CFG, ...JSON.parse(localStorage.getItem(LS_KEY) || '{}') }; } catch(e){}
@@ -1536,6 +1576,18 @@ async function mediaVolume(id, pct){
   const ok = await opdracht(() => zetCap(id, 'volume_set', pct / 100));
   if(!ok){ d.capabilitiesObj.volume_set.value = oud; tekenMediaPaneel(); }
 }
+
+/* ── Wat is er nieuw ── */
+let nwOpen = false;
+function openNieuw(){
+  nwOpen = true;
+  $('nwSub').textContent = `Je draait versie ${DASHBOARD_VERSIE} · gepubliceerd ${DASHBOARD_DATUM}`;
+  $('nwLijst').innerHTML = WIJZIGINGEN.slice(0, 6).map((w, i) => `<div class="nw-blok ${i === 0 ? 'nieuwste' : ''}">
+      <div class="nw-kop"><b>Versie ${esc(w.v)}</b><span>${esc(i === 0 ? DASHBOARD_DATUM : w.datum)}</span>${i === 0 ? '<em>laatste aanpassing</em>' : ''}</div>
+      <ul>${w.punten.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>`).join('');
+  $('nieuwPaneel').classList.add('on'); $('nwLijst').scrollTop = 0;
+}
+function sluitNieuw(){ nwOpen = false; $('nieuwPaneel').classList.remove('on'); }
 
 function openKlimaat(){ klOpen = true; $('klimaatPaneel').classList.add('on'); tekenKlimaatPaneel(); $('klLijst').scrollTop = 0; }
 function sluitKlimaat(){ klOpen = false; $('klimaatPaneel').classList.remove('on'); }
@@ -2794,6 +2846,7 @@ async function bewaarVar(){
 
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
+  if(nwOpen && (e.target === $('nieuwPaneel') || e.target.closest('[data-nw-sluit]'))) return sluitNieuw();
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
@@ -2831,11 +2884,12 @@ document.addEventListener('click', e => {
   if(t.dataset.acmode) return zetModus(t.dataset.ac, t.dataset.acmode);
   if(t.dataset.temp)  return temperatuur(t.dataset.temp, parseFloat(t.dataset.stap));
   if(t.dataset.page)  return goPage(t.dataset.page, t);
-  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat, 'media':openMedia,
+  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat, 'nieuw':openNieuw, 'media':openMedia,
      'sluit':closeCfg, 'opslaan':saveCfg, 'lampen':openLampen, 'zone-aanuit':zoneAanUit,
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
 document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && nwOpen) return sluitNieuw();
   if(e.key === 'Escape' && klOpen) return sluitKlimaat();
   if(e.key === 'Escape' && mdOpen) return sluitMedia();
   if(e.key === 'Escape' && camGrootId) return sluitCam();
