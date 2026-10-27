@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Homey-dashboard</title>
+<style>html,body{margin:0;height:100%;background:#0F1319;color:#8A95A5;font:15px system-ui,sans-serif;display:grid;place-items:center}</style>
+</head>
+<body>
+<div id="melding">Dashboard laden…</div>
+<script>
+/* LADER — staat op de Homey (/dashboard/index.html) en verandert (bijna) nooit.
+   Haalt het echte dashboard van GitHub en toont het hier, zodat de pagina op de Homey blijft draaien
+   (verbinding met Homey, API-sleutel in deze browser en de foto's in /dashboard/img/ blijven werken).
+   Geen internet? Dan de laatst opgehaalde versie uit deze browser. */
+(async function(){
+  var BRON = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/dashboard.html';
+  var SLEUTEL = 'dashboard_kopie';
+  var html = null;
+  try {
+    var r = await fetch(BRON + '?t=' + Date.now(), { cache:'no-store' });
+    if(r.ok){ html = await r.text(); try { localStorage.setItem(SLEUTEL, html); } catch(e){} }
+  } catch(e){}
+  if(!html){ try { html = localStorage.getItem(SLEUTEL); } catch(e){} }
+  if(!html){
+    document.getElementById('melding').textContent = 'Kan het dashboard niet ophalen (geen internet?). Probeer het straks opnieuw.';
+    setTimeout(function(){ location.reload(); }, 60000);
+    return;
+  }
+  html = html.replace('<head>', '<head><script>window.__VIA_LADER = true;<\/script>');
+  document.open(); document.write(html); document.close();
+})();
+</script>
+</body>
+</html>
