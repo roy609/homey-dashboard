@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Thuis</title>
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 57 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 58 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -181,6 +181,9 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .mz-vol { display:flex; align-items:center; gap:10px; }
 .mz-vol input[type=range] { accent-color:var(--green); height:36px; }
 .mz-vol span { font-size:var(--fs-sm); color:var(--text-muted); min-width:38px; text-align:right; }
+.klim-aan { width:var(--tap); height:var(--tap); border-radius:12px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-muted); display:grid; place-items:center; cursor:pointer; flex-shrink:0; }
+.klim-aan.on { color:var(--amber); border-color:var(--amber-border); background:var(--amber-dim); }
+#klimaatPaneel .modal { max-width:560px; }
 .cam-noot { font-size:var(--fs-sm); color:var(--text-muted); margin:12px 2px 0; }
 .cam-groot .cam-groot-kader { width:min(96vw, calc(88vh * 16 / 9)); background:var(--bg-nav); border-radius:var(--r); overflow:hidden; border:1px solid var(--border2); }
 .cam-groot-kop { display:flex; align-items:center; gap:12px; padding:8px 8px 8px 16px; font-weight:700; }
@@ -694,6 +697,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="klimaatPaneel">
+  <div class="modal lp" role="dialog" aria-label="Klimaat">
+    <div class="lp-kop">
+      <div class="ico amber" data-icon="thermo"></div>
+      <div class="grow"><h2>Klimaat</h2><div class="card-sub" id="klSub"></div></div>
+      <button class="lp-knop" data-kl-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst" id="klLijst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="sysPaneel" data-sys-achter="1">
   <div class="modal lp" role="dialog" aria-label="Details">
     <div class="lp-kop">
@@ -789,6 +803,13 @@ const CONFIG = {
     { id:'bc002a04-2df3-439a-a62c-dfb102835d67', naam:'Airco Slaapkamer' },  // "slaapkamer" in Homey
     { id:'32b29831-27fd-4b9d-9010-32fd40e6210e', naam:'Infrarood spiegel' },
   ],
+  // Klimaatpaneel (tik op "Klimaat" linksboven): alle apparaten voor verwarmen en koelen, per ruimte
+  klimaatPaneel: [
+    { id:'e2f02bdd-56ae-4d56-808b-ca8cca2e02cf', naam:'Thermostaat (Honeywell)', ruimte:'Woonkamer', icoon:'thermo' },
+    { id:'89bd8240-0bcd-41ce-a021-05a589436030', naam:'Airco Woonkamer',         ruimte:'Woonkamer' },
+    { id:'bc002a04-2df3-439a-a62c-dfb102835d67', naam:'Airco Slaapkamer',        ruimte:'Slaapkamer' },
+    { id:'32b29831-27fd-4b9d-9010-32fd40e6210e', naam:'Infrarood spiegel',       ruimte:'Badkamer', icoon:'mirror' },
+  ],
   // Achtertuin-foto (Tuin-pagina): waar lampen en sensoren op de foto staan (coördinaten 1536 × 1024).
   // Klopt een plek niet? Pas alleen x en y aan.
   achtertuin: {
@@ -845,7 +866,7 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '57';
+const DASHBOARD_VERSIE = '58';
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -1090,7 +1111,7 @@ function tekenLinks(){
   const beweging = alle.some(d => cap(d,'alarm_motion') === true);
   const lampenAan = alle.filter(d => d.class === 'light' && cap(d,'onoff') === true && !CONFIG.nietTellen.includes(d.id)).length;
   $('huisKaarten').innerHTML =
-    miniKaart('thermo','amber','Thuis', t != null ? `${nl(t)}° | ${Math.round(h ?? 0)}%` : '–') +
+    miniKaart('thermo','amber','Klimaat', (t != null ? `${nl(t)}° | ${Math.round(h ?? 0)}%` : '–'), 'klimaat') +
     miniKaart('music','purple','Muziek', spelen ? `${spelen} speelt af` : 'Stil') +
     miniKaart('run','blue','Beweging', beweging ? 'Actief' : 'Rustig') +
     miniKaart('bulb','amber','Lampen', lampenAan === 1 ? '1 staat aan' : `${lampenAan} staan aan`, 'lampen');
@@ -1371,7 +1392,11 @@ const isUit = d => (heeft(d,'thermostat_cmode') && isOffWaarde(cap(d,'thermostat
 const huidigeModus = d => isUit(d) ? '__uit' : String(cap(d,'ac_mode') ?? cap(d,'thermostat_cmode') ?? '');
 
 function tekenKlimaat(){
-  $('klimaat').innerHTML = CONFIG.klimaat.map(k => {
+  $('klimaat').innerHTML = CONFIG.klimaat.map(klimaatKaart).join('');
+  if(klOpen) tekenKlimaatPaneel();
+}
+function klimaatKaart(k){
+  {
     const d = dev(k.id);
     if(!d) return '';
     const offline = d.available === false;
@@ -1380,20 +1405,44 @@ function tekenKlimaat(){
     const lijst = modi(d), uit = lijst.length && isUit(d);
     const huidig = lijst.find(m => String(m.id).toLowerCase() === huidigeModus(d).toLowerCase());
     return `<div class="card klim ${uit ? 'uit' : ''}"><div class="row">
-      <div class="ico ${offline ? 'red' : uit ? '' : 'blue'}">${ic(k.naam.includes('spiegel') ? 'mirror' : 'ac')}</div>
-      <div class="grow"><div style="font-weight:700">${esc(k.naam)}${lijst.length && !offline ? ` <span class="klim-modus">${uit ? 'staat uit' : esc(huidig?.label || '')}</span>` : ''}</div>
+      <div class="ico ${offline ? 'red' : uit || cap(d,'onoff') === false ? '' : k.icoon === 'thermo' ? 'amber' : 'blue'}">${ic(k.icoon || (k.naam.includes('spiegel') ? 'mirror' : 'ac'))}</div>
+      <div class="grow"><div style="font-weight:700">${esc(k.naam)}${lijst.length && !offline ? ` <span class="klim-modus">${uit ? 'staat uit' : esc(huidig?.label || '')}</span>`
+          : !offline && cap(d,'custom_thermostat_mode') ? ` <span class="klim-modus">${esc(({ heat:'Verwarmen', cool:'Koelen', off:'Uit', auto:'Auto' })[String(cap(d,'custom_thermostat_mode')).toLowerCase()] || cap(d,'custom_thermostat_mode'))}</span>`
+          : !offline && !lijst.length && typeof cap(d,'onoff') === 'boolean' ? ` <span class="klim-modus">${cap(d,'onoff') ? 'staat aan' : 'staat uit'}</span>` : ''}</div>
         ${offline ? '<div class="warn">Onbereikbaar</div>' :
           `<div class="klim-val">${nl(nu)}°${metDoel ? `<span class="pijl">→</span><span class="doel">${nl(doel)}°</span>` : ''}</div>`}</div>
       ${!offline && metDoel ? `<div class="stepper">
         <button data-temp="${esc(k.id)}" data-stap="0.5" aria-label="Warmer">${ic('up')}</button>
         <button data-temp="${esc(k.id)}" data-stap="-0.5" aria-label="Kouder">${ic('down')}</button></div>` : ''}
+      ${!offline && !lijst.length && typeof cap(d,'onoff') === 'boolean' ? `<button class="klim-aan ${cap(d,'onoff') ? 'on' : ''}" data-tegel="${esc(k.id)}" data-soort="schakelaar"
+        aria-label="${esc(k.naam)} ${cap(d,'onoff') ? 'uitzetten' : 'aanzetten'}">${ic('power')}</button>` : ''}
     </div>
     ${lijst.length && !offline ? `<div class="klim-modi" role="radiogroup" aria-label="Stand van ${esc(k.naam)}">${lijst.map(m =>
       `<button role="radio" aria-checked="${huidig === m}" class="${huidig === m ? 'on' : ''} m-${m.id === '__uit' ? 'off' : String(m.id).toLowerCase()}"
         data-acmode="${esc(String(m.id))}" data-ac="${esc(k.id)}" title="${esc(m.label)}">${ic(m.icoon)}<span>${esc(m.label)}</span></button>`).join('')}</div>` : ''}
     </div>`;
-  }).join('');
+  }
 }
+
+/* ── Klimaatpaneel: alle verwarmings- en koelapparaten per ruimte ── */
+let klOpen = false;
+function klimaatSamenvatting(){
+  const lijst = CONFIG.klimaatPaneel.map(k => dev(k.id)).filter(Boolean);
+  const aan = lijst.filter(d => d.available !== false && !(modi(d).length && isUit(d)) && cap(d,'onoff') !== false
+    && !(heeft(d,'custom_thermostat_mode') && isOffWaarde(cap(d,'custom_thermostat_mode')))).length;
+  return { aan, totaal:lijst.length };
+}
+function tekenKlimaatPaneel(){
+  const ruimtes = [...new Set(CONFIG.klimaatPaneel.map(k => k.ruimte))];
+  const S = klimaatSamenvatting();
+  $('klSub').textContent = `${S.aan} van ${S.totaal} apparaten aan`;
+  $('klLijst').innerHTML = ruimtes.map(r => {
+    const kaarten = CONFIG.klimaatPaneel.filter(k => k.ruimte === r).map(klimaatKaart).join('');
+    return kaarten ? `<div class="sec-label" style="margin:10px 2px 6px">${esc(r)}</div><div class="col" style="gap:10px">${kaarten}</div>` : '';
+  }).join('') || '<span class="leeg">Geen klimaatapparaten gevonden</span>';
+}
+function openKlimaat(){ klOpen = true; $('klimaatPaneel').classList.add('on'); tekenKlimaatPaneel(); $('klLijst').scrollTop = 0; }
+function sluitKlimaat(){ klOpen = false; $('klimaatPaneel').classList.remove('on'); }
 async function zetModus(id, modus){
   const d = dev(id); if(!d) return;
   const c = d.capabilitiesObj, oud = { cmode:c.thermostat_cmode?.value, mode:c.ac_mode?.value, onoff:c.onoff?.value };
@@ -2649,6 +2698,7 @@ async function bewaarVar(){
 
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
+  if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   const sp = e.target.closest('[data-sysdetail],[data-sys-sluit],[data-sys-achter]');
   if(sp){
     if(sp.dataset.sysdetail) return openSysDetail(sp.dataset.sysdetail);
@@ -2683,11 +2733,12 @@ document.addEventListener('click', e => {
   if(t.dataset.acmode) return zetModus(t.dataset.ac, t.dataset.acmode);
   if(t.dataset.temp)  return temperatuur(t.dataset.temp, parseFloat(t.dataset.stap));
   if(t.dataset.page)  return goPage(t.dataset.page, t);
-  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg,
+  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat,
      'sluit':closeCfg, 'opslaan':saveCfg, 'lampen':openLampen, 'zone-aanuit':zoneAanUit,
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
 document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && klOpen) return sluitKlimaat();
   if(e.key === 'Escape' && camGrootId) return sluitCam();
   if(e.key === 'Escape' && spOpen) return sluitSysDetail();
   if(e.key === 'Escape' && lpOpen) return lpZone ? (lpZone = null, tekenLampPaneel()) : sluitLampen();
