@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 70 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 71 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -602,6 +602,25 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .bewoner { position:relative; width:46px; height:46px; flex-shrink:0; cursor:pointer; }
 .bewoner:active { transform:scale(.94); }
 #bewonerPaneel .modal { max-width:420px; }
+#radioPaneel .modal { max-width:520px; }
+.rd-zenders { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.rd-zender { display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 8px; border-radius:14px; border:2px solid var(--border2);
+  background:var(--bg-inset); color:var(--text-primary); font:inherit; font-weight:700; cursor:pointer; }
+.rd-zender.on { border-color:var(--z); background:linear-gradient(180deg, color-mix(in srgb, var(--z) 22%, transparent), var(--bg-inset)); }
+.rd-logo { position:relative; width:56px; height:56px; border-radius:14px; overflow:hidden; background:var(--z); display:grid; place-items:center; }
+.rd-logo img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
+.rd-logo b { color:#fff; font-size:1.5rem; font-weight:900; }
+.rd-speakers { display:flex; flex-wrap:wrap; gap:6px; }
+.rd-sp { min-height:40px; padding:0 14px; border-radius:100px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-secondary);
+  font:inherit; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.rd-sp.groep { font-weight:800; }
+.rd-sp.on { border-color:var(--purple); background:rgba(167,139,250,.16); color:var(--text-primary); }
+.rd-sp[disabled] { opacity:.4; }
+.rd-eq { display:inline-flex; gap:2px; align-items:flex-end; height:12px; }
+.rd-eq b { width:3px; background:var(--purple); border-radius:1px; animation:rdEq .9s ease-in-out infinite; }
+.rd-eq b:nth-child(2) { animation-delay:-.3s; } .rd-eq b:nth-child(3) { animation-delay:-.6s; }
+@keyframes rdEq { 0%,100% { height:3px } 50% { height:12px } }
+.rd-acties { grid-template-columns:1fr; }
 #bewegingPaneel .modal { max-width:520px; }
 .bwg-rij { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
 .bwg-rij b { display:block; font-size:var(--fs-md); }
@@ -895,6 +914,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="radioPaneel">
+  <div class="modal lp" role="dialog" aria-label="Radio">
+    <div class="lp-kop">
+      <div class="ico purple" data-icon="radio"></div>
+      <div class="grow"><h2>Radio</h2><div class="card-sub" id="rdSub"></div></div>
+      <button class="lp-knop" data-rd-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst st-lijst" id="rdLijst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="sysPaneel" data-sys-achter="1">
   <div class="modal lp" role="dialog" aria-label="Details">
     <div class="lp-kop">
@@ -949,6 +979,7 @@ const CONFIG = {
     { id:'51095063-ad0c-49b3-8bef-8df71af85139', naam:'Radio Beneden',   soort:'schakelaar', icoon:'radio' },
     { id:'42b12708-a915-4d6d-9c4e-6c75276bbcbd', naam:'Radio Boven',     soort:'schakelaar', icoon:'radio' },
     { id:'75d83bdd-6e22-4e11-8d12-51328495fd64', naam:'Visite',          soort:'schakelaar', icoon:'users' },
+    { id:'radio',                                naam:'Radio',           soort:'radio',      icoon:'radio' },
     { id:'4e5db254-7e95-4884-ba36-537fe6029ff3', naam:'Stofzuiger',      soort:'stofzuiger', icoon:'vacuum' },   // "Robotstofzuiger" (eufy)
   ],
   // Gordijnen woonkamer: één kaart voor links en rechts samen
@@ -990,6 +1021,26 @@ const CONFIG = {
     { id:'bc002a04-2df3-439a-a62c-dfb102835d67', naam:'Airco Slaapkamer' },  // "slaapkamer" in Homey
     { id:'32b29831-27fd-4b9d-9010-32fd40e6210e', naam:'Infrarood spiegel' },
   ],
+  // Radio: zenders (TuneIn, via de Chromecast-app in Homey) en de speakers waarop je kunt afspelen
+  radio: {
+    zenders: [
+      { naam:'Qmusic',    kleur:'#E4002B', station:{ id:'s87683',  name:'Qmusic',       image:'http://cdn-profiles.tunein.com/s87683/images/logoq.png' } },
+      { naam:'JOE',       kleur:'#F59E0B', station:{ id:'s307829', name:'JOE Nederland', image:'http://cdn-profiles.tunein.com/s307829/images/logoq.png' } },
+      { naam:'Sky Radio', kleur:'#2563EB', station:{ id:'s9067',   name:'Sky Radio',    image:'http://cdn-profiles.tunein.com/s9067/images/logoq.png' } },
+    ],
+    speakers: [
+      { id:'a55ced45-ab31-488b-8ca8-d0e12916e7e6', naam:'Beneden',        groep:true },
+      { id:'a28ab85b-f9c8-4297-a94e-21aa74f742bc', naam:'Boven',          groep:true },
+      { id:'b95a9ff1-4aa2-4693-a724-7490d529693e', naam:'Overal',         groep:true },
+      { id:'809c15f4-6274-485e-997c-efe36bd00231', naam:'Woonkamer' },
+      { id:'3cf08966-1e7a-4acd-bc47-44f21b34cb33', naam:'Soundbar' },
+      { id:'c05655f8-eb69-45de-8d5a-c8c39460f462', naam:'Keuken' },
+      { id:'40a76d97-2e7e-4aa6-b57d-083c02c18943', naam:'Werkkamer' },
+      { id:'2d0b547e-8d7c-49a6-a91f-518efa1a1783', naam:'Slaapkamer' },
+      { id:'4934fe26-3e02-44c5-a33c-89b6b6722e5f', naam:'Badkamer' },
+      { id:'22f764ea-3dc6-4896-bf5e-5fa9bc087bea', naam:'Achtertuin' },
+    ],
+  },
   // Pop-up met het camerabeeld bij een melding van een eufy-camera of de deurbel.
   // Soorten: aanbellen, persoon, beweging, dier, voertuig, geluid, huilen
   cameraMeldingen: {
@@ -1066,9 +1117,11 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '70';
+const DASHBOARD_VERSIE = '71';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'71', datum:'28-10-2026', punten:[
+    'Nieuwe tegel "Radio": kies Qmusic, JOE of Sky Radio, kies op welke speakers, en start of stop; met volume.' ] },
   { v:'70', datum:'28-10-2026', punten:[
     'Beweging: tik op een ruimte voor de historie van de afgelopen 24 uur — tijdlijn, aantal keer, totale duur en de tijdstippen.',
     'De eufy-camera\'s en de deurbel tellen nu ook mee als bewegingsmelder (net als in Homey); tik op "beeld" voor de laatste snapshot.' ] },
@@ -1280,6 +1333,12 @@ const DEMO_RAW = {
   '6f3b6527-77ac-4a65-adac-d3a06d192b8e':['Camera achtertuin','camera',Z.achter,{onoff:true,alarm_motion:false}],
   'demo-spotify':['Spotify','speaker',Z.woon,{speaker_playing:true,speaker_track:'Demo-nummer',speaker_artist:'Demo-artiest',speaker_album:'Demo-album',
     speaker_prev:false,speaker_next:false,speaker_shuffle:false,speaker_repeat:'none',volume_set:.35,speaker_duration:214,speaker_position:96}],
+  'a55ced45-ab31-488b-8ca8-d0e12916e7e6':['Speakergroep Beneden','speaker',Z.thuis,{speaker_playing:true,speaker_artist:'Qmusic',speaker_track:'Qmusic',volume_set:.3}],
+  'a28ab85b-f9c8-4297-a94e-21aa74f742bc':['Speakergroep Boven','speaker',Z.thuis,{speaker_playing:false,volume_set:.25}],
+  'b95a9ff1-4aa2-4693-a724-7490d529693e':['Speakergroep Alle speakers','speaker',Z.thuis,{speaker_playing:false,volume_set:.3}],
+  '809c15f4-6274-485e-997c-efe36bd00231':['Google Home Woonkamer','speaker',Z.woon,{speaker_playing:false,volume_set:.37}],
+  'c05655f8-eb69-45de-8d5a-c8c39460f462':['Keuken Hub','speaker',Z.keuken,{speaker_playing:false,volume_set:.4}],
+  '22f764ea-3dc6-4896-bf5e-5fa9bc087bea':['Achtertuin','speaker',Z.achter,{speaker_playing:false,volume_set:.5}],
   'demo-deurbel':['Deurbel','doorbell',Z.voor,{alarm_motion:false,measure_battery:76}],
   'demo-camwoon':['Camera woonkamer','camera',Z.woon,{onoff:false,alarm_motion:false}],
   't5':['Kerstverlichting Voortuin','socket',Z.voor,{onoff:true}],
@@ -1464,6 +1523,7 @@ function tekenVariabelen(){
 }
 
 function tegelHtml(t){
+  if(t.soort === 'radio') return radioTegelHtml(t);
   const d = dev(t.id);
   if(!d) return '';
   const offline = d.available === false;
@@ -2046,6 +2106,81 @@ function openBeweging(){
   clearInterval(bwgZoneTimer); bwgZoneTimer = setInterval(() => laadZones().then(tekenBewegingPaneel), 15000);   // "zone actief" vers houden
 }
 function sluitBeweging(){ bwgOpen = false; bwgZoneOpen = null; clearInterval(bwgZoneTimer); $('bewegingPaneel').classList.remove('on'); }
+
+/* ── Radio: zender kiezen, speakers kiezen, starten/stoppen (Chromecast-app: "Speel radio af") ── */
+let rdOpen = false, rdMelding = '';
+let rdKeuze = { zender:0, speakers:['a55ced45-ab31-488b-8ca8-d0e12916e7e6'] };
+try { rdKeuze = { ...rdKeuze, ...JSON.parse(localStorage.getItem('dashboard_radio') || '{}') }; } catch(e){}
+const bewaarRadio = () => { try { localStorage.setItem('dashboard_radio', JSON.stringify(rdKeuze)); } catch(e){} };
+const zenderVan = d => { const t = [cap(d,'speaker_artist'), cap(d,'speaker_track')].join(' ').toLowerCase();
+  return CONFIG.radio.zenders.find(z => t.includes(z.naam.toLowerCase().split(' ')[0])) || null; };
+function radioSpelend(){
+  return CONFIG.radio.speakers.map(sp => ({ sp, d:dev(sp.id) })).filter(({ d }) => d && cap(d,'speaker_playing') === true && zenderVan(d));
+}
+function radioTegelHtml(t){
+  const nu = radioSpelend();
+  const staat = nu.length ? `${zenderVan(nu[0].d).naam} · ${nu.map(x => x.sp.naam).join(', ')}` : 'Uit · tik om te kiezen';
+  return `<div class="card tile ${nu.length ? 'on' : ''}" data-tegel="radio" data-soort="radio">
+    <div class="t-top"><div class="ico">${ic('radio')}</div><div class="pwr">${ic('rechts')}</div></div>
+    <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">${esc(staat)}</div></div></div>`;
+}
+function tekenRadioPaneel(){
+  if(!rdOpen) return;
+  const R = CONFIG.radio, nu = radioSpelend();
+  $('rdSub').textContent = nu.length ? `${zenderVan(nu[0].d).naam} speelt op ${nu.map(x => x.sp.naam).join(', ')}` : 'Er speelt nu geen radio';
+  const kies = R.speakers.filter(sp => dev(sp.id));
+  const vol = rdKeuze.speakers.map(id => cap(dev(id),'volume_set')).find(v => typeof v === 'number');
+  $('rdLijst').innerHTML = `
+    <div class="sec-label">Zender</div>
+    <div class="rd-zenders">${R.zenders.map((z, i) => `<button class="rd-zender ${rdKeuze.zender === i ? 'on' : ''}" style="--z:${z.kleur}" data-rdzender="${i}">
+      <span class="rd-logo"><img src="${esc(z.station.image)}" alt="" onerror="this.remove()"><b>${esc(z.naam[0])}</b></span><span>${esc(z.naam)}</span></button>`).join('')}</div>
+    <div class="sec-label">Waar</div>
+    <div class="rd-speakers">${kies.map(sp => { const d = dev(sp.id), aan = rdKeuze.speakers.includes(sp.id), speelt = cap(d,'speaker_playing') === true;
+      return `<button class="rd-sp ${aan ? 'on' : ''} ${sp.groep ? 'groep' : ''}" data-rdsp="${esc(sp.id)}" ${d.available === false ? 'disabled' : ''}>
+        ${speelt ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(sp.naam)}</button>`; }).join('')}</div>
+    ${typeof vol === 'number' ? `<div class="sec-label">Volume</div>
+      <div class="mz-vol">${ic('volume')}<input type="range" min="0" max="100" value="${Math.round(vol * 100)}" id="rdVol" aria-label="Volume"><span>${Math.round(vol * 100)}%</span></div>` : ''}
+    <div class="st-acties rd-acties">
+      <button class="st-knop primair groot" data-rdactie="start" ${rdKeuze.speakers.length ? '' : 'disabled'}>${ic('play')}<span>${esc(R.zenders[rdKeuze.zender].naam)} afspelen</span></button>
+    </div>
+    <div class="st-acties rd-acties"><button class="st-knop groot" data-rdactie="stop" ${nu.length || rdKeuze.speakers.length ? '' : 'disabled'}>${ic('pauze')}<span>Stop${nu.length ? ' (overal waar radio speelt)' : ''}</span></button></div>
+    ${rdMelding ? `<div class="st-noot">${esc(rdMelding)}</div>` : ''}`;
+}
+function openRadio(){ rdOpen = true; rdMelding = ''; $('radioPaneel').classList.add('on'); tekenRadioPaneel(); }
+function sluitRadio(){ rdOpen = false; $('radioPaneel').classList.remove('on'); }
+function kiesRadio(soort, waarde){
+  if(soort === 'zender') rdKeuze.zender = Number(waarde);
+  else { const l = rdKeuze.speakers; rdKeuze.speakers = l.includes(waarde) ? l.filter(x => x !== waarde) : [...l, waarde]; }
+  bewaarRadio(); tekenRadioPaneel();
+}
+async function radioActie(actie){
+  const R = CONFIG.radio, z = R.zenders[rdKeuze.zender];
+  if(actie === 'start'){
+    const ids = [...rdKeuze.speakers];
+    rdMelding = `${z.naam} starten op ${ids.length} ${ids.length === 1 ? 'speaker' : 'speakers'}…`; tekenRadioPaneel();
+    const ok = await opdracht(async () => {
+      const res = await Promise.allSettled(ids.map(id => kaartActie(id, 'castRadio', { station_id:{ ...z.station, description:'' } })));
+      const mis = res.filter(r => r.status === 'rejected').length;
+      if(mis === ids.length) throw res.find(r => r.status === 'rejected').reason;
+      if(mis) rdMelding = `${z.naam} gestart, maar ${mis} speaker(s) reageerden niet`;
+    }, () => ids.forEach(id => { const c = dev(id).capabilitiesObj; c.speaker_playing = { value:true }; c.speaker_artist = { value:z.naam }; c.speaker_track = { value:z.naam }; }));
+    if(ok && !/maar/.test(rdMelding)) rdMelding = `${z.naam} gestart`;
+    if(!ok) rdMelding = 'Starten mislukt — zie de melding bovenaan';
+  } else {
+    const ids = [...new Set([...radioSpelend().map(x => x.sp.id), ...rdKeuze.speakers])];
+    rdMelding = 'Stoppen…'; tekenRadioPaneel();
+    const ok = await opdracht(() => Promise.allSettled(ids.map(id => kaartActie(id, 'stop'))),
+      () => ids.forEach(id => { const c = dev(id)?.capabilitiesObj; if(c?.speaker_playing) c.speaker_playing.value = false; }));
+    rdMelding = ok ? 'Gestopt' : 'Stoppen mislukt';
+  }
+  tekenRadioPaneel(); tekenTegels();
+  [2500, 7000].forEach(ms => setTimeout(verversApparaten, ms));
+}
+async function radioVolume(pct){
+  const ids = rdKeuze.speakers.filter(id => dev(id));
+  ids.forEach(id => { const c = dev(id).capabilitiesObj; if(c.volume_set) c.volume_set.value = pct / 100; });
+  await opdracht(() => Promise.allSettled(ids.map(id => zetCap(id, 'volume_set', pct / 100))));
+}
 
 /* ── Wat is er nieuw ── */
 let nwOpen = false;
@@ -3218,7 +3353,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenCameras(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -3234,6 +3369,7 @@ async function opdracht(fn, demoFn){
 }
 
 async function klikTegel(el){
+  if(el.dataset.soort === 'radio') return openRadio();
   if(el.dataset.soort === 'stofzuiger') return openStof();
   const id = el.dataset.tegel, soort = el.dataset.soort, d = dev(id);
   if(!d || d.available === false || soort === 'gordijn' || soort === 'status') return;
@@ -3349,6 +3485,10 @@ document.addEventListener('click', e => {
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
+  if(rdOpen && (e.target === $('radioPaneel') || e.target.closest('[data-rd-sluit]'))) return sluitRadio();
+  const rdz = e.target.closest('[data-rdzender]'); if(rdz) return kiesRadio('zender', rdz.dataset.rdzender);
+  const rds = e.target.closest('[data-rdsp]'); if(rds) return kiesRadio('sp', rds.dataset.rdsp);
+  const rda = e.target.closest('[data-rdactie]'); if(rda) return radioActie(rda.dataset.rdactie);
   if(bwgOpen && (e.target === $('bewegingPaneel') || e.target.closest('[data-bwg-sluit]'))) return sluitBeweging();
   const cp = e.target.closest('[data-campop]'); if(cp) return openCam(cp.dataset.campop);
   const bz = e.target.closest('[data-bwgzone]'); if(bz && !e.target.closest('.bwg-historie')) return kiesZoneHistorie(bz.dataset.bwgzone);
@@ -3399,6 +3539,7 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && nwOpen) return sluitNieuw();
   if(e.key === 'Escape' && camGrootId) return sluitCam();
+  if(e.key === 'Escape' && rdOpen) return sluitRadio();
   if(e.key === 'Escape' && bwgOpen) return sluitBeweging();
   if(e.key === 'Escape' && bwOpen) return sluitBewoner();
   if(e.key === 'Escape' && stOpen) return sluitStof();
@@ -3413,11 +3554,13 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('input',  e => {
   if(e.target.id === 'zoneDim') sleeptSlider = true;
+  if(e.target.id === 'rdVol') e.target.nextElementSibling.textContent = e.target.value + '%';
   if(e.target.dataset.mdvol){ mdSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
   if(e.target.id === 'muziekVol'){ mzSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
 });
 document.addEventListener('change', e => {
   if(e.target.id === 'zoneDim'){ sleeptSlider = false; zoneDimmen(+e.target.value); }
+  if(e.target.id === 'rdVol') radioVolume(+e.target.value);
   if(e.target.dataset.mdvol){ mdSleept = false; mediaVolume(e.target.dataset.mdvol, +e.target.value); }
   if(e.target.id === 'muziekVol'){ mzSleept = false; muziekVolume(+e.target.value); }
 });
