@@ -1226,7 +1226,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '81';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'81', datum:'28-10-2026', punten:[ 'Tik op de weertekst rechtsonder in de huisfoto (Energie) of tuinfoto (Tuin) voor alle beelden met uitleg wanneer je welke ziet; het huidige beeld is gemarkeerd.' ] },
+  { v:'81', datum:'28-10-2026', punten:[ 'Tik op de weertekst rechtsonder in de huisfoto (Energie) of tuinfoto (Tuin) voor alle beelden met uitleg wanneer je welke ziet; het huidige beeld is gemarkeerd.' , 'Energie: de grafieken Stroom en Zonne-energie waren leeg omdat Homey het vermogen van de P1-meter en omvormer niet meer onder measure_power logt. Ze gebruiken nu de vermogenslogs die wél gevuld worden.' ] },
   { v:'80', datum:'28-10-2026', punten:[ 'Media en Muziek gebruiken nu dezelfde regel voor "speelt": radio die je via Muziek start, telt ook in Media mee (met de zendernaam).' ] },
   { v:'79', datum:'28-10-2026', punten:[
     'Media: Spotify Boven/Beneden staan niet meer onterecht bij "Nu actief" met "Onbereikbaar"; als ze niet in gebruik zijn staat er "Niet actief in Spotify".',
@@ -2670,7 +2670,19 @@ async function laadEnergie(forceer){
   const P1 = CONFIG.apparaten.p1, ZON = CONFIG.apparaten.zon;
   const vraag = [[P1,'measure_power','p1'],[ZON,'measure_power','zon'],[P1,'meter_gas','gas'],
                  [P1,'meter_power.consumed','imp'],[P1,'meter_power.returned','exp']];
-  const res = await Promise.allSettled(vraag.map(([d,c]) => insight(d, c)));
+  // measure_power wordt door sommige apps niet (meer) in Insights gelogd (alleen null-waarden).
+  // Daarom eerst de logs die Homey Energy wél vult, met measure_power als terugval.
+  const ALTERNATIEF = { p1:['energy_power','measure_power'], zon:['measure_solar_power','energy_power','measure_power'] };
+  const eerstMetData = async (d, caps) => {
+    let fout;
+    for(const c of caps){
+      try { const r = await insight(d, c); if(r.length) return r; }
+      catch(e){ fout = e; }
+    }
+    if(fout) throw fout;
+    return [];
+  };
+  const res = await Promise.allSettled(vraag.map(([d,c,k]) => ALTERNATIEF[k] ? eerstMetData(d, ALTERNATIEF[k]) : insight(d, c)));
   res.forEach((r, i) => { if(r.status === 'fulfilled') REEKS[vraag[i][2]] = r.value; });
   const fout = res.find(r => r.status === 'rejected');
   $('eStand').className = 'pill ' + (fout ? 'fout' : '');
