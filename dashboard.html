@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 76 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 77 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -635,6 +635,28 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .rd-eq b:nth-child(2) { animation-delay:-.3s; } .rd-eq b:nth-child(3) { animation-delay:-.6s; }
 @keyframes rdEq { 0%,100% { height:3px } 50% { height:12px } }
 .rd-acties { grid-template-columns:1fr; }
+.rd-tabs { margin:0 0 6px; }
+.rd-tabs button { flex:1; display:flex; align-items:center; justify-content:center; gap:8px; min-height:42px; font-weight:700; }
+.rd-tabs button svg { width:18px; height:18px; }
+.sp-nu { display:flex; align-items:center; gap:12px; padding:10px; border-radius:14px; background:var(--bg-inset); border:1px solid var(--border); }
+.sp-nu.aan { border-color:rgba(29,185,84,.5); }
+.sp-hoes { position:relative; width:56px; height:56px; border-radius:10px; overflow:hidden; background:#1DB954; display:grid; place-items:center; flex-shrink:0; color:#08140C; }
+.sp-hoes img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.sp-nu b { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sp-nu small { display:block; font-size:var(--fs-sm); color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sp-knoppen { display:flex; gap:6px; align-items:center; }
+.sp-knoppen .mz-knop.groot { width:48px; height:48px; background:#1DB954; border-color:#1DB954; color:#08140C; }
+.sp-lijsten { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.sp-lijst { display:flex; flex-direction:column; gap:6px; padding:6px; border-radius:12px; border:2px solid transparent; background:var(--bg-inset); color:var(--text-primary);
+  font:inherit; font-size:var(--fs-sm); font-weight:700; cursor:pointer; text-align:left; }
+.sp-lijst span:last-child { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px 2px; }
+.sp-lijst.on { border-color:#1DB954; }
+.sp-lijst.start { border-color:var(--amber); animation:rdPuls 1.4s ease-in-out infinite; }
+.sp-lijst[disabled] { cursor:progress; }
+.sp-cover { position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; display:grid; place-items:center;
+  background:hsl(calc(var(--i) * 45) 55% 40%); }
+.sp-cover img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.sp-cover b { color:#fff; font-size:1.6rem; }
 .rd-start.bezig { position:relative; overflow:hidden; color:#1B1200; border-color:var(--amber); opacity:1 !important; cursor:progress;
   background:linear-gradient(90deg, #F5A524, #FFD166, #F5A524); background-size:200% 100%; animation:rdGolf 1.4s linear infinite, rdPuls 1.4s ease-in-out infinite; }
 .rd-start.klaar { background:var(--green); border-color:var(--green); color:#06210F; opacity:1 !important; }
@@ -944,10 +966,11 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 <div class="overlay" id="radioPaneel">
   <div class="modal lp" role="dialog" aria-label="Radio">
     <div class="lp-kop">
-      <div class="ico purple" data-icon="radio"></div>
-      <div class="grow"><h2>Radio</h2><div class="card-sub" id="rdSub"></div></div>
+      <div class="ico purple" data-icon="music"></div>
+      <div class="grow"><h2>Muziek</h2><div class="card-sub" id="rdSub"></div></div>
       <button class="lp-knop" data-rd-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
     </div>
+    <div class="segment rd-tabs" id="rdTabs"></div>
     <div class="lp-lijst st-lijst" id="rdLijst"></div>
   </div>
 </div>
@@ -1006,7 +1029,7 @@ const CONFIG = {
     { id:'51095063-ad0c-49b3-8bef-8df71af85139', naam:'Radio Beneden',   soort:'schakelaar', icoon:'radio' },
     { id:'42b12708-a915-4d6d-9c4e-6c75276bbcbd', naam:'Radio Boven',     soort:'schakelaar', icoon:'radio' },
     { id:'75d83bdd-6e22-4e11-8d12-51328495fd64', naam:'Visite',          soort:'schakelaar', icoon:'users' },
-    { id:'radio',                                naam:'Radio',           soort:'radio',      icoon:'radio' },
+    { id:'radio',                                naam:'Muziek',          soort:'radio',      icoon:'music' },
     { id:'4e5db254-7e95-4884-ba36-537fe6029ff3', naam:'Stofzuiger',      soort:'stofzuiger', icoon:'vacuum' },   // "Robotstofzuiger" (eufy)
   ],
   // Gordijnen woonkamer: één kaart voor links en rechts samen
@@ -1068,6 +1091,24 @@ const CONFIG = {
       { id:'40a76d97-2e7e-4aa6-b57d-083c02c18943', naam:'Werkkamer' },
       { id:'2d0b547e-8d7c-49a6-a91f-518efa1a1783', naam:'Slaapkamer' },
       { id:'4934fe26-3e02-44c5-a33c-89b6b6722e5f', naam:'Badkamer' },
+    ],
+  },
+  // Spotify (app "Spotify Connect"): één Homey-apparaat per speaker/groep. Achtertuin bewust niet.
+  spotify: {
+    apparaten: [
+      { id:'06d9b857-1da3-4913-b4d7-c25400804cc3', naam:'Beneden' },
+      { id:'ce24f77c-1145-408e-a86b-0e78816577f2', naam:'Boven' },
+    ],
+    // Favoriete afspeellijsten (uit het Spotify-account). Aanpassen = deze lijst wijzigen.
+    lijsten: [
+      { naam:'Acoustic Chill',  id:'4bnsd6gB74UK4AsceZVqtD', image:'https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da84ed19bb5365e859d1cb050b67' },
+      { naam:'Lofi',            id:'3LFIBdP7eZXJKqf3guepZ1', image:'https://image-cdn-fa.spotifycdn.com/image/ab67706c0000da84bc777cc650ddc2876875dca5' },
+      { naam:'Sax house',       id:'3FPG9ZbdKeWf2BHjs29XqJ', image:'https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da8482ada07ace69e00dd9ee538c' },
+      { naam:'Beach House',     id:'2tkXRn8Rp2L5yGcrCcFhXo', image:'https://image-cdn-ak.spotifycdn.com/image/ab67706c0000d72c15477a46a6b5f1d5ae1cbd17' },
+      { naam:'Zomer #25',       id:'2OpP6waBzaIobgp6aCOZ0A', image:'https://image-cdn-fa.spotifycdn.com/image/ab67706c0000da848995ad351dcae4c865519852' },
+      { naam:'Feest',           id:'5FGbAIrAsNCAdBiRDUaixn', image:'https://mosaic.scdn.co/640/ab67616d00001e022c4cf46700b1d07e43e00b78ab67616d00001e029b30f2945e55b5b8a82eb6caab67616d00001e02c55a2d31ef4b957aaf4f3a9bab67616d00001e02d0b683f27218b7c2d5c8a793' },
+      { naam:'Foute 1500',      id:'1SutuoTknFbxL9jVsUxbF2', image:'https://image-cdn-fa.spotifycdn.com/image/ab67706c0000d72cd587e3edc160017a5b443329' },
+      { naam:'Kerstmuziek',     id:'4jrvwHGB6ukJMhJOIUJADX', image:'https://mosaic.scdn.co/640/ab67616d00001e0222344edc74789f8aec99cf66ab67616d00001e02af0aff7f601df9ed6d2d531dab67616d00001e02b0e67635ab4a1bc52847cfc2ab67616d00001e02fcf0b137adcf4f1338b434d4' },
     ],
   },
   // Pop-up met het camerabeeld bij een melding van een eufy-camera of de deurbel.
@@ -1146,9 +1187,12 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '76';
+const DASHBOARD_VERSIE = '77';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'77', datum:'28-10-2026', punten:[
+    'De tegel "Radio" heet nu "Muziek", met twee tabbladen: Radio en Spotify.',
+    'Spotify: kies Beneden of Boven, tik op een van de 8 favoriete afspeellijsten; met wat er nu speelt, vorige/pauze/volgende en volume.' ] },
   { v:'76', datum:'28-10-2026', punten:[ 'Radio: tijdens het starten pulseert de knop geel met een draaiend rondje ("Qmusic starten op …"), daarna kort groen "speelt".' ] },
   { v:'75', datum:'28-10-2026', punten:[ 'De tegel "Radio" kleurt paars als er radio speelt (zelfde kleur als Media).' ] },
   { v:'74', datum:'28-10-2026', punten:[
@@ -1381,6 +1425,8 @@ const DEMO_RAW = {
   '809c15f4-6274-485e-997c-efe36bd00231':['Google Home Woonkamer','speaker',Z.woon,{speaker_playing:false,volume_set:.37}],
   'c05655f8-eb69-45de-8d5a-c8c39460f462':['Keuken Hub','speaker',Z.keuken,{speaker_playing:false,volume_set:.4}],
   '22f764ea-3dc6-4896-bf5e-5fa9bc087bea':['Achtertuin','speaker',Z.achter,{speaker_playing:false,volume_set:.5}],
+  '06d9b857-1da3-4913-b4d7-c25400804cc3':['Spotify Beneden','speaker',Z.thuis,{speaker_playing:false,speaker_artist:'Vance Joy',speaker_track:'Riptide',speaker_album:'Dream Your Life Away',speaker_shuffle:true,speaker_repeat:'none',volume_set:.16}],
+  'ce24f77c-1145-408e-a86b-0e78816577f2':['Spotify Boven','speaker',Z.thuis,{speaker_playing:false,speaker_artist:'Vance Joy',speaker_track:'Riptide',speaker_shuffle:true,speaker_repeat:'none',volume_set:.08}],
   'demo-deurbel':['Deurbel','doorbell',Z.voor,{alarm_motion:false,measure_battery:76}],
   'demo-camwoon':['Camera woonkamer','camera',Z.woon,{onoff:false,alarm_motion:false}],
   't5':['Kerstverlichting Voortuin','socket',Z.voor,{onoff:true}],
@@ -2195,14 +2241,23 @@ const spelendTekst = nu => {
 };
 function radioTegelHtml(t){
   const nu = radioSpelend();
-  const bezig = rdBezig && !rdBezig.gelukt;
-  const staat = bezig ? `${CONFIG.radio.zenders[rdBezig.zender].naam} starten…` : nu.length ? spelendTekst(nu).replace(' op ', ' · ') : 'Uit · tik om te kiezen';
-  return `<div class="card tile tile-radio ${nu.length || bezig ? 'on' : ''} ${bezig ? 'start' : ''}" data-tegel="radio" data-soort="radio">
-    <div class="t-top"><div class="ico">${ic('radio')}</div><div class="pwr">${ic('rechts')}</div></div>
+  const bezig = (rdBezig && !rdBezig.gelukt) || (spBezig && !spBezig.gelukt);
+  const sp = spotifySpelend();
+  const staat = rdBezig && !rdBezig.gelukt ? `${CONFIG.radio.zenders[rdBezig.zender].naam} starten…`
+    : spBezig && !spBezig.gelukt ? `${spBezig.lijst} starten…`
+    : nu.length ? spelendTekst(nu).replace(' op ', ' · ')
+    : sp ? `${cap(sp.d,'speaker_track') || 'Spotify'} · ${sp.a.naam}` : 'Uit · tik om te kiezen';
+  return `<div class="card tile tile-radio ${nu.length || sp || bezig ? 'on' : ''} ${bezig ? 'start' : ''}" data-tegel="radio" data-soort="radio">
+    <div class="t-top"><div class="ico">${ic('music')}</div><div class="pwr">${ic('rechts')}</div></div>
     <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">${esc(staat)}</div></div></div>`;
 }
+let rdTab = 'radio';
+try { rdTab = localStorage.getItem('dashboard_muziek_tab') || 'radio'; } catch(e){}
 function tekenRadioPaneel(){
   if(!rdOpen) return;
+  $('rdTabs').innerHTML = [['radio','Radio','radio'],['spotify','Spotify','music']].map(([k, t, i]) =>
+    `<button class="${rdTab === k ? 'on' : ''}" data-rdtab="${k}">${ic(i)}<span>${t}</span></button>`).join('');
+  if(rdTab === 'spotify') return tekenSpotify();
   const R = CONFIG.radio, nu = radioSpelend();
   $('rdSub').textContent = nu.length ? `Speelt: ${spelendTekst(nu)}` : 'Er speelt nu niets';
   const kies = R.speakers.filter(sp => dev(sp.id));
@@ -2261,6 +2316,71 @@ async function radioActie(actie){
   tekenRadioPaneel(); tekenTegels();
   [1500, 4000, 9000].forEach(ms => setTimeout(verversApparaten, ms));
 }
+/* ── Spotify-tabblad ── */
+let spKeuze = CONFIG.spotify.apparaten[0]?.id, spBezig = null, spMelding = '', spLaatsteLijst = null;
+try { const k = localStorage.getItem('dashboard_spotify'); if(k && CONFIG.spotify.apparaten.some(a => a.id === k)) spKeuze = k; } catch(e){}
+/* De app meldt de afspeelstatus van het Spotify-account op elk apparaat; we nemen het apparaat dat speelt */
+function spotifySpelend(){
+  for(const a of CONFIG.spotify.apparaten){ const d = dev(a.id); if(d && d.available !== false && cap(d,'speaker_playing') === true) return { a, d }; }
+  return null;
+}
+function tekenSpotify(){
+  const S = CONFIG.spotify, nu = spotifySpelend(), d = dev(spKeuze);
+  $('rdSub').textContent = nu ? `Speelt: ${[cap(nu.d,'speaker_artist'), cap(nu.d,'speaker_track')].filter(Boolean).join(' – ')}` : 'Spotify speelt nu niet';
+  const bron = nu?.d || d;
+  const vol = cap(d,'volume_set'), speelt = !!nu;
+  const hoes = spLaatsteLijst?.image || '';
+  const bezig = spBezig && !spBezig.gelukt;
+  $('rdLijst').innerHTML = `
+    ${bron ? `<div class="sp-nu ${speelt ? 'aan' : ''}">
+      <div class="sp-hoes">${hoes ? `<img src="${esc(hoes)}" alt="" onerror="this.remove()">` : ''}${ic('music')}</div>
+      <div class="grow" style="min-width:0"><b>${esc(cap(bron,'speaker_track') || '–')}</b><small>${esc([cap(bron,'speaker_artist'), cap(bron,'speaker_album')].filter(Boolean).join(' · ') || '')}</small></div>
+      <div class="sp-knoppen">
+        <button class="mz-knop" data-spactie="prev" aria-label="Vorige">${ic('vorige')}</button>
+        <button class="mz-knop groot" data-spactie="toggle_playing" aria-label="Afspelen/pauze">${ic(speelt ? 'pauze' : 'play')}</button>
+        <button class="mz-knop" data-spactie="next" aria-label="Volgende">${ic('volgende')}</button>
+      </div></div>` : ''}
+    <div class="sec-label">Waar</div>
+    <div class="rd-speakers">${S.apparaten.filter(a => dev(a.id)).map(a => { const x = dev(a.id), aan = a.id === spKeuze, sp = nu?.a.id === a.id;
+      return `<button class="rd-sp groep ${aan ? 'on' : ''} ${bezig && spBezig.id === a.id ? 'start' : ''}" data-spsp="${esc(a.id)}" ${x.available === false ? 'disabled' : ''}>
+        ${sp ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(a.naam)}</button>`; }).join('')}</div>
+    <div class="sec-label">Afspeellijsten</div>
+    <div class="sp-lijsten">${S.lijsten.map((l, i) => `<button class="sp-lijst ${spBezig?.i === i ? (bezig ? 'start' : 'on') : ''}" data-splijst="${i}" ${bezig ? 'disabled' : ''}>
+      <span class="sp-cover" style="--i:${i}"><img src="${esc(l.image)}" alt="" onerror="this.remove()"><b>${esc(l.naam[0])}</b></span><span>${esc(l.naam)}</span></button>`).join('')}</div>
+    ${typeof vol === 'number' ? `<div class="sec-label">Volume</div>
+      <div class="mz-vol">${ic('volume')}<input type="range" min="0" max="100" value="${Math.round(vol * 100)}" id="spVol" aria-label="Volume"><span>${Math.round(vol * 100)}%</span></div>` : ''}
+    ${bezig ? `<div class="st-knop groot rd-start bezig">${'<i class="rd-spin"></i>'}<span>${esc(spBezig.lijst)} starten op ${esc(S.apparaten.find(a => a.id === spBezig.id)?.naam || '')}…</span></div>` : ''}
+    ${spMelding ? `<div class="st-noot">${esc(spMelding)}</div>` : ''}`;
+}
+async function spotifyLijst(i){
+  const l = CONFIG.spotify.lijsten[i], id = spKeuze; if(!l || !id) return;
+  spBezig = { i, id, lijst:l.naam, sinds:Date.now() }; spMelding = ''; spLaatsteLijst = l;
+  tekenRadioPaneel(); tekenTegels();
+  const ok = await opdracht(() => kaartActie(id, 'play_playlist', { playlist:{ id:l.id, name:l.naam, image:l.image, uri:'spotify:playlist:' + l.id, description:'' } }),
+    () => { const c = dev(id).capabilitiesObj; c.speaker_playing.value = true; c.speaker_track.value = l.naam; c.speaker_artist.value = 'Spotify'; });
+  if(!ok){ spBezig = null; spMelding = 'Starten mislukt — staat de speaker aan? Zie ook de melding bovenaan.'; tekenRadioPaneel(); tekenTegels(); return; }
+  const volg = () => {
+    if(cap(dev(id),'speaker_playing') === true || Date.now() - spBezig.sinds > 20000){
+      spBezig = { ...spBezig, gelukt:Date.now() }; tekenRadioPaneel(); tekenTegels();
+      setTimeout(() => { if(spBezig?.gelukt){ spBezig = { i:spBezig.i, gelukt:1 }; tekenRadioPaneel(); } }, 2000); return;
+    }
+    verversApparaten().then(() => setTimeout(volg, 1500));
+  };
+  volg();
+}
+async function spotifyActie(actie){
+  const id = spotifySpelend()?.a.id || spKeuze; if(!id) return;
+  const c = dev(id)?.capabilitiesObj;
+  if(actie === 'toggle_playing' && c?.speaker_playing){ c.speaker_playing.value = !c.speaker_playing.value; tekenRadioPaneel(); tekenTegels(); }
+  await opdracht(() => kaartActie(id, actie));
+  [1200, 3500].forEach(ms => setTimeout(verversApparaten, ms));
+}
+async function spotifyVolume(pct){
+  const d = dev(spKeuze); if(!d) return;
+  d.capabilitiesObj.volume_set.value = pct / 100;
+  await opdracht(() => zetCap(d.id, 'volume_set', pct / 100));
+}
+
 /* Na het starten even blijven kijken tot de speaker echt speelt; daarna kort "Speelt" tonen */
 function volgRadioStart(){
   const B = rdBezig; if(!B) return;
@@ -3596,6 +3716,10 @@ document.addEventListener('click', e => {
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
   if(rdOpen && (e.target === $('radioPaneel') || e.target.closest('[data-rd-sluit]'))) return sluitRadio();
+  const rdt = e.target.closest('[data-rdtab]'); if(rdt){ rdTab = rdt.dataset.rdtab; try { localStorage.setItem('dashboard_muziek_tab', rdTab); } catch(e){} return tekenRadioPaneel(); }
+  const spl = e.target.closest('[data-splijst]'); if(spl) return spotifyLijst(+spl.dataset.splijst);
+  const sps = e.target.closest('[data-spsp]'); if(sps){ spKeuze = sps.dataset.spsp; try { localStorage.setItem('dashboard_spotify', spKeuze); } catch(e){} return tekenRadioPaneel(); }
+  const spa = e.target.closest('[data-spactie]'); if(spa) return spotifyActie(spa.dataset.spactie);
   const rdz = e.target.closest('[data-rdzender]'); if(rdz) return kiesRadio('zender', rdz.dataset.rdzender);
   const rd1 = e.target.closest('[data-rdstop1]'); if(rd1) return radioActie('stop1:' + rd1.dataset.rdstop1);
   const rds = e.target.closest('[data-rdsp]'); if(rds) return kiesRadio('sp', rds.dataset.rdsp);
@@ -3665,13 +3789,14 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('input',  e => {
   if(e.target.id === 'zoneDim') sleeptSlider = true;
-  if(e.target.id === 'rdVol') e.target.nextElementSibling.textContent = e.target.value + '%';
+  if(e.target.id === 'rdVol' || e.target.id === 'spVol') e.target.nextElementSibling.textContent = e.target.value + '%';
   if(e.target.dataset.mdvol){ mdSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
   if(e.target.id === 'muziekVol'){ mzSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
 });
 document.addEventListener('change', e => {
   if(e.target.id === 'zoneDim'){ sleeptSlider = false; zoneDimmen(+e.target.value); }
   if(e.target.id === 'rdVol') radioVolume(+e.target.value);
+  if(e.target.id === 'spVol') spotifyVolume(+e.target.value);
   if(e.target.dataset.mdvol){ mdSleept = false; mediaVolume(e.target.dataset.mdvol, +e.target.value); }
   if(e.target.id === 'muziekVol'){ mzSleept = false; muziekVolume(+e.target.value); }
 });
