@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 69 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 70 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -611,6 +611,23 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .bwg-rij.actief .bwg-stip { background:var(--blue); box-shadow:0 0 0 0 rgba(84,191,240,.6); animation:bwgPuls 1.6s infinite; }
 .bwg-rij.actief small { color:var(--blue); font-weight:600; }
 .bwg-rij.zonder { opacity:.5; }
+.bwg-rij.klikbaar { cursor:pointer; flex-wrap:wrap; }
+.bwg-rij > .grow { flex:1; min-width:0; }
+.bwg-rij.open { border-color:var(--border2); }
+.bwg-pijl svg { width:18px; height:18px; color:var(--text-muted); }
+.bwg-historie { flex-basis:100%; padding:10px 2px 2px; cursor:default; }
+.bwg-tijdlijn { position:relative; padding-bottom:18px; }
+.bwg-balk { position:relative; height:26px; border-radius:8px; background:rgba(128,128,128,.12); overflow:hidden; }
+.bwg-balk i { position:absolute; top:0; bottom:0; background:var(--blue); border-radius:2px; opacity:.9; }
+.bwg-balk .nu { position:absolute; right:0; top:0; bottom:0; width:2px; background:var(--text-secondary); }
+.bwg-uren { position:absolute; left:0; right:0; bottom:0; height:16px; }
+.bwg-uren span { position:absolute; transform:translateX(-50%); font-size:11px; color:var(--text-muted); }
+.bwg-uren span:last-child { transform:translateX(-100%); }
+.bwg-stats { display:flex; gap:16px; flex-wrap:wrap; font-size:var(--fs-sm); color:var(--text-muted); margin:8px 2px 6px; }
+.bwg-stats b { color:var(--text-primary); }
+.bwg-momenten { display:flex; flex-wrap:wrap; gap:6px; }
+.bwg-momenten span { font-size:var(--fs-micro); padding:3px 8px; border-radius:100px; background:var(--blue-dim); color:var(--blue); font-weight:600; }
+.bwg-momenten .meer { background:transparent; color:var(--text-muted); }
 @keyframes bwgPuls { 0% { box-shadow:0 0 0 0 rgba(84,191,240,.6); } 100% { box-shadow:0 0 0 10px rgba(84,191,240,0); } }
 .bw-kop { display:flex; align-items:center; gap:14px; }
 .bw-kop .bewoner { width:64px; height:64px; cursor:default; }
@@ -1045,9 +1062,11 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '69';
+const DASHBOARD_VERSIE = '70';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'70', datum:'28-10-2026', punten:[
+    'Beweging: tik op een ruimte voor de historie van de afgelopen 24 uur — tijdlijn, aantal keer, totale duur en de tijdstippen.' ] },
   { v:'69', datum:'28-10-2026', punten:[
     'Kaart "Beweging" toont welke zones actief zijn; een tik opent alle zones per verdieping, met beweging nu of hoe lang het rustig is.' ] },
   { v:'68', datum:'28-10-2026', punten:[
@@ -1937,10 +1956,13 @@ function tekenBewegingPaneel(){
     const sensoren = per[z.id] || [], actief = zoneActief(z.id, sensoren);
     const laatst = sensoren.map(d => d.capabilitiesObj?.alarm_motion?.lastUpdated).filter(Boolean).sort().pop() || ZONES[z.id]?.activeLastUpdated;
     const sub = actief ? 'Beweging nu' : sensoren.length ? `Rustig${laatst ? ' · ' + sindsTekst(laatst) : ''}` : 'Geen bewegingssensor';
-    return `<div class="bwg-rij ${actief ? 'actief' : ''} ${sensoren.length ? '' : 'zonder'}">
+    const open = bwgZoneOpen === z.id;
+    return `<div class="bwg-rij ${actief ? 'actief' : ''} ${sensoren.length ? 'klikbaar' : 'zonder'} ${open ? 'open' : ''}" ${sensoren.length ? `data-bwgzone="${esc(z.id)}"` : ''}>
       <span class="bwg-stip"></span><div class="grow"><b>${esc(z.name.replace(/^\d+(\.\d+)*\.?\s+/, ''))}</b><small>${esc(sub)}</small>
       ${sensoren.length > 1 ? `<small class="bwg-sensoren">${sensoren.map(d => `${cap(d,'alarm_motion') ? '●' : '○'} ${esc(d.name.trim())}`).join(' · ')}</small>` : ''}</div>
-      ${sensoren.some(d => d.available === false) ? '<span class="warn">offline</span>' : ''}</div>`;
+      ${sensoren.some(d => d.available === false) ? '<span class="warn">offline</span>' : ''}
+      ${sensoren.length ? `<span class="bwg-pijl">${ic(open ? 'up' : 'down')}</span>` : ''}</div>
+      ${open ? `<div class="bwg-historie" id="bwgHist">${historieHtml(z.id)}</div>` : ''}`;
   };
   const groepen = {};
   for(const z of bladeren) (groepen[groepNaam(z)] ||= []).push(z);
@@ -1948,16 +1970,73 @@ function tekenBewegingPaneel(){
   const actief = bladeren.filter(z => zoneActief(z.id, per[z.id] || []));
   const B = bewegingSamenvatting();
   $('bwgSub').textContent = B.actief ? `${B.actief} ${B.actief === 1 ? 'zone' : 'zones'} actief · ${B.sensoren} sensoren` : `Overal rustig · ${B.sensoren} sensoren`;
-  $('bwgLijst').innerHTML = (actief.length ? `<div class="sec-label">Nu actief</div><div class="col" style="gap:6px">${actief.map(rij).join('')}</div>` : '')
+  const rijKort = z => rij(z).replace(/<div class="bwg-historie"[\s\S]*$/, '').replace(' open ', ' ');
+  $('bwgLijst').innerHTML = (actief.length ? `<div class="sec-label">Nu actief</div><div class="col" style="gap:6px">${actief.map(rijKort).join('')}</div>` : '')
     + volgorde.map(g => `<div class="sec-label">${esc(g.replace(/^\d+\.\s*/, ''))}</div><div class="col" style="gap:6px">${
         groepen[g].sort((a, b) => a.name.localeCompare(b.name, 'nl', { numeric:true })).map(rij).join('')}</div>`).join('');
 }
+/* ── Historie per zone: tijdlijn van de afgelopen 24 uur (Insights van de bewegingssensoren) ── */
+let bwgZoneOpen = null;
+const bwgHist = {};                     // zone → { tijd, perioden:[[van,tot]], fout }
+async function laadHistorie(zoneId, forceer){
+  const h = bwgHist[zoneId];
+  if(!forceer && h && Date.now() - h.tijd < 120000) return;
+  const sensoren = bewegingPerZone()[zoneId] || [];
+  const tot = Date.now(), van = tot - 24 * 3600e3;
+  let perioden = [], fout = null;
+  if(DEMO()){
+    // demo: een paar momenten verspreid over de dag
+    perioden = [[7.2,7.4],[7.9,8.1],[12.5,12.6],[17.8,18.3],[19.1,19.2],[21.4,21.5]].map(([a,b]) => { const d = new Date(); d.setHours(0,0,0,0); return [d.getTime() + a * 3600e3, d.getTime() + b * 3600e3]; })
+      .map(([a,b]) => a > tot ? [a - 864e5, b - 864e5] : [a, Math.min(b, tot)]);
+  } else {
+    const res = await Promise.allSettled(sensoren.map(d => insightBool(d.id, 'alarm_motion')));
+    for(const r of res){
+      if(r.status !== 'fulfilled'){ fout = r.reason?.message || 'onbekend'; continue; }
+      let start = null;
+      for(const e of r.value.sort((a, b) => a.t - b.t)){
+        if(e.v && start == null) start = e.t;
+        else if(!e.v && start != null){ perioden.push([start, e.t]); start = null; }
+      }
+      if(start != null) perioden.push([start, tot]);
+    }
+  }
+  perioden = perioden.filter(([a, b]) => b > van).map(([a, b]) => [Math.max(a, van), b]).sort((a, b) => a[0] - b[0]);
+  const samen = [];                                         // overlappende perioden (meerdere sensoren) samenvoegen
+  for(const p of perioden){ const l = samen[samen.length - 1]; if(l && p[0] <= l[1] + 60000) l[1] = Math.max(l[1], p[1]); else samen.push([...p]); }
+  bwgHist[zoneId] = { tijd:Date.now(), perioden:samen, fout:samen.length ? null : fout };
+}
+const uurMin = t => new Date(t).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+function historieHtml(zoneId){
+  const h = bwgHist[zoneId];
+  if(!h) return '<div class="st-noot">Historie laden…</div>';
+  if(h.fout) return `<div class="st-noot">Historie niet geladen: ${esc(/40[13]/.test(h.fout) ? 'geen rechten voor Insights' : h.fout)}</div>`;
+  const tot = Date.now(), van = tot - 24 * 3600e3, x = t => ((t - van) / (tot - van) * 100).toFixed(2);
+  const blokken = h.perioden.map(([a, b]) => `<i style="left:${x(a)}%;width:max(2px, ${(x(b) - x(a)).toFixed(2)}%)" title="${uurMin(a)}–${uurMin(b)}"></i>`).join('');
+  const uren = [];                                            // streepjes op hele 3 uur
+  const eerste = new Date(van); eerste.setMinutes(0, 0, 0); eerste.setHours(Math.ceil((eerste.getHours() + 1) / 3) * 3);
+  for(let t = eerste.getTime(); t < tot; t += 3 * 3600e3) uren.push(`<span style="left:${x(t)}%">${String(new Date(t).getHours()).padStart(2, '0')}</span>`);
+  const totaalMin = Math.round(h.perioden.reduce((s, [a, b]) => s + (b - a), 0) / 60000);
+  const lijst = [...h.perioden].reverse().slice(0, 12);
+  return `<div class="bwg-tijdlijn"><div class="bwg-balk">${blokken}<b class="nu"></b></div><div class="bwg-uren">${uren.join('')}<span style="left:100%">nu</span></div></div>
+    <div class="bwg-stats"><span><b>${h.perioden.length}×</b> beweging</span><span><b>${totaalMin < 60 ? totaalMin + ' min' : nl(totaalMin / 60, 1) + ' uur'}</b> totaal</span>
+      ${h.perioden.length ? `<span>laatst <b>${uurMin(h.perioden[h.perioden.length - 1][0])}</b></span>` : ''}</div>
+    ${lijst.length ? `<div class="bwg-momenten">${lijst.map(([a, b]) => `<span>${uurMin(a)}${b - a > 90000 ? '–' + uurMin(b) : ''}</span>`).join('')}${h.perioden.length > 12 ? `<span class="meer">+${h.perioden.length - 12} eerder</span>` : ''}</div>`
+                  : '<div class="st-noot">Geen beweging in de afgelopen 24 uur</div>'}`;
+}
+async function kiesZoneHistorie(id){
+  bwgZoneOpen = bwgZoneOpen === id ? null : id;
+  tekenBewegingPaneel();
+  if(!bwgZoneOpen) return;
+  await laadHistorie(id);
+  if(bwgZoneOpen === id && $('bwgHist')) $('bwgHist').innerHTML = historieHtml(id);
+}
+
 function openBeweging(){
   bwgOpen = true; $('bewegingPaneel').classList.add('on'); tekenBewegingPaneel();
   laadZones().then(tekenBewegingPaneel);
   clearInterval(bwgZoneTimer); bwgZoneTimer = setInterval(() => laadZones().then(tekenBewegingPaneel), 15000);   // "zone actief" vers houden
 }
-function sluitBeweging(){ bwgOpen = false; clearInterval(bwgZoneTimer); $('bewegingPaneel').classList.remove('on'); }
+function sluitBeweging(){ bwgOpen = false; bwgZoneOpen = null; clearInterval(bwgZoneTimer); $('bewegingPaneel').classList.remove('on'); }
 
 /* ── Wat is er nieuw ── */
 let nwOpen = false;
@@ -2105,6 +2184,18 @@ async function insight(devId, capId){
   if(laatsteFout) throw laatsteFout;
   const lijst = Array.isArray(r) ? r : (r?.values || r?.entries || []);
   return lijst.filter(e => e && typeof e.v === 'number').map(e => ({ t:new Date(e.t).getTime(), v:e.v }));
+}
+/* Ja/nee-historie (bijv. beweging) van de afgelopen 24 uur */
+async function insightBool(devId, capId, resolutie = 'last24Hours'){
+  const vormen = insightVorm != null ? [insightVorm, ...INSIGHT_VORMEN.keys()].filter((v, i, a) => a.indexOf(v) === i) : [...INSIGHT_VORMEN.keys()];
+  let r, laatsteFout;
+  for(const i of vormen){
+    try { r = await homey(INSIGHT_VORMEN[i](devId, capId) + '?resolution=' + resolutie); insightVorm = i; laatsteFout = null; break; }
+    catch(e){ laatsteFout = e; if(!/HTTP 404|HTTP 400/.test(e.message)) break; }
+  }
+  if(laatsteFout) throw laatsteFout;
+  const lijst = Array.isArray(r) ? r : (r?.values || r?.entries || []);
+  return lijst.filter(e => e && typeof e.v === 'boolean').map(e => ({ t:new Date(e.t).getTime(), v:e.v }));
 }
 let energieGeladen = 0;
 async function laadEnergie(forceer){
@@ -3250,6 +3341,7 @@ document.addEventListener('click', e => {
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
   if(bwgOpen && (e.target === $('bewegingPaneel') || e.target.closest('[data-bwg-sluit]'))) return sluitBeweging();
+  const bz = e.target.closest('[data-bwgzone]'); if(bz && !e.target.closest('.bwg-historie')) return kiesZoneHistorie(bz.dataset.bwgzone);
   if(bwOpen && (e.target === $('bewonerPaneel') || e.target.closest('[data-bw-sluit]'))) return sluitBewoner();
   const bwa = e.target.closest('[data-bwactie]'); if(bwa) return bewonerActie(bwa.dataset.bwactie);
   const bw = e.target.closest('#bewoners [data-bewoner]'); if(bw) return openBewoner(bw.dataset.bewoner);
