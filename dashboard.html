@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 65 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 66 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -212,6 +212,17 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .tile.uitgeklapt { border-color:var(--amber-border); }
 .tile.storing .t-state { color:var(--red); }
 .st-paneel { grid-column:1 / -1; gap:10px; }
+#stofPaneel .modal { max-width:560px; }
+.st-lijst { display:flex; flex-direction:column; gap:8px; }
+.st-lijst .sec-label { margin:8px 2px 0; }
+.st-seg button { display:flex; align-items:center; justify-content:center; gap:6px; flex:1; }
+.st-seg button svg { width:18px; height:18px; }
+.st-ruimtes { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:6px; }
+.st-ruimtes .on { border-color:var(--amber-border); background:var(--amber-dim); color:var(--amber); }
+.st-bat.groot { width:100%; } .st-bat.groot i { display:block; width:100%; height:8px; border-radius:6px; background:var(--bg-inset); overflow:hidden; }
+.st-bat.groot b { display:block; height:100%; background:var(--green); }
+.st-knop.groot { grid-column:1 / -1; min-height:56px; font-size:1.05rem; }
+.st-noot { font-size:var(--fs-sm); color:var(--text-muted); padding:2px 4px; }
 .st-kop { display:flex; align-items:center; gap:12px; }
 .st-kop b { display:block; font-size:var(--fs-md); }
 .st-kop small { display:block; font-size:var(--fs-sm); color:var(--text-muted); }
@@ -798,6 +809,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="stofPaneel">
+  <div class="modal lp" role="dialog" aria-label="Stofzuiger">
+    <div class="lp-kop">
+      <div class="ico green" data-icon="vacuum"></div>
+      <div class="grow"><h2>Robotstofzuiger</h2><div class="card-sub" id="stSub"></div></div>
+      <button class="lp-knop" data-st-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst st-lijst" id="stLijst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="sysPaneel" data-sys-achter="1">
   <div class="modal lp" role="dialog" aria-label="Details">
     <div class="lp-kop">
@@ -969,9 +991,12 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '65';
+const DASHBOARD_VERSIE = '66';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'66', datum:'28-10-2026', punten:[
+    'Stofzuiger opent nu als pop-up.',
+    'Kies stofzuigen, dweilen of beide, de ruimte, grondigheid, zuigkracht en waterstand; daarna Start, Pauze/Hervat, Stop of Naar dock.' ] },
   { v:'65', datum:'28-10-2026', punten:[
     'Eigen icoon met de contouren van ons huis (twee gevels, lang dak over de carport, zonnepanelen en verlichte ramen) voor favorieten, tabbladen en het startscherm.' ] },
   { v:'64', datum:'28-10-2026', punten:[
@@ -1370,11 +1395,11 @@ function tegelHtml(t){
     const pos = cap(d,'windowcoverings_set'), bat = cap(d,'measure_battery');
     staat = (typeof pos === 'number' ? Math.round(pos * 100) + '%' : '–') + (typeof bat === 'number' && bat < 25 ? ` · batterij ${bat}%` : '');
   } else if(t.soort === 'stofzuiger'){
-    klasse += stofOpen ? ' on uitgeklapt' : '';
+    klasse += /cleaning/.test(cap(d,'vacuumcleaner_state') || '') ? ' on' : '';
     const bat = cap(d,'measure_battery'), fout = cap(d,'measure_error');
     staat = stofStatus(d) + (typeof bat === 'number' ? ` · ${bat}%` : '');
     if(fout && !/^(none|no_error|geen)$/i.test(fout)) { staat = 'Storing'; klasse += ' storing'; }
-    rechts = `<div class="pwr">${ic(stofOpen ? 'up' : 'down')}</div>`;
+    rechts = `<div class="pwr">${ic('rechts')}</div>`;
   } else if(t.soort === 'status'){
     klasse += ' readonly';
     const s = cap(d,'vacuumcleaner_state');
@@ -1385,53 +1410,95 @@ function tegelHtml(t){
     <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">${esc(staat)}</div></div></div>`;
 }
 function tekenTegels(){ if(gordijnSleept) return;   // niet verversen terwijl je een gordijn versleept
-  $('tegels').innerHTML = CONFIG.tegels.map(tegelHtml).join('') + (stofOpen ? stofPaneelHtml() : '') + '<div class="gordijn-plek" id="gordijnKaart"></div>'; tekenGordijnen(); }
+  $('tegels').innerHTML = CONFIG.tegels.map(tegelHtml).join('') + '<div class="gordijn-plek" id="gordijnKaart"></div>'; tekenGordijnen(); }
 
-/* ── Stofzuiger: compacte tegel die uitklapt met alle keuzes ── */
-let stofOpen = false;
+/* ── Stofzuiger: tegel opent een pop-up met wat (zuigen/dweilen/beide), hoe, waar (ruimte) en de bediening.
+   Werkt via de actiekaarten van de eufy-app (dezelfde als in een flow). ── */
+const STOF_RUIMTES = [            // ruimtes = "scenes" in de eufy-app (daar per ruimte aanmaken); id = scene-nummer
+  // { naam:'Woonkamer', scene:1 },
+  // { naam:'Keuken',    scene:2 },
+];
+const STOF_STATUS = { charging:'Laadt', docked:'In dock', cleaning:'Bezig', spot_cleaning:'Plek', stopped:'Gestopt' };
 const stofTegel = () => CONFIG.tegels.find(t => t.soort === 'stofzuiger');
-const STOF_STATUS = { charging:'Laadt', docked:'In dock', cleaning:'Zuigt', spot_cleaning:'Spot', stopped:'Gestopt' };
 function stofStatus(d){
   const s = cap(d,'vacuumcleaner_state');
   return STOF_STATUS[s] || cap(d,'measure_work_status') || s || '–';
 }
-/* Keuzes uit de capability zelf (titels van de app), anders een standaardlijst */
-function capKeuzes(d, k, standaard = []){
-  const v = d.capabilitiesObj?.[k]?.values;
-  if(Array.isArray(v) && v.length) return v.map(x => ({ id:x.id, label:(typeof x.title === 'object' ? (x.title.nl || x.title.en) : x.title) || x.id }));
-  return standaard.map(([id, label]) => ({ id, label }));
-}
-function stofPaneelHtml(){
-  const t = stofTegel(), d = t && dev(t.id); if(!d) return '';
-  const offline = d.available === false, s = cap(d,'vacuumcleaner_state'), bezig = /cleaning/.test(s || '');
-  const bat = cap(d,'measure_battery'), fout = cap(d,'measure_error');
-  const knop = (waarde, icoon, label, extra = '') => `<button class="st-knop ${extra}" data-stof="${waarde}" ${offline ? 'disabled' : ''}>${ic(icoon)}<span>${label}</span></button>`;
-  const snelheid = heeft(d,'action_clean_speed') ? capKeuzes(d, 'action_clean_speed', [['quiet','Stil'],['standard','Normaal'],['turbo','Turbo'],['max','Max']]) : [];
-  const huidigeSnelheid = String(cap(d,'action_clean_speed') ?? '').toLowerCase();
-  const scenes = heeft(d,'action_scenes') ? capKeuzes(d, 'action_scenes') : [];
-  return `<div class="card st-paneel">
-    <div class="st-kop"><div class="grow"><b>${esc(d.name.trim())}</b>
-      <small>${offline ? '<span class="warn">Niet bereikbaar</span>' : esc(stofStatus(d))}${cap(d,'measure_docked') === true && !/In dock|Laadt/.test(stofStatus(d)) ? ' · in dock' : ''}${
-        cap(d,'measure_work_mode') ? ' · modus ' + esc(cap(d,'measure_work_mode')) : ''}</small></div>
-      ${typeof bat === 'number' ? `<div class="st-bat"><span>${bat}%</span><i><b style="width:${Math.max(0, Math.min(100, bat))}%"></b></i></div>` : ''}</div>
-    ${fout && !/^(none|no_error|geen)$/i.test(fout) ? `<div class="st-fout">Storing: ${esc(fout)}</div>` : ''}
-    <div class="st-acties">
-      ${bezig ? knop('stopped', 'pauze', 'Stop', 'on') : knop('cleaning', 'play', 'Start', 'primair')}
-      ${knop('spot_cleaning', 'vacuum', 'Spot', s === 'spot_cleaning' ? 'on' : '')}
-      ${knop('docked', 'home', 'Naar dock', /docked|charging/.test(s || '') ? 'on' : '')}
-    </div>
-    ${snelheid.length ? `<div class="sec-label" style="margin:4px 2px 0">Zuigkracht</div>
-      <div class="segment st-seg">${snelheid.map(o => `<button class="${String(o.id).toLowerCase() === huidigeSnelheid ? 'on' : ''}" data-stofcap="action_clean_speed" data-stofval="${esc(String(o.id))}" ${offline ? 'disabled' : ''}>${esc(o.label)}</button>`).join('')}</div>` : ''}
-    ${scenes.length ? `<div class="sec-label" style="margin:4px 2px 0">Programma's</div>
-      <div class="st-scenes">${scenes.map(o => `<button class="g-stand" data-stofcap="action_scenes" data-stofval="${esc(String(o.id))}" ${offline ? 'disabled' : ''}>${esc(o.label)}</button>`).join('')}</div>` : ''}
-  </div>`;
-}
-async function stofOpdracht(capNaam, waarde){
+let stOpen = false, stKeuze = { type:'SWEEP_ONLY', water:'MEDIUM', grondig:'NORMAL', kracht:'standard', ruimte:0 }, stMelding = '';
+try { stKeuze = { ...stKeuze, ...JSON.parse(localStorage.getItem('dashboard_stof') || '{}') }; } catch(e){}
+const bewaarStof = () => { try { localStorage.setItem('dashboard_stof', JSON.stringify(stKeuze)); } catch(e){} };
+
+function tekenStofPaneel(){
+  if(!stOpen) return;
   const t = stofTegel(), d = t && dev(t.id); if(!d) return;
-  const c = d.capabilitiesObj[capNaam], oud = c && c.value;
-  if(c) c.value = waarde; tekenTegels();
-  const ok = await opdracht(() => zetCap(d.id, capNaam, waarde));
-  if(!ok && c){ c.value = oud; tekenTegels(); }
+  const offline = d.available === false, s = cap(d,'vacuumcleaner_state') || '', bezig = /cleaning/.test(s);
+  const bat = cap(d,'measure_battery'), fout = cap(d,'measure_error');
+  $('stSub').innerHTML = `${offline ? '<span class="warn">Niet bereikbaar</span>' : esc(stofStatus(d))}${typeof bat === 'number' ? ` · ${bat}%` : ''}`;
+  const seg = (veld, opties) => `<div class="segment st-seg">${opties.map(([id, label, icoon]) =>
+    `<button class="${String(stKeuze[veld]) === String(id) ? 'on' : ''}" data-stkies="${veld}" data-stwaarde="${id}">${icoon ? ic(icoon) : ''}<span>${label}</span></button>`).join('')}</div>`;
+  const dweilt = stKeuze.type !== 'SWEEP_ONLY', zuigt = stKeuze.type !== 'MOP_ONLY';
+  const ruimtes = [[0, 'Hele huis'], ...STOF_RUIMTES.map(r => [r.scene, r.naam])];
+  $('stLijst').innerHTML = `
+    ${fout && !/^(none|no_error|geen)$/i.test(fout) ? `<div class="st-fout">Storing: ${esc(fout)}</div>` : ''}
+    ${typeof bat === 'number' ? `<div class="st-bat groot"><i><b style="width:${Math.max(0, Math.min(100, bat))}%"></b></i></div>` : ''}
+    <div class="sec-label">Wat</div>
+    ${seg('type', [['SWEEP_ONLY','Stofzuigen','vacuum'], ['MOP_ONLY','Dweilen','druppel'], ['SWEEP_AND_MOP','Beide','check']])}
+    <div class="sec-label">Waar</div>
+    <div class="st-ruimtes">${ruimtes.map(([id, naam]) => `<button class="g-stand ${Number(stKeuze.ruimte) === id ? 'on' : ''}" data-stkies="ruimte" data-stwaarde="${id}">${esc(naam)}</button>`).join('')}</div>
+    ${STOF_RUIMTES.length ? '' : '<div class="st-noot">Per ruimte schoonmaken: maak in de eufy-app een scène per ruimte, dan zet ik ze hier neer.</div>'}
+    <div class="sec-label">Grondigheid</div>
+    ${seg('grondig', [['QUICK','Snel'], ['NORMAL','Standaard'], ['NARROW','Grondig']])}
+    ${zuigt ? `<div class="sec-label">Zuigkracht</div>${seg('kracht', [['quiet','Stil'], ['standard','Standaard'], ['turbo','Turbo'], ['max','Max']])}` : ''}
+    ${dweilt ? `<div class="sec-label">Water</div>${seg('water', [['LOW','Laag'], ['MEDIUM','Middel'], ['HIGH','Hoog']])}` : ''}
+    <div class="st-acties">
+      <button class="st-knop primair groot" data-stactie="start" ${offline ? 'disabled' : ''}>${ic('play')}<span>${bezig ? 'Opnieuw starten' : 'Start'}</span></button>
+    </div>
+    <div class="st-acties">
+      ${bezig ? `<button class="st-knop" data-stactie="pauze" ${offline ? 'disabled' : ''}>${ic('pauze')}<span>Pauze</span></button>`
+              : `<button class="st-knop" data-stactie="hervat" ${offline || s !== 'stopped' ? 'disabled' : ''}>${ic('play')}<span>Hervat</span></button>`}
+      <button class="st-knop" data-stactie="stop" ${offline ? 'disabled' : ''}>${ic('kruis')}<span>Stop</span></button>
+      <button class="st-knop ${/docked|charging/.test(s) ? 'on' : ''}" data-stactie="dock" ${offline ? 'disabled' : ''}>${ic('home')}<span>Naar dock</span></button>
+    </div>
+    ${stMelding ? `<div class="st-noot">${esc(stMelding)}</div>` : ''}`;
+}
+function openStof(){ stOpen = true; stMelding = ''; $('stofPaneel').classList.add('on'); tekenStofPaneel(); }
+function sluitStof(){ stOpen = false; $('stofPaneel').classList.remove('on'); }
+function kiesStof(veld, waarde){ stKeuze[veld] = veld === 'ruimte' ? Number(waarde) : waarde; bewaarStof(); tekenStofPaneel(); }
+
+/* Een actiekaart van het apparaat uitvoeren (zoals een flow dat doet) */
+async function kaartActie(id, kaart, args = {}){
+  const uri = 'homey:device:' + id;
+  let fout;
+  for(const kid of [`${uri}:${kaart}`, kaart]){            // Homey-versies verschillen in de vorm van het kaart-id
+    try { await homey(`/api/manager/flow/flowcardaction/${encodeURIComponent(uri)}/${encodeURIComponent(kid)}/run`,
+            { method:'POST', body:JSON.stringify({ args }) }); return; }
+    catch(e){ fout = e; if(!/404/.test(e.message)) break; }
+  }
+  throw fout;
+}
+async function stofActie(actie){
+  const t = stofTegel(), d = t && dev(t.id); if(!d) return;
+  const id = d.id, K = stKeuze;
+  const stappen = {
+    start: async () => {
+      await kaartActie(id, 'action_clean_params', { action_clean_params_cleantype:K.type, action_clean_params_cleanextent:K.grondig, action_clean_params_mopmode:K.water });
+      if(K.type !== 'MOP_ONLY') await kaartActie(id, 'action_measure_clean_speed', { action_measure_clean_speed_type:K.kracht });
+      if(K.ruimte) await kaartActie(id, 'action_scenes', { action_scenes_type:'START_SCENE_CLEAN_' + K.ruimte });
+      else await kaartActie(id, 'action_control_mode', { action_control_mode_type:'AUTO_CLEAN' });
+    },
+    pauze:  () => kaartActie(id, 'action_control_mode', { action_control_mode_type:'PAUSE' }),
+    hervat: () => kaartActie(id, 'action_control_mode', { action_control_mode_type:'PLAY' }),
+    stop:   () => kaartActie(id, 'action_control_mode', { action_control_mode_type:'STOP' }),
+    dock:   () => kaartActie(id, 'action_control_mode', { action_control_mode_type:'GO_HOME' }),
+  }[actie];
+  if(!stappen) return;
+  const naam = { start:'Starten', pauze:'Pauzeren', hervat:'Hervatten', stop:'Stoppen', dock:'Naar dock' }[actie];
+  stMelding = naam + '…'; tekenStofPaneel();
+  const demoStand = { start:'cleaning', pauze:'stopped', hervat:'cleaning', stop:'stopped', dock:'docked' }[actie];
+  const ok = await opdracht(stappen, () => { d.capabilitiesObj.vacuumcleaner_state.value = demoStand; });
+  stMelding = ok ? `${naam}: opdracht verstuurd` : `${naam} mislukt — zie de melding bovenaan`;
+  tekenStofPaneel();
+  if(ok) [2000, 6000].forEach(ms => setTimeout(verversApparaten, ms));
 }
 
 /* ═════════════════════════════════════════════
@@ -2869,7 +2936,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenCameras(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenCameras(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -2885,7 +2952,7 @@ async function opdracht(fn, demoFn){
 }
 
 async function klikTegel(el){
-  if(el.dataset.soort === 'stofzuiger'){ stofOpen = !stofOpen; return tekenTegels(); }
+  if(el.dataset.soort === 'stofzuiger') return openStof();
   const id = el.dataset.tegel, soort = el.dataset.soort, d = dev(id);
   if(!d || d.available === false || soort === 'gordijn' || soort === 'status') return;
   el.classList.add('busy');
@@ -3000,8 +3067,9 @@ document.addEventListener('click', e => {
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
-  const st = e.target.closest('[data-stof]'); if(st) return stofOpdracht('vacuumcleaner_state', st.dataset.stof);
-  const stc = e.target.closest('[data-stofcap]'); if(stc) return stofOpdracht(stc.dataset.stofcap, stc.dataset.stofval);
+  if(stOpen && (e.target === $('stofPaneel') || e.target.closest('[data-st-sluit]'))) return sluitStof();
+  const stk = e.target.closest('[data-stkies]'); if(stk) return kiesStof(stk.dataset.stkies, stk.dataset.stwaarde);
+  const sta = e.target.closest('[data-stactie]'); if(sta) return stofActie(sta.dataset.stactie);
   const sp = e.target.closest('[data-sysdetail],[data-sys-sluit],[data-sys-achter]');
   if(sp){
     if(sp.dataset.sysdetail) return openSysDetail(sp.dataset.sysdetail);
@@ -3042,6 +3110,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && nwOpen) return sluitNieuw();
+  if(e.key === 'Escape' && stOpen) return sluitStof();
   if(e.key === 'Escape' && klOpen) return sluitKlimaat();
   if(e.key === 'Escape' && mdOpen) return sluitMedia();
   if(e.key === 'Escape' && camGrootId) return sluitCam();
