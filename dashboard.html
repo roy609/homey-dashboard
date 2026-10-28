@@ -1066,7 +1066,8 @@ const DASHBOARD_VERSIE = '70';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
   { v:'70', datum:'28-10-2026', punten:[
-    'Beweging: tik op een ruimte voor de historie van de afgelopen 24 uur — tijdlijn, aantal keer, totale duur en de tijdstippen.' ] },
+    'Beweging: tik op een ruimte voor de historie van de afgelopen 24 uur — tijdlijn, aantal keer, totale duur en de tijdstippen.',
+    'De eufy-camera\'s en de deurbel tellen nu ook mee als bewegingsmelder (net als in Homey).' ] },
   { v:'69', datum:'28-10-2026', punten:[
     'Kaart "Beweging" toont welke zones actief zijn; een tik opent alle zones per verdieping, met beweging nu of hoe lang het rustig is.' ] },
   { v:'68', datum:'28-10-2026', punten:[
@@ -1924,7 +1925,9 @@ async function bewonerActie(actie){
 
 /* ── Beweging: alle zones met hun bewegingssensoren, actief bovenaan ── */
 let bwgOpen = false, bwgZoneTimer = null;
-const isBewegingsSensor = d => heeft(d,'alarm_motion') && !['camera','doorbell'].includes(d.class);
+/* Bewegingssensoren én de eufy-camera's/deurbel (alleen die op de camerapagina staan, zodat de oude dubbele deurbel niet meetelt) */
+const isCamera = d => ['camera','doorbell'].includes(d.class);
+const isBewegingsSensor = d => heeft(d,'alarm_motion') && (!isCamera(d) || CAMERA_IDS.includes(d.id));
 function bewegingPerZone(){
   const per = {};
   for(const d of Object.values(DEVS).filter(isBewegingsSensor)) (per[d.zone] ||= []).push(d);
@@ -1959,7 +1962,7 @@ function tekenBewegingPaneel(){
     const open = bwgZoneOpen === z.id;
     return `<div class="bwg-rij ${actief ? 'actief' : ''} ${sensoren.length ? 'klikbaar' : 'zonder'} ${open ? 'open' : ''}" ${sensoren.length ? `data-bwgzone="${esc(z.id)}"` : ''}>
       <span class="bwg-stip"></span><div class="grow"><b>${esc(z.name.replace(/^\d+(\.\d+)*\.?\s+/, ''))}</b><small>${esc(sub)}</small>
-      ${sensoren.length > 1 ? `<small class="bwg-sensoren">${sensoren.map(d => `${cap(d,'alarm_motion') ? '●' : '○'} ${esc(d.name.trim())}`).join(' · ')}</small>` : ''}</div>
+      ${sensoren.length > 1 || sensoren.some(isCamera) ? `<small class="bwg-sensoren">${sensoren.map(d => `${cap(d,'alarm_motion') ? '●' : '○'} ${isCamera(d) ? '📷 ' : ''}${esc(d.name.trim())}`).join(' · ')}</small>` : ''}</div>
       ${sensoren.some(d => d.available === false) ? '<span class="warn">offline</span>' : ''}
       ${sensoren.length ? `<span class="bwg-pijl">${ic(open ? 'up' : 'down')}</span>` : ''}</div>
       ${open ? `<div class="bwg-historie" id="bwgHist">${historieHtml(z.id)}</div>` : ''}`;
