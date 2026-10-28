@@ -289,6 +289,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .cam-groot-kop #camGrootNaam { flex:1; }
 .cam-groot-kop .cam-tijd { font-weight:500; font-size:var(--fs-sm); color:var(--text-muted); }
 .cam-slots { font-size:11px; opacity:.75; font-weight:400; }
+.cam-slots.fout { color:var(--red); opacity:1; white-space:normal; }
 #achterSvg { stroke:none; }
 #achterSvg { width:100%; height:auto; display:block; }
 #achterSvg .f-weer { font-size:30px; font-weight:600; fill:rgba(255,255,255,.85); paint-order:stroke; stroke:rgba(0,0,0,.45); stroke-width:5px; }
@@ -1223,9 +1224,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '83';
+const DASHBOARD_VERSIE = '84';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'84', datum:'28-10-2026', punten:[ 'Camera\'s: mislukt "Nieuw beeld", dan staat de volledige foutmelding van de eufy-app in rood in de grote weergave (in plaats van alleen "HTTP 500"). Het dashboard probeert het dan nog één keer via de actiekaart "Maak Snapshot".' ] },
   { v:'83', datum:'28-10-2026', punten:[ 'Camera\'s: het dashboard toont nu het nieuwste beeld van een camera. De eufy-app heeft een apart event-beeld en snapshot-beeld; voorheen werd altijd het eerste getoond, waardoor een nieuwe snapshot onzichtbaar bleef.', 'In de grote camera-weergave staat een klein regeltje met welke beelden Homey heeft en van wanneer.' ] },
   { v:'82', datum:'28-10-2026', punten:[ 'Gordijnen: achter de gordijnen zie je nu een wazig uitzicht op de tuin, gemaakt van een foto van de pui.' ] },
   { v:'81', datum:'28-10-2026', punten:[ 'Tik op de weertekst rechtsonder in de huisfoto (Energie) of tuinfoto (Tuin) voor alle beelden met uitleg wanneer je welke ziet; het huidige beeld is gemarkeerd.' , 'Energie: de grafieken Stroom en Zonne-energie waren leeg omdat Homey het vermogen van de P1-meter en omvormer niet meer onder measure_power logt. Ze gebruiken nu de vermogenslogs die wél gevuld worden.' ] },
@@ -1293,7 +1295,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '28-10-2026 16:51';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '28-10-2026 16:55';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -1400,7 +1402,13 @@ async function homey(pad, opts = {}){
       headers: { 'Authorization':'Bearer ' + CFG.token, 'Content-Type':'application/json' } });
     if(!r.ok){
       let msg = 'HTTP ' + r.status;
-      try { const j = await r.json(); if(j && (j.error || j.message)) msg += ' – ' + (j.error || j.message); } catch(e){}
+      try {                                                  // foutmelding van Homey/app: JSON of platte tekst
+        const t = (await r.text()).trim();
+        let m = t;
+        try { const j = JSON.parse(t); m = j && (j.error_description || j.error || j.message || (typeof j === 'string' ? j : '')); } catch(_){}
+        if(m && typeof m === 'object') m = m.message || JSON.stringify(m);
+        if(m) msg += ' – ' + String(m).slice(0, 300);
+      } catch(e){}
       throw new Error(msg);
     }
     const t = await r.text();
@@ -4006,8 +4014,9 @@ function tekenCameras(){
 function camSlotsHtml(d){             // kleine regel: welke beelden Homey heeft en van wanneer (helpt bij storingen)
   if(DEMO()) return '';
   const sl = camSlots(d), kies = camSlot(d);
-  if(!sl.length) return '<br><small class="cam-slots">Homey heeft geen beeldslot voor dit apparaat</small>';
-  return '<br><small class="cam-slots">' + sl.map(s => `${kies && s.bron === kies.bron ? '▶ ' : ''}${esc(s.naam)}: ${s.t ? tijdStr(s.t) + (new Date(s.t).toDateString() === new Date().toDateString() ? '' : ' (' + new Date(s.t).toLocaleDateString('nl-NL', { day:'numeric', month:'short' }) + ')') : 'geen tijd'}`).join(' · ') + '</small>';
+  const fout = (snapStatus[d.id] || '').startsWith('fout:') ? `<br><small class="cam-slots fout">Snapshot mislukt: ${esc(snapStatus[d.id].slice(5))}</small>` : '';
+  if(!sl.length) return '<br><small class="cam-slots">Homey heeft geen beeldslot voor dit apparaat</small>' + fout;
+  return '<br><small class="cam-slots">' + sl.map(s => `${kies && s.bron === kies.bron ? '▶ ' : ''}${esc(s.naam)}: ${s.t ? tijdStr(s.t) + (new Date(s.t).toDateString() === new Date().toDateString() ? '' : ' (' + new Date(s.t).toLocaleDateString('nl-NL', { day:'numeric', month:'short' }) + ')') : 'geen tijd'}`).join(' · ') + '</small>' + fout;
 }
 function tekenCamGroot(){
   const d = DEVS[camGrootId]; if(!d) return sluitCam();
@@ -4062,16 +4071,19 @@ async function zoekSnapKaart(id){
 }
 async function nieuweSnapshot(id){
   const d = DEVS[id]; if(!d || snapStatus[id] === 'bezig') return;
-  const zet = st => { snapStatus[id] = st; tekenCameras(); setTimeout(() => { if(snapStatus[id] === st){ delete snapStatus[id]; tekenCameras(); } }, st === 'bezig' ? 30000 : 8000); };
+  const zet = st => { snapStatus[id] = st; tekenCameras(); setTimeout(() => { if(snapStatus[id] === st){ delete snapStatus[id]; tekenCameras(); } }, st === 'bezig' ? 45000 : st.startsWith('fout') ? 120000 : 8000); };
   if(DEMO()){ zet('ok'); return; }
   zet('bezig');
   try {
+    let knopFout = null;
     if(heeft(d,'CMD_SNAPSHOT')){                       // eufy-app: snapshot als knop op het apparaat zelf
-      await zetCap(id, 'CMD_SNAPSHOT', true);
-      zet('ok'); [3000, 8000, 15000].forEach(ms => setTimeout(verversApparaten, ms)); return;
+      try {
+        await zetCap(id, 'CMD_SNAPSHOT', true);
+        zet('ok'); [3000, 8000, 15000, 30000].forEach(ms => setTimeout(verversApparaten, ms)); return;
+      } catch(e){ if(/403/.test(e.message)) throw e; knopFout = e; }   // anders: nog één keer via de actiekaart "Maak Snapshot"
     }
-    const k = await zoekSnapKaart(id);
-    if(!k) throw new Error('Geen snapshotkaart gevonden voor deze camera');
+    const k = await zoekSnapKaart(id).catch(() => null);
+    if(!k){ if(knopFout) throw knopFout; throw new Error('Geen snapshotkaart gevonden voor deze camera'); }
     const uri = k.uri || k.ownerUri || ('homey:device:' + id);
     const kort = String(k.id).startsWith(uri + ':') ? String(k.id).slice(uri.length + 1) : String(k.id);
     const body = JSON.stringify({ args:{ device:{ id, name:d.name } } });
@@ -4080,9 +4092,9 @@ async function nieuweSnapshot(id){
       try { await homey(`/api/manager/flow/flowcardaction/${encodeURIComponent(uri)}/${encodeURIComponent(kid)}/run`, { method:'POST', body }); laatste = null; break; }
       catch(e){ laatste = e; if(!/404/.test(e.message)) break; }
     }
-    if(laatste) throw laatste;
+    if(laatste) throw new Error((knopFout ? 'Knop: ' + knopFout.message + ' | Actiekaart: ' : '') + laatste.message);
     zet('ok');
-    [3000, 8000, 15000].forEach(ms => setTimeout(verversApparaten, ms));   // nieuw beeld oppikken zodra eufy het levert
+    [3000, 8000, 15000, 30000].forEach(ms => setTimeout(verversApparaten, ms));   // nieuw beeld oppikken zodra eufy het levert
   } catch(e){
     zet('fout:' + (/403/.test(e.message) ? 'API-sleutel mag geen flows starten' : e.name === 'AbortError' ? 'Homey antwoordt niet' : e.message));
   }
