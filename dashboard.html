@@ -137,7 +137,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .tile.on { border-color:var(--amber-border); background:linear-gradient(180deg, var(--amber-dim), var(--bg-card)); }
 .tile.on .ico, .tile.on .pwr { background:var(--amber-dim); color:var(--amber); }
 .tile.on .t-state { color:var(--amber); }
-.tile.tile-muziek { grid-column:span 2; flex-direction:row; align-items:center; gap:12px; justify-content:flex-start; }
+.tile.tile-muziek { grid-column:1 / -1; flex-direction:row; align-items:center; gap:12px; justify-content:flex-start; }
 .tile.tile-muziek .pwr { margin-left:auto; flex-shrink:0; align-self:flex-start; }
 .mt-hoes { position:relative; width:72px; height:72px; border-radius:14px; overflow:hidden; flex-shrink:0; display:grid; place-items:center;
   background:var(--z, rgba(128,128,128,.14)); color:var(--text-secondary); }
@@ -1043,11 +1043,9 @@ const CONFIG = {
     { id:'04ccb400-d23c-4340-8c71-9c06d68c91a0', naam:'Eten',            soort:'schakelaar', icoon:'food' },
     { id:'4ec3c682-f4d9-41a3-9939-9eba9652ab89', naam:'De deur uit',     soort:'schakelaar', icoon:'door' },
     { id:'db1057e0-0d95-4c63-ac55-626ad61779bd', naam:'Thuiswerken Roy', soort:'schakelaar', icoon:'laptop' },
-    { id:'51095063-ad0c-49b3-8bef-8df71af85139', naam:'Radio Beneden',   soort:'schakelaar', icoon:'radio' },
-    { id:'42b12708-a915-4d6d-9c4e-6c75276bbcbd', naam:'Radio Boven',     soort:'schakelaar', icoon:'radio' },
     { id:'75d83bdd-6e22-4e11-8d12-51328495fd64', naam:'Visite',          soort:'schakelaar', icoon:'users' },
-    { id:'radio',                                naam:'Muziek',          soort:'radio',      icoon:'music' },
     { id:'4e5db254-7e95-4884-ba36-537fe6029ff3', naam:'Stofzuiger',      soort:'stofzuiger', icoon:'vacuum' },   // "Robotstofzuiger" (eufy)
+    { id:'radio',                                naam:'Muziek',          soort:'radio',      icoon:'music' },     // volle breedte onderaan
   ],
   // Gordijnen woonkamer: één kaart voor links en rechts samen
   gordijnen: {
@@ -1209,7 +1207,8 @@ const DASHBOARD_VERSIE = '78';
 const WIJZIGINGEN = [
   { v:'78', datum:'28-10-2026', punten:[
     'De tegel Muziek is twee keer zo breed, met het zenderlogo of de Spotify-hoes, wat er speelt, waar, en een label Radio of Spotify.',
-    'Spotify: Beneden en Boven zijn altijd te kiezen, ook als een speaker slaapt.' ] },
+    'Spotify: Beneden en Boven zijn altijd te kiezen, ook als een speaker slaapt.',
+    'De tegels Radio Beneden en Radio Boven zijn weg (Muziek vervangt ze); Muziek staat nu over de volle breedte onder de andere tegels.' ] },
   { v:'77', datum:'28-10-2026', punten:[
     'De tegel "Radio" heet nu "Muziek", met twee tabbladen: Radio en Spotify.',
     'Spotify: kies Beneden of Boven, tik op een van de 8 favoriete afspeellijsten; met wat er nu speelt, vorige/pauze/volgende en volume.' ] },
