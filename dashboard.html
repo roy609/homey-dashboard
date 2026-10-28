@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 66 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 67 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -596,6 +596,20 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .pill i { width:6px; height:6px; border-radius:50%; background:currentColor; }
 .pill.ok { color:var(--green); } .pill.fout { color:var(--red); } .pill.demo { color:var(--blue); }
 .statusbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; }
+.kop-links { display:flex; align-items:center; gap:18px; min-width:0; }
+.bewoners { display:flex; gap:12px; }
+.bewoner { position:relative; width:46px; height:46px; flex-shrink:0; }
+.bewoner .foto { width:46px; height:46px; border-radius:50%; overflow:hidden; display:grid; place-items:center; font-weight:800; font-size:1.05rem;
+  background:var(--bg-inset); color:var(--text-secondary); border:3px solid var(--border2); box-sizing:border-box; transition:border-color .4s, filter .4s, opacity .4s; }
+.bewoner .foto img { width:100%; height:100%; object-fit:cover; display:block; }
+.bewoner.thuis .foto { border-color:var(--green); box-shadow:0 0 0 3px rgba(34,197,94,.18); color:var(--text-primary); }
+.bewoner.weg .foto { filter:grayscale(1); opacity:.55; }
+.bewoner .badge { position:absolute; right:-4px; bottom:-4px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+  background:var(--bg-nav); border:2px solid var(--bg-main); }
+.bewoner .badge svg { width:13px; height:13px; }
+.bewoner .badge.slaapt { color:var(--purple); }
+.bewoner .badge.wakker { color:var(--amber); }
+.bewoner .badge.weg { color:var(--text-muted); }
 .statusbar h1 { font-size:1.5rem; font-weight:800; letter-spacing:-.02em; }
 
 /* Instellingen */
@@ -630,7 +644,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <!-- ═══════════ HOOFDDASHBOARD ═══════════ -->
   <section class="page on" id="page-home">
     <div class="statusbar">
-      <h1>Hoofddashboard</h1>
+      <div class="kop-links"><h1>Hoofddashboard</h1><div class="bewoners" id="bewoners"></div></div>
       <span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span>
     </div>
     <div class="board">
@@ -991,9 +1005,11 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '66';
+const DASHBOARD_VERSIE = '67';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'67', datum:'28-10-2026', punten:[
+    'Naast "Hoofddashboard" staan nu rondjes met de foto\'s van de bewoners uit Homey: groene rand = thuis, grijs = weg, maantje = slaapt, zonnetje = wakker.' ] },
   { v:'66', datum:'28-10-2026', punten:[
     'Stofzuiger opent nu als pop-up.',
     'Kies stofzuigen, dweilen of beide, de ruimte, grondigheid, zuigkracht en waterstand; daarna Start, Pauze/Hervat, Stop of Naar dock.' ] },
@@ -1775,6 +1791,34 @@ function openClaude(){
     }
   } catch(e){}
   window.open(CLAUDE_PROJECT, '_blank', 'noopener');
+}
+
+/* ── Bewoners: Homey-gebruikers met foto, thuis/weg en wakker/slaapt (zoals in de Homey-app) ── */
+let BEWONERS = null;
+const DEMO_BEWONERS = { u1:{ id:'u1', name:'Roy', present:true, asleep:false }, u2:{ id:'u2', name:'Partner', present:true, asleep:true }, u3:{ id:'u3', name:'Logé', present:false, asleep:false } };
+async function laadBewoners(){
+  if(DEMO()){ BEWONERS = DEMO_BEWONERS; return tekenBewoners(); }
+  try { BEWONERS = await homey('/api/manager/users/user') || {}; tekenBewoners(); }
+  catch(e){ /* sleutel mag geen gebruikers lezen of Homey even weg: oude stand laten staan */ }
+}
+function avatarUrl(u){
+  const a = u.avatar;
+  if(!a) return null;
+  if(/^https?:/.test(a)) return a;
+  return apiBase() + (a.startsWith('/') ? a : '/' + a);
+}
+function tekenBewoners(){
+  const el = $('bewoners'); if(!el || !BEWONERS) return;
+  const lijst = Object.values(BEWONERS).filter(u => u && u.enabled !== false && u.role !== 'guest' || u?.present)
+    .sort((a, b) => (b.role === 'owner') - (a.role === 'owner') || String(a.name).localeCompare(String(b.name), 'nl'));
+  el.innerHTML = lijst.map(u => {
+    const thuis = u.present === true, slaapt = thuis && u.asleep === true;
+    const naam = String(u.name || '?'), url = avatarUrl(u);
+    const status = !thuis ? 'Niet thuis' : slaapt ? 'Thuis · slaapt' : 'Thuis · wakker';
+    return `<div class="bewoner ${thuis ? 'thuis' : 'weg'}" title="${esc(naam)}: ${status}" aria-label="${esc(naam)}: ${status}">
+      <div class="foto">${url ? `<img src="${esc(url)}" alt="" onerror="this.replaceWith(document.createTextNode('${esc(naam[0].toUpperCase())}'))">` : esc(naam[0].toUpperCase())}</div>
+      <span class="badge ${!thuis ? 'weg' : slaapt ? 'slaapt' : 'wakker'}">${ic(!thuis ? 'door' : slaapt ? 'moon' : 'sun')}</span></div>`;
+  }).join('');
 }
 
 /* ── Wat is er nieuw ── */
@@ -3507,7 +3551,7 @@ function closeCfg(){ $('cfg').classList.remove('on'); }
 function saveCfg(){
   CFG.host = $('cfgHost').value.trim(); CFG.token = $('cfgToken').value.trim();
   try { localStorage.setItem(LS_KEY, JSON.stringify(CFG)); } catch(e){}
-  closeCfg(); laadZones(); laadMoods(); verversApparaten(); verversVariabelen(); energieGeladen = 0; laadEnergie(true);
+  closeCfg(); laadBewoners(); laadZones(); laadMoods(); verversApparaten(); verversVariabelen(); energieGeladen = 0; laadEnergie(true);
 }
 
 $('moodsHome').innerHTML = moodKnoppen(CONFIG.moodsHome);
@@ -3515,6 +3559,7 @@ $('moodsTuin').innerHTML = moodKnoppen(CONFIG.moodsTuin);
 try { const th = localStorage.getItem('dashboard_theme'); if(th) document.documentElement.dataset.theme = th; } catch(e){}
 klok(); setInterval(klok, 15000);
 verversApparaten(); setInterval(verversApparaten, POLL_APPARATEN_MS);
+laadBewoners(); setInterval(laadBewoners, 30000);
 verversVariabelen(); setInterval(verversVariabelen, POLL_VARIABELEN_MS);
 laadEnergie(true); setInterval(() => laadEnergie(true), 5 * 60000);   // grafieken elke 5 minuten
 laadZones(); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
