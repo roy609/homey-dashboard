@@ -1224,9 +1224,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '84';
+const DASHBOARD_VERSIE = '85';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'85', datum:'28-10-2026', punten:[ 'Camera\'s: "Nieuw beeld" en de snapshot bij aanbellen gebruiken nu de actiekaart "Maak Snapshot" van de eufy-app. De knop die het dashboard eerst gebruikte, mag je in Homey niet zetten ("Capability Not Setable"), vandaar de HTTP 500.' ] },
   { v:'84', datum:'28-10-2026', punten:[ 'Camera\'s: mislukt "Nieuw beeld", dan staat de volledige foutmelding van de eufy-app in rood in de grote weergave (in plaats van alleen "HTTP 500"). Het dashboard probeert het dan nog één keer via de actiekaart "Maak Snapshot".' ] },
   { v:'83', datum:'28-10-2026', punten:[ 'Camera\'s: het dashboard toont nu het nieuwste beeld van een camera. De eufy-app heeft een apart event-beeld en snapshot-beeld; voorheen werd altijd het eerste getoond, waardoor een nieuwe snapshot onzichtbaar bleef.', 'In de grote camera-weergave staat een klein regeltje met welke beelden Homey heeft en van wanneer.' ] },
   { v:'82', datum:'28-10-2026', punten:[ 'Gordijnen: achter de gordijnen zie je nu een wazig uitzicht op de tuin, gemaakt van een foto van de pui.' ] },
@@ -4076,11 +4077,11 @@ async function nieuweSnapshot(id){
   zet('bezig');
   try {
     let knopFout = null;
-    if(heeft(d,'CMD_SNAPSHOT')){                       // eufy-app: snapshot als knop op het apparaat zelf
-      try {
-        await zetCap(id, 'CMD_SNAPSHOT', true);
+    if(heeft(d,'CMD_SNAPSHOT')){                       // eufy-app: de knop CMD_SNAPSHOT is niet schrijfbaar ("Capability Not Setable"),
+      try {                                            // dus de actiekaart "Maak Snapshot" (action_CMD_SNAPSHOT) direct uitvoeren
+        await kaartActie(id, 'action_CMD_SNAPSHOT');
         zet('ok'); [3000, 8000, 15000, 30000].forEach(ms => setTimeout(verversApparaten, ms)); return;
-      } catch(e){ if(/403/.test(e.message)) throw e; knopFout = e; }   // anders: nog één keer via de actiekaart "Maak Snapshot"
+      } catch(e){ if(/403/.test(e.message)) throw e; knopFout = e; }   // anders: kaart opzoeken in de lijst met actiekaarten
     }
     const k = await zoekSnapKaart(id).catch(() => null);
     if(!k){ if(knopFout) throw knopFout; throw new Error('Geen snapshotkaart gevonden voor deze camera'); }
@@ -4092,7 +4093,7 @@ async function nieuweSnapshot(id){
       try { await homey(`/api/manager/flow/flowcardaction/${encodeURIComponent(uri)}/${encodeURIComponent(kid)}/run`, { method:'POST', body }); laatste = null; break; }
       catch(e){ laatste = e; if(!/404/.test(e.message)) break; }
     }
-    if(laatste) throw new Error((knopFout ? 'Knop: ' + knopFout.message + ' | Actiekaart: ' : '') + laatste.message);
+    if(laatste) throw new Error((knopFout ? 'Kaart: ' + knopFout.message + ' | Opgezochte kaart: ' : '') + laatste.message);
     zet('ok');
     [3000, 8000, 15000, 30000].forEach(ms => setTimeout(verversApparaten, ms));   // nieuw beeld oppikken zodra eufy het levert
   } catch(e){
@@ -4234,7 +4235,7 @@ function toonCamPopup(m){
     const d = DEVS[m.id];
     if(M.snapshotBijAanbellen && d && heeft(d,'CMD_SNAPSHOT') && d.available !== false){
       snapStatus[m.id] = 'bezig';
-      zetCap(m.id, 'CMD_SNAPSHOT', true)
+      kaartActie(m.id, 'action_CMD_SNAPSHOT')
         .then(() => { snapStatus[m.id] = 'ok'; [3000, 8000, 15000].forEach(ms => setTimeout(verversApparaten, ms)); })
         .catch(e => { snapStatus[m.id] = 'fout:' + e.message; })
         .finally(() => { if(camGrootId === m.id) tekenCamGroot(); setTimeout(() => { delete snapStatus[m.id]; if(camGrootId === m.id) tekenCamGroot(); }, 8000); });
