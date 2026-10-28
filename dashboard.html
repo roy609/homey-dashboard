@@ -640,8 +640,8 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .huiskaart .hk-weer { right:14px; text-align:right; }
 .huiskaart .hk-klok b, .huiskaart .hk-weer b { display:block; font-size:2rem; font-weight:800; letter-spacing:-.03em; }
 .huiskaart .hk-klok span, .huiskaart .hk-weer span { display:block; margin-top:4px; font-size:var(--fs-sm); font-weight:600; opacity:.9; }
-#flowSvgHome .f-weer, #flowSvgHomeHome .f-weer, #flowSvgHome #h_fAutoW, #flowSvgHomeHome #h_fAutoW, #flowSvgHome #h_fAutoSub, #flowSvgHomeHome #h_fAutoSub { display:none; }
-#flowSvgHome #h_fHuisW, #flowSvgHomeHome #h_fHuisW { transition:fill .6s; }
+#flowSvgHome .f-weer, #flowSvgHome #h_fAutoW, #flowSvgHome #h_fAutoSub{ display:none; }
+#flowSvgHome #h_fHuisW{ transition:fill .6s; }
 .tarief-let { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px; border-radius:12px; background:var(--amber-dim, rgba(245,165,36,.12)); border:1px solid rgba(245,165,36,.45); color:var(--amber); font-size:var(--fs-sm); font-weight:600; }
 .tarief-let svg { width:18px; height:18px; flex-shrink:0; }
 .zone-moods { margin-top:6px; }
@@ -1258,7 +1258,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '89';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.', 'Hoofddashboard: linksboven staat nu het huis van het tabblad Energie, met de energielijnen, klok en weer. Het verbruik van het huis kleurt mee (groen bij teruglevering, daarna geel, oranje, rood). Tik erop voor de energiepagina.', 'Klimaat, Media, Beweging en Lampen staan als ronde knoppen in de bovenbalk.' ] },
+  { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.', 'Hoofddashboard: linksboven staat nu het huis van het tabblad Energie, met de energielijnen, klok en weer. Het verbruik van het huis kleurt mee (groen bij teruglevering, daarna geel, oranje, rood). Net, huis en zon staan gelijk verdeeld. Tik erop voor de energiepagina.', 'Klimaat, Media, Beweging en Lampen staan als ronde knoppen in de bovenbalk.' ] },
   { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
   { v:'87', datum:'28-10-2026', punten:[ 'Camera\'s: na "Nieuw beeld", aanbellen of een gebeurtenis wordt het beeld een paar keer opnieuw opgehaald, en verder elke minuut (in de grote weergave elke 10 s). De eufy-app past de tijd van het beeld in Homey niet aan, waardoor het dashboard een nieuwe snapshot niet opmerkte.', 'Onder het beeld staat nu wanneer het is opgehaald; de echte opnametijd staat in het beeld zelf.', 'Het instellingenknopje linksonder is nu een tandwiel (was een soort zonnetje).' ] },
   { v:'86', datum:'28-10-2026', punten:[ 'Camera\'s: lukt het ophalen van het nieuwste beeld niet (HTTP 500 van de eufy-app), dan probeert het dashboard het andere beeld (event of snapshot).', 'In de grote weergave zie je per beeld of het ophalen lukte, met de foutmelding van de app erbij.' ] },
@@ -2798,6 +2798,12 @@ function spiegelHuis(){
   for(const id of [...bron.querySelectorAll('[id]')].map(e => e.id))
     html = html.split(`id="${id}"`).join(`id="h_${id}"`).split(`#${id})`).join(`#h_${id})`).split(`"#${id}"`).join(`"#h_${id}"`);
   doel.innerHTML = html;
+  // zonder ID.4 de drie waardes gelijk verdelen: net links, huis in het midden, zon rechts
+  doel.querySelectorAll('text.f-val, text.f-naam').forEach(t => {
+    const x = t.getAttribute('x');
+    if(x === '570') t.setAttribute('x', '768');
+    else if(x === '985'){ t.setAttribute('x', '1500'); t.style.textAnchor = 'end'; }
+  });
 }
 function tekenEnergieLive(){
   if(!$('flow')) return;
