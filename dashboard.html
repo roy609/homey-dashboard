@@ -1009,7 +1009,7 @@ const DASHBOARD_VERSIE = '67';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
   { v:'67', datum:'28-10-2026', punten:[
-    'Naast "Hoofddashboard" staan nu rondjes met de foto\'s van de bewoners uit Homey: groene rand = thuis, grijs = weg, maantje = slaapt, zonnetje = wakker.' ] },
+    'Naast "Hoofddashboard" staan nu rondjes met de foto\'s van Roy en Beau, met hun status uit de Homey-app: groene rand = thuis, grijs = weg, maantje = slaapt, zonnetje = wakker.' ] },
   { v:'66', datum:'28-10-2026', punten:[
     'Stofzuiger opent nu als pop-up.',
     'Kies stofzuigen, dweilen of beide, de ruimte, grondigheid, zuigkracht en waterstand; daarna Start, Pauze/Hervat, Stop of Naar dock.' ] },
@@ -1795,12 +1795,14 @@ function openClaude(){
 
 /* ── Bewoners: Homey-gebruikers met foto, thuis/weg en wakker/slaapt (zoals in de Homey-app) ── */
 let BEWONERS = null;
-const DEMO_BEWONERS = { u1:{ id:'u1', name:'Roy', present:true, asleep:false }, u2:{ id:'u2', name:'Partner', present:true, asleep:true }, u3:{ id:'u3', name:'Logé', present:false, asleep:false } };
+const DEMO_BEWONERS = { u1:{ id:'u1', name:'Roy Frentz', role:'owner', present:true, asleep:false }, u2:{ id:'u2', name:'Beau Wemmers', present:false, asleep:false } };
 async function laadBewoners(){
   if(DEMO()){ BEWONERS = DEMO_BEWONERS; return tekenBewoners(); }
   try { BEWONERS = await homey('/api/manager/users/user') || {}; tekenBewoners(); }
   catch(e){ /* sleutel mag geen gebruikers lezen of Homey even weg: oude stand laten staan */ }
 }
+/* Eigen foto's in de map img/ op de Homey: img/bewoner_<voornaam>.jpg (bijv. bewoner_roy.jpg). Valt terug op de Homey-profielfoto. */
+const eigenFoto = u => `img/bewoner_${String(u.name || '').trim().split(/\s+/)[0].toLowerCase()}.jpg`;
 function avatarUrl(u){
   const a = u.avatar || (u.athomId ? `https://api.athom.com/user/${u.athomId}/avatar` : null);   // Homey-profielfoto
   if(!a) return null;
@@ -1816,7 +1818,8 @@ function tekenBewoners(){
     const naam = String(u.name || '?'), url = avatarUrl(u);
     const status = !thuis ? 'Niet thuis' : slaapt ? 'Thuis · slaapt' : 'Thuis · wakker';
     return `<div class="bewoner ${thuis ? 'thuis' : 'weg'}" title="${esc(naam)}: ${status}" aria-label="${esc(naam)}: ${status}">
-      <div class="foto">${url ? `<img src="${esc(url)}" alt="" onerror="this.replaceWith(document.createTextNode('${esc(naam[0].toUpperCase())}'))">` : esc(naam[0].toUpperCase())}</div>
+      <div class="foto"><img src="${esc(eigenFoto(u))}" alt="" data-terug="${esc(url || '')}" data-letter="${esc(naam[0].toUpperCase())}"
+        onerror="if(this.dataset.terug){ this.src = this.dataset.terug; this.dataset.terug = ''; } else this.replaceWith(document.createTextNode(this.dataset.letter))"></div>
       <span class="badge ${!thuis ? 'weg' : slaapt ? 'slaapt' : 'wakker'}">${ic(!thuis ? 'door' : slaapt ? 'moon' : 'sun')}</span></div>`;
   }).join('');
 }
