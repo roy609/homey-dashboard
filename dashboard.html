@@ -657,6 +657,20 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .huiskaart .hk-klok span, .huiskaart .hk-weer span { display:block; margin-top:4px; font-size:var(--fs-sm); font-weight:600; opacity:.9; }
 #flowSvgHome .f-weer, #flowSvgHome #h_fAutoW, #flowSvgHome #h_fAutoSub{ display:none; }
 #flowSvgHome #h_fHuisW{ transition:fill .6s; }
+.hk-regen { display:flex !important; align-items:center; justify-content:flex-end; gap:4px; margin-top:5px !important; font-size:12px !important; font-weight:700 !important; opacity:1 !important; }
+.hk-regen svg { width:13px; height:13px; }
+.hk-regen.nat { color:#7DD3FC; }
+.huiskaart .hk-weer { cursor:pointer; }
+#regenPaneel .modal { max-width:600px; width:min(600px,94vw); }
+.rg-grafiek { margin-top:14px; }
+.rg-grafiek svg { width:100%; height:auto; display:block; }
+.rg-grafiek .rg-band { fill:rgba(255,255,255,.04); }
+.rg-grafiek .rg-lijn { stroke:var(--border2); stroke-width:1; fill:none; }
+.rg-grafiek text { fill:var(--text-muted); font-size:11px; stroke:none; font-weight:500; }
+.rg-grafiek .rg-staaf { fill:#38BDF8; stroke:none; }
+.rg-grafiek .rg-nu { stroke:var(--amber); stroke-width:1.5; stroke-dasharray:3 3; }
+.rg-radar { margin-top:14px; border-radius:12px; overflow:hidden; background:#0b1a3a; text-align:center; }
+.rg-radar img { width:100%; max-width:520px; display:block; margin:0 auto; }
 .tarief-let { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px; border-radius:12px; background:var(--amber-dim, rgba(245,165,36,.12)); border:1px solid rgba(245,165,36,.45); color:var(--amber); font-size:var(--fs-sm); font-weight:600; }
 .tarief-let svg { width:18px; height:18px; flex-shrink:0; }
 .zone-moods { margin-top:6px; }
@@ -835,7 +849,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
         <div class="card huiskaart klikbaar" data-page="energie" role="button" aria-label="Naar de energiepagina">
           <div class="hk-tekening" id="huisTekening"></div>
           <div class="hk-klok"><b id="klok">–</b><span id="datum">–</span></div>
-          <div class="hk-weer"><b id="weerTemp">–</b><span id="weerSub">–</span></div>
+          <div class="hk-weer" data-regen="1" role="button" aria-label="Regen en buienradar"><b id="weerTemp">–</b><span id="weerSub">–</span><span class="hk-regen" id="regenRegel"></span></div>
         </div>
         <div class="sec-label">Variabelen</div>
         <div class="g2" id="variabelen"></div>
@@ -978,6 +992,21 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="regenPaneel">
+  <div class="modal lp" role="dialog" aria-label="Regen">
+    <div class="lp-kop">
+      <div class="ico blue" data-icon="druppel"></div>
+      <div class="grow"><h2>Regen in <span id="rgPlaats"></span></h2><div class="card-sub" id="rgSub"></div></div>
+      <button class="lp-knop" data-rg-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="segment" role="tablist">
+      <button data-rgtab="grafiek" class="on">Komende 2 uur</button>
+      <button data-rgtab="radar">Radar</button>
+    </div>
+    <div id="rgInhoud"></div>
+    <p class="note">Bron: Buienradar. Ververst elke 5 minuten.</p>
+  </div>
+</div>
 <div class="overlay" id="mediaPaneel">
   <div class="modal lp" role="dialog" aria-label="Media">
     <div class="lp-kop">
@@ -1239,6 +1268,8 @@ const CONFIG = {
       { id:'6f3b6527-77ac-4a65-adac-d3a06d192b8e', soort:'camera', naam:'Camera', x:1290, y:55 },
     ],
   },
+  // Regen: verwachting per 5 minuten (komende 2 uur) en radarbeeld van Buienradar
+  regen: { lat:51.89, lon:5.90, plaats:'Bemmel' },
   tuinZones: [
     '5204dc44-8e9c-49e7-aed8-9d5c93330126', // Achtertuin
     '9fc1dda8-dae7-4bde-a0e7-0506f85762f3', // Voortuin
@@ -1273,7 +1304,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '90';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.' ] },
+  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.', 'Regen: in de huiskaart staat onder het weer of het droog blijft of wanneer het gaat regenen (Buienradar, komende 2 uur). Tik op het weer voor een grafiek van de komende 2 uur en het radarbeeld.' ] },
   { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.', 'Hoofddashboard: linksboven staat nu het huis van het tabblad Energie, met de energielijnen, klok en weer. Het verbruik van het huis kleurt mee (groen bij teruglevering, daarna geel, oranje, rood). Net, huis en zon staan gelijk verdeeld. Tik erop voor de energiepagina.', 'Klimaat, Media, Beweging en Lampen staan als ronde knoppen in de bovenbalk.' ] },
   { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
   { v:'87', datum:'28-10-2026', punten:[ 'Camera\'s: na "Nieuw beeld", aanbellen of een gebeurtenis wordt het beeld een paar keer opnieuw opgehaald, en verder elke minuut (in de grote weergave elke 10 s). De eufy-app past de tijd van het beeld in Homey niet aan, waardoor het dashboard een nieuwe snapshot niet opmerkte.', 'Onder het beeld staat nu wanneer het is opgehaald; de echte opnametijd staat in het beeld zelf.', 'Het instellingenknopje linksonder is nu een tandwiel (was een soort zonnetje).' ] },
@@ -3902,8 +3933,87 @@ async function bewaarVar(){
   }
 }
 
+/* ═════════════════════════════════════════════
+   REGEN — Buienradar: verwachting per 5 minuten voor de komende 2 uur (raintext) en radarbeeld
+   raintext geeft per regel "waarde|tijd"; mm/u = 10^((waarde − 109) / 32), 0 = droog.
+═════════════════════════════════════════════ */
+let REGEN = null, rgOpen = false, rgTab = 'grafiek', regenFout = null;
+const REGEN_DREMPEL = 0.1;                       // mm/u: daaronder telt het als droog
+async function laadRegen(){
+  const R = CONFIG.regen; if(!R) return;
+  try {
+    const stop = new AbortController(), timer = setTimeout(() => stop.abort(), 15000);
+    const r = await fetch(`https://gpsgadget.buienradar.nl/data/raintext?lat=${R.lat}&lon=${R.lon}&t=${Date.now()}`, { signal:stop.signal, cache:'no-store' });
+    clearTimeout(timer);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const vandaag = new Date();
+    let vorige = null, dagErbij = 0;
+    REGEN = (await r.text()).trim().split(/\r?\n/).map(regel => {
+      const [w, tijd] = regel.split('|'); const [u, m] = (tijd || '').split(':').map(Number);
+      if(vorige != null && u < vorige) dagErbij = 1; vorige = u;               // over middernacht heen
+      const t = new Date(vandaag.getFullYear(), vandaag.getMonth(), vandaag.getDate() + dagErbij, u, m).getTime();
+      const v = Number(w);
+      return { t, mm: v > 0 ? Math.pow(10, (v - 109) / 32) : 0 };
+    }).filter(x => !isNaN(x.t));
+    regenFout = null;
+  } catch(e){ regenFout = e.name === 'AbortError' ? 'Buienradar antwoordt niet' : e.message; }
+  tekenRegen();
+}
+function regenSamenvatting(){
+  if(!REGEN || !REGEN.length) return null;
+  const nat = x => x.mm >= REGEN_DREMPEL, hm = t => new Date(t).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+  const nu = REGEN.findIndex(x => x.t + 5 * 60000 > Date.now()), lijst = REGEN.slice(Math.max(0, nu));
+  if(!lijst.length) return null;
+  const max = Math.max(...lijst.map(x => x.mm));
+  if(nat(lijst[0])){
+    const eind = lijst.find(x => !nat(x));
+    return { nat:true, tekst: eind ? `Regent nu · droog om ${hm(eind.t)}` : 'Regent nu · komende 2 uur nat', max };
+  }
+  const start = lijst.find(nat);
+  return start ? { nat:true, tekst:`Regen vanaf ${hm(start.t)}`, max } : { nat:false, tekst:'Droog komende 2 uur', max };
+}
+const regenSterkte = mm => mm < REGEN_DREMPEL ? 'droog' : mm < 1 ? 'lichte regen' : mm < 5 ? 'matige regen' : 'zware regen';
+function tekenRegen(){
+  const el = $('regenRegel');
+  const S = regenSamenvatting();
+  if(el){
+    el.className = 'hk-regen' + (S && S.nat ? ' nat' : '');
+    el.innerHTML = S ? `${ic(S.nat ? 'druppel' : 'sun')}${esc(S.tekst)}` : regenFout ? '' : '';
+  }
+  if(rgOpen) tekenRegenPaneel();
+}
+function regenGrafiek(){
+  if(!REGEN || !REGEN.length) return `<p class="leeg" style="margin-top:14px">${regenFout ? 'Geen regendata: ' + esc(regenFout) : 'Regendata laden…'}</p>`;
+  const W = 560, H = 196, L = 40, B = 22, T = 14, n = REGEN.length, bw = (W - L) / n;
+  const schaal = mm => Math.min(1, Math.log10(1 + mm) / Math.log10(1 + 10));          // 0–10 mm/u, logaritmisch zoals Buienalarm
+  const y = f => T + (H - T - B) * (1 - f);
+  const banden = [[1, 'zwaar'], [schaal(5), 'matig'], [schaal(1), 'licht']];
+  const nuX = L + ((Date.now() - REGEN[0].t) / (5 * 60000)) * bw;
+  return `<div class="rg-grafiek"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Regenverwachting komende 2 uur">
+    ${banden.map(([f, naam], i) => `<line class="rg-lijn" x1="${L}" x2="${W}" y1="${y(f)}" y2="${y(f)}"/><text x="${L - 4}" y="${y(f) + 4}" text-anchor="end">${naam}</text>`).join('')}
+    <line class="rg-lijn" x1="${L}" x2="${W}" y1="${y(0)}" y2="${y(0)}"/>
+    ${REGEN.map((x, i) => x.mm >= REGEN_DREMPEL ? `<rect class="rg-staaf" x="${(L + i * bw + 1).toFixed(1)}" y="${y(schaal(x.mm)).toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${(y(0) - y(schaal(x.mm))).toFixed(1)}" rx="2"/>` : '').join('')}
+    ${REGEN.map((x, i) => i % 6 === 0 ? `<text x="${(L + i * bw).toFixed(1)}" y="${H - 6}">${new Date(x.t).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' })}</text>` : '').join('')}
+    ${nuX >= L && nuX <= W ? `<line class="rg-nu" x1="${nuX.toFixed(1)}" x2="${nuX.toFixed(1)}" y1="${T}" y2="${y(0)}"/>` : ''}
+  </svg></div>`;
+}
+function tekenRegenPaneel(){
+  const R = CONFIG.regen, S = regenSamenvatting();
+  $('rgPlaats').textContent = R.plaats;
+  $('rgSub').textContent = S ? `${S.tekst}${S.max >= REGEN_DREMPEL ? ' · maximaal ' + nl(S.max, 1) + ' mm/u (' + regenSterkte(S.max) + ')' : ''}` : (regenFout ? 'Buienradar niet bereikbaar' : 'Laden…');
+  document.querySelectorAll('[data-rgtab]').forEach(b => b.classList.toggle('on', b.dataset.rgtab === rgTab));
+  $('rgInhoud').innerHTML = rgTab === 'radar'
+    ? `<div class="rg-radar"><img src="https://image.buienradar.nl/2.0/image/animation/RadarMapRainNL?height=512&width=500&t=${Math.floor(Date.now() / 300000)}" alt="Buienradar: neerslag in Nederland"></div>`
+    : regenGrafiek();
+}
+function openRegen(){ rgOpen = true; $('regenPaneel').classList.add('on'); tekenRegenPaneel(); if(!REGEN) laadRegen(); }
+function sluitRegen(){ rgOpen = false; $('regenPaneel').classList.remove('on'); }
+
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
+  if(rgOpen && (e.target === $('regenPaneel') || e.target.closest('[data-rg-sluit]'))) return sluitRegen();
+  const rgt = e.target.closest('[data-rgtab]'); if(rgt){ rgTab = rgt.dataset.rgtab; return tekenRegenPaneel(); }
+  if(e.target.closest('[data-regen]')) return openRegen();
   if(bgOpen && (e.target === $('beeldPaneel') || e.target.closest('[data-bg-sluit]'))) return sluitBeelden();
   const bgk = e.target.closest('[data-beelden]'); if(bgk) return openBeelden(bgk.dataset.beelden);
   if(nwOpen && (e.target === $('nieuwPaneel') || e.target.closest('[data-nw-sluit]'))) return sluitNieuw();
@@ -4435,6 +4545,7 @@ verversApparaten(); setInterval(verversApparaten, POLL_APPARATEN_MS);
 laadBewoners(); setInterval(laadBewoners, 30000);
 verversVariabelen(); setInterval(verversVariabelen, POLL_VARIABELEN_MS);
 laadEnergie(true); setInterval(() => laadEnergie(true), 5 * 60000);   // grafieken elke 5 minuten
+laadRegen(); setInterval(laadRegen, 5 * 60000);                        // Buienradar: regen komende 2 uur
 laadZones().then(tekenLinks); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
 setInterval(() => { if($('page-systeem').classList.contains('on')) laadSysteem(true); }, 5 * 60000);   // namen van ruimtes en moods
 </script>
