@@ -1802,7 +1802,7 @@ async function laadBewoners(){
   catch(e){ /* sleutel mag geen gebruikers lezen of Homey even weg: oude stand laten staan */ }
 }
 function avatarUrl(u){
-  const a = u.avatar;
+  const a = u.avatar || (u.athomId ? `https://api.athom.com/user/${u.athomId}/avatar` : null);   // Homey-profielfoto
   if(!a) return null;
   if(/^https?:/.test(a)) return a;
   return apiBase() + (a.startsWith('/') ? a : '/' + a);
