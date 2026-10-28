@@ -660,6 +660,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .hk-regen { display:flex !important; align-items:center; justify-content:flex-end; gap:4px; margin-top:5px !important; font-size:12px !important; font-weight:700 !important; opacity:1 !important; }
 .hk-regen svg { width:13px; height:13px; }
 .hk-regen.nat { color:#7DD3FC; }
+.hk-regen[hidden] { display:none !important; }
 .huiskaart .hk-weer { cursor:pointer; }
 #regenPaneel .modal { max-width:600px; width:min(600px,94vw); }
 .rg-grafiek { margin-top:14px; }
@@ -1305,9 +1306,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '90';
+const DASHBOARD_VERSIE = '91';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'91', datum:'28-10-2026', punten:[ 'Regen in de huiskaart: blauw als het regent of binnen 15 minuten gaat regenen, wit "Droog tot …" als de regen later komt, en geen regel als er de komende 2 uur geen regen wordt voorspeld.' ] },
   { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.', 'Regen: in de huiskaart staat onder het weer of het droog blijft of wanneer het gaat regenen (Buienradar, komende 2 uur). Tik op het weer voor een grafiek van de komende 2 uur, de Buienradar-kaart van de regio (ingesloten) en het radarbeeld van Nederland.', 'Voor de titel Hoofddashboard staat nu het huisjes-icoon van de favoriet.' ] },
   { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.', 'Hoofddashboard: linksboven staat nu het huis van het tabblad Energie, met de energielijnen, klok en weer. Het verbruik van het huis kleurt mee (groen bij teruglevering, daarna geel, oranje, rood). Net, huis en zon staan gelijk verdeeld. Tik erop voor de energiepagina.', 'Klimaat, Media, Beweging en Lampen staan als ronde knoppen in de bovenbalk.' ] },
   { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
@@ -3969,20 +3971,26 @@ function regenSamenvatting(){
   const nu = REGEN.findIndex(x => x.t + 5 * 60000 > Date.now()), lijst = REGEN.slice(Math.max(0, nu));
   if(!lijst.length) return null;
   const max = Math.max(...lijst.map(x => x.mm));
+  // vier situaties: het regent (blauw) · regen binnen 15 min (blauw) · regen later (wit, "droog tot") · geen regen (geen regel)
   if(nat(lijst[0])){
     const eind = lijst.find(x => !nat(x));
-    return { nat:true, tekst: eind ? `Regent nu · droog om ${hm(eind.t)}` : 'Regent nu · komende 2 uur nat', max };
+    return { nat:true, soort:'regent', tekst: eind ? `Het regent · droog om ${hm(eind.t)}` : 'Het regent · komende 2 uur nat', max };
   }
   const start = lijst.find(nat);
-  return start ? { nat:true, tekst:`Regen vanaf ${hm(start.t)}`, max } : { nat:false, tekst:'Droog komende 2 uur', max };
+  if(!start) return { nat:false, soort:'droog', tekst:'Droog komende 2 uur', max };
+  const min = Math.max(0, Math.round((start.t - Date.now()) / 60000));
+  return min <= 15 ? { nat:true, soort:'straks', tekst:`Regen over ${Math.max(min, 1)} min (${hm(start.t)})`, max }
+                   : { nat:true, soort:'later', tekst:`Droog tot ${hm(start.t)}`, max };
 }
 const regenSterkte = mm => mm < REGEN_DREMPEL ? 'droog' : mm < 1 ? 'lichte regen' : mm < 5 ? 'matige regen' : 'zware regen';
 function tekenRegen(){
   const el = $('regenRegel');
   const S = regenSamenvatting();
   if(el){
-    el.className = 'hk-regen' + (S && S.nat ? ' nat' : '');
-    el.innerHTML = S ? `${ic(S.nat ? 'druppel' : 'sun')}${esc(S.tekst)}` : regenFout ? '' : '';
+    const toon = S && S.soort !== 'droog';                                 // geen regen voorspeld: geen regel
+    el.hidden = !toon;
+    el.className = 'hk-regen' + (toon && (S.soort === 'regent' || S.soort === 'straks') ? ' nat' : '');
+    el.innerHTML = toon ? `${ic(S.soort === 'later' ? 'sun' : 'druppel')}${esc(S.tekst)}` : '';
   }
   if(rgOpen) tekenRegenPaneel();
 }
