@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 78 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 79 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -1202,9 +1202,12 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '78';
+const DASHBOARD_VERSIE = '79';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'79', datum:'28-10-2026', punten:[
+    'Media: Spotify Boven/Beneden staan niet meer onterecht bij "Nu actief" met "Onbereikbaar"; als ze niet in gebruik zijn staat er "Niet actief in Spotify".',
+    'Media: speakers die "speelt" melden met titel "Homey" of "Idle" tellen niet meer als actief.' ] },
   { v:'78', datum:'28-10-2026', punten:[
     'De tegel Muziek is twee keer zo breed, met het zenderlogo of de Spotify-hoes, wat er speelt, waar, en een label Radio of Spotify.',
     'Spotify: Beneden en Boven zijn altijd te kiezen, ook als een speaker slaapt.',
@@ -1965,8 +1968,12 @@ function tekenKlimaatPaneel(){
 let mdOpen = false, mdSleept = false;
 const isMedia = d => ['speaker','tv','amplifier'].includes(d.class) || (/radio/i.test(d.name) && heeft(d,'onoff'));
 function mediaLijst(){ return Object.values(DEVS).filter(isMedia); }
-const mediaSpeelt = d => cap(d,'speaker_playing') === true;
-const mediaAan = d => !heeft(d,'speaker_playing') && cap(d,'onoff') === true;
+/* Spotify Connect-apparaten: de app meldt "speelt" voor het hele account en zet niet-actieve speakers op onbereikbaar */
+const SPOTIFY_IDS = () => [...CONFIG.spotify.apparaten.map(a => a.id), '5f2a69bf-39af-4bcf-a46e-1f672d07792d'];
+const isSpotifyDev = d => SPOTIFY_IDS().includes(d.id);
+const mediaSpeelt = d => d.available !== false && cap(d,'speaker_playing') === true
+  && !/^(homey|idle)$/i.test(String(cap(d,'speaker_track') || '').trim());
+const mediaAan = d => d.available !== false && !heeft(d,'speaker_playing') && cap(d,'onoff') === true;
 function mediaSamenvatting(){
   const l = mediaLijst();
   return { totaal:l.length, speelt:l.filter(mediaSpeelt).length, aan:l.filter(mediaAan).length };
@@ -1974,7 +1981,7 @@ function mediaSamenvatting(){
 function mediaRij(d){
   const offline = d.available === false, speelt = mediaSpeelt(d), aan = mediaAan(d);
   const nu = [cap(d,'speaker_artist'), cap(d,'speaker_track')].filter(v => v && !/^(idle|homey)$/i.test(v)).join(' – ');
-  const status = offline ? '<span class="warn">Onbereikbaar</span>' : speelt ? `<span class="md-speelt">▶ ${esc(nu || 'Speelt af')}</span>`
+  const status = offline && isSpotifyDev(d) ? 'Niet actief in Spotify' : offline ? '<span class="warn">Onbereikbaar</span>' : speelt ? `<span class="md-speelt">▶ ${esc(nu || 'Speelt af')}</span>`
     : heeft(d,'speaker_playing') ? (nu ? `Gepauzeerd · ${esc(nu)}` : 'Stil') : typeof cap(d,'onoff') === 'boolean' ? (aan ? 'Staat aan' : 'Staat uit') : '–';
   const vol = cap(d,'volume_set');
   const icoon = d.class === 'tv' ? 'laptop' : d.class === 'amplifier' || /radio/i.test(d.name) ? 'radio' : 'music';
