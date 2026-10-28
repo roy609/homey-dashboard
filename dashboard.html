@@ -620,6 +620,8 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
   color:var(--text-primary); font:inherit; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:10px; }
 .btn.primary { background:var(--amber-dim); border-color:var(--amber-border); color:var(--amber); }
 .moods { display:flex; flex-wrap:wrap; gap:10px; }
+.tarief-let { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px; border-radius:12px; background:var(--amber-dim, rgba(245,165,36,.12)); border:1px solid rgba(245,165,36,.45); color:var(--amber); font-size:var(--fs-sm); font-weight:600; }
+.tarief-let svg { width:18px; height:18px; flex-shrink:0; }
 .zone-moods { margin-top:6px; }
 .zone-moods .btn { min-height:40px; padding:6px 14px; font-size:var(--fs-sm); }
 .toggle { width:52px; height:30px; border-radius:100px; border:1px solid var(--border2); background:var(--bg-inset); position:relative; cursor:pointer; flex-shrink:0; }
@@ -827,6 +829,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <h1>Energie</h1>
       <span class="pill" id="eStand"><i></i><span>Vandaag</span></span>
     </div>
+    <div class="tarief-let" id="tariefWaarschuwing" hidden></div>
     <div class="e-stats" id="eStats"></div>
     <div class="e-grid">
       <div class="card">
@@ -1205,10 +1208,15 @@ const CONFIG = {
     '5204dc44-8e9c-49e7-aed8-9d5c93330126', // Achtertuin
     '9fc1dda8-dae7-4bde-a0e7-0506f85762f3', // Voortuin
   ],
-  // Energie-pagina: tarieven komen uit je eigen Logic-variabelen
+  // Energie-pagina: tarieven van het energiecontract (zelfde als in de HomeWizard-app).
+  // Nieuw contract? Pas deze getallen aan én zet ze ook in de HomeWizard Energy-app.
   energie: {
-    tariefStroom: '90335b5f-1826-48af-9bc4-9a178efe0775', // Tarief Energie Kwh (€/kWh)
-    tariefGas:    '980393ce-0094-45ed-80e9-624d48501da0', // Tarief gas m3 (€/m³)
+    tarieven: {
+      leverancier: 'BudgetEnergie', contractEinde: '2027-03-20',   // na deze datum toont de energiepagina een herinnering
+      stroom: 0.25474,      // € per afgenomen kWh (normaal en dal gelijk), all-in
+      terug:  0.01,         // € per teruggeleverde kWh
+      gas:    1.38182,      // € per m³, all-in
+    },
     nietBijGrootverbruikers: [],                           // extra apparaat-id's die je daar niet wilt zien
     // Kleur van "Verbruik nu": groen bij teruglevering, daarna oplopend tot rood
     kleurGrenzen: { geel:700, rood:2000 },                 // tot 700 W geel, 700–2000 W oranje, vanaf 2000 W rood
@@ -1227,9 +1235,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '88';
+const DASHBOARD_VERSIE = '89';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.' ] },
   { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
   { v:'87', datum:'28-10-2026', punten:[ 'Camera\'s: na "Nieuw beeld", aanbellen of een gebeurtenis wordt het beeld een paar keer opnieuw opgehaald, en verder elke minuut (in de grote weergave elke 10 s). De eufy-app past de tijd van het beeld in Homey niet aan, waardoor het dashboard een nieuwe snapshot niet opmerkte.', 'Onder het beeld staat nu wanneer het is opgehaald; de echte opnametijd staat in het beeld zelf.', 'Het instellingenknopje linksonder is nu een tandwiel (was een soort zonnetje).' ] },
   { v:'86', datum:'28-10-2026', punten:[ 'Camera\'s: lukt het ophalen van het nieuwste beeld niet (HTTP 500 van de eufy-app), dan probeert het dashboard het andere beeld (event of snapshot).', 'In de grote weergave zie je per beeld of het ophalen lukte, met de foutmelding van de app erbij.' ] },
@@ -2723,7 +2732,7 @@ function totalen(){
 function tekenEnergie(){
   if(!$('page-energie')) return;
   const T = totalen();
-  const tS = varWaarde(CONFIG.energie.tariefStroom), tG = varWaarde(CONFIG.energie.tariefGas);
+  const TR = CONFIG.energie.tarieven;
   const stat = (titel, val, eenh, sub, kleur) => `<div class="card e-stat"><div class="card-title">${titel}</div>
     <div class="card-val" style="${kleur ? 'color:' + kleur : ''}">${val}<span class="u">${eenh}</span></div><div class="card-sub">${sub}</div></div>`;
   $('eStats').innerHTML =
@@ -2735,7 +2744,10 @@ function tekenEnergie(){
   // Stroom
   $('stroomTot').innerHTML = `<div><b style="color:var(--blue)">${kWh(T.imp)}</b> kWh<small>Geïmporteerd</small></div>
     <div><b style="color:var(--green)">${kWh(T.exp)}</b> kWh<small>Geëxporteerd</small></div>`;
-  $('stroomKost').textContent = tS != null && T.netto != null ? euro(T.netto * tS) : '';
+  // kosten = afname × stroomtarief − teruglevering × terugleververgoeding (geen salderen, zoals in de HomeWizard-app)
+  const sKost = T.imp != null && T.exp != null ? T.imp * TR.stroom - T.exp * TR.terug : T.netto != null ? T.netto * TR.stroom : null;
+  $('stroomKost').textContent = sKost != null ? euro(sKost) : '';
+  $('stroomKost').title = sKost != null && T.imp != null ? `${kWh(T.imp)} kWh × € ${nl(TR.stroom, 5)} − ${kWh(T.exp)} kWh × € ${nl(TR.terug, 2)}` : '';
   $('stroomChart').innerHTML = lijnGrafiek(REEKS.p1, { pos:'var(--blue)', neg:'var(--green)' });
 
   // Zon
@@ -2745,7 +2757,12 @@ function tekenEnergie(){
 
   // Gas
   $('gasTot').innerHTML = `<div><b style="color:var(--red)">${typeof T.gas === 'number' ? nl(T.gas, 2) : '–'}</b> m³<small>Verbruikt</small></div>`;
-  $('gasKost').textContent = tG != null && typeof T.gas === 'number' ? euro(T.gas * tG) : '';
+  $('gasKost').textContent = typeof T.gas === 'number' ? euro(T.gas * TR.gas) : '';
+  $('gasKost').title = typeof T.gas === 'number' ? `${nl(T.gas, 3)} m³ × € ${nl(TR.gas, 5)}` : '';
+  // contract verlopen: herinnering om tarieven bij te werken (hier én in de HomeWizard-app)
+  const verlopen = TR.contractEinde && Date.now() > Date.parse(TR.contractEinde + 'T00:00:00');
+  $('tariefWaarschuwing').hidden = !verlopen;
+  if(verlopen) $('tariefWaarschuwing').innerHTML = `${ic('klok')}<span>Het contract bij ${esc(TR.leverancier)} is afgelopen. Pas de tarieven aan in het dashboard én in de HomeWizard-app; de bedragen kloppen nu mogelijk niet.</span>`;
   $('gasChart').innerHTML = staafGrafiek(perUur(REEKS.gas), { kleur:'var(--red)', eenheid:'m³' });
 
   tekenEnergieLive();
