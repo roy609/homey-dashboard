@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 72 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 73 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -621,6 +621,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .rd-sp { min-height:40px; padding:0 14px; border-radius:100px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-secondary);
   font:inherit; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
 .rd-sp.groep { font-weight:800; }
+.rd-scheiding { flex-basis:100%; height:0; }
 .rd-sp.on { border-color:var(--purple); background:rgba(167,139,250,.16); color:var(--text-primary); }
 .rd-sp[disabled] { opacity:.4; }
 .rd-eq { display:inline-flex; gap:2px; align-items:flex-end; height:12px; }
@@ -1038,17 +1039,19 @@ const CONFIG = {
       { naam:'JOE',       kleur:'#F59E0B', station:{ id:'s307829', name:'JOE Nederland', image:'http://cdn-profiles.tunein.com/s307829/images/logoq.png' } },
       { naam:'Sky Radio', kleur:'#2563EB', station:{ id:'s9067',   name:'Sky Radio',    image:'http://cdn-profiles.tunein.com/s9067/images/logoq.png' } },
     ],
+    // Eén keuze tegelijk: zo speelt alles via één cast en lopen speakers in een groep altijd synchroon.
+    // Meerdere ruimtes samen? Maak in de Google Home-app een speakergroep; die verschijnt dan in Homey en kan hier bij.
+    // Bewust NIET: Achtertuin en "Alle speakers" (die bevat ook de buitenspeakers).
     speakers: [
       { id:'a55ced45-ab31-488b-8ca8-d0e12916e7e6', naam:'Beneden',        groep:true },
       { id:'a28ab85b-f9c8-4297-a94e-21aa74f742bc', naam:'Boven',          groep:true },
-      { id:'b95a9ff1-4aa2-4693-a724-7490d529693e', naam:'Overal',         groep:true },
+      { id:'265de5bc-559e-45e8-95a2-38fddd1b9980', naam:'Werk + badkamer', groep:true },
       { id:'809c15f4-6274-485e-997c-efe36bd00231', naam:'Woonkamer' },
       { id:'3cf08966-1e7a-4acd-bc47-44f21b34cb33', naam:'Soundbar' },
       { id:'c05655f8-eb69-45de-8d5a-c8c39460f462', naam:'Keuken' },
       { id:'40a76d97-2e7e-4aa6-b57d-083c02c18943', naam:'Werkkamer' },
       { id:'2d0b547e-8d7c-49a6-a91f-518efa1a1783', naam:'Slaapkamer' },
       { id:'4934fe26-3e02-44c5-a33c-89b6b6722e5f', naam:'Badkamer' },
-      { id:'22f764ea-3dc6-4896-bf5e-5fa9bc087bea', naam:'Achtertuin' },
     ],
   },
   // Pop-up met het camerabeeld bij een melding van een eufy-camera of de deurbel.
@@ -1127,9 +1130,12 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '72';
+const DASHBOARD_VERSIE = '73';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'73', datum:'28-10-2026', punten:[
+    'Radio: Achtertuin en "Overal" (met de buitenspeakers) zijn weg uit de keuze.',
+    'Radio: je kiest nu één ruimte of groep, zodat alles precies tegelijk speelt (geen galm meer). Nieuwe groep erbij: Werk + badkamer.' ] },
   { v:'72', datum:'28-10-2026', punten:[
     'Ververs-knop naast de versie (linksonder): laadt direct de nieuwste versie, zonder op de automatische controle te wachten.' ] },
   { v:'71', datum:'28-10-2026', punten:[
@@ -2125,6 +2131,8 @@ function sluitBeweging(){ bwgOpen = false; bwgZoneOpen = null; clearInterval(bwg
 let rdOpen = false, rdMelding = '';
 let rdKeuze = { zender:0, speakers:['a55ced45-ab31-488b-8ca8-d0e12916e7e6'] };
 try { rdKeuze = { ...rdKeuze, ...JSON.parse(localStorage.getItem('dashboard_radio') || '{}') }; } catch(e){}
+rdKeuze.speakers = rdKeuze.speakers.filter(id => CONFIG.radio.speakers.some(sp => sp.id === id)).slice(0, 1);
+if(!rdKeuze.speakers.length) rdKeuze.speakers = [CONFIG.radio.speakers[0].id];
 const bewaarRadio = () => { try { localStorage.setItem('dashboard_radio', JSON.stringify(rdKeuze)); } catch(e){} };
 const zenderVan = d => { const t = [cap(d,'speaker_artist'), cap(d,'speaker_track')].join(' ').toLowerCase();
   return CONFIG.radio.zenders.find(z => t.includes(z.naam.toLowerCase().split(' ')[0])) || null; };
@@ -2149,9 +2157,10 @@ function tekenRadioPaneel(){
     <div class="rd-zenders">${R.zenders.map((z, i) => `<button class="rd-zender ${rdKeuze.zender === i ? 'on' : ''}" style="--z:${z.kleur}" data-rdzender="${i}">
       <span class="rd-logo"><img src="${esc(z.station.image)}" alt="" onerror="this.remove()"><b>${esc(z.naam[0])}</b></span><span>${esc(z.naam)}</span></button>`).join('')}</div>
     <div class="sec-label">Waar</div>
-    <div class="rd-speakers">${kies.map(sp => { const d = dev(sp.id), aan = rdKeuze.speakers.includes(sp.id), speelt = cap(d,'speaker_playing') === true;
+    <div class="rd-speakers">${kies.map((sp, i) => (i && sp.groep !== kies[i - 1].groep ? '<span class="rd-scheiding"></span>' : '') + (() => { const d = dev(sp.id), aan = rdKeuze.speakers.includes(sp.id), speelt = cap(d,'speaker_playing') === true;
       return `<button class="rd-sp ${aan ? 'on' : ''} ${sp.groep ? 'groep' : ''}" data-rdsp="${esc(sp.id)}" ${d.available === false ? 'disabled' : ''}>
-        ${speelt ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(sp.naam)}</button>`; }).join('')}</div>
+        ${speelt ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(sp.naam)}</button>`; })()).join('')}</div>
+    <div class="st-noot">Kies één ruimte of groep. Een groep speelt altijd precies tegelijk; meerdere losse speakers naast elkaar lopen net niet gelijk.</div>
     ${typeof vol === 'number' ? `<div class="sec-label">Volume</div>
       <div class="mz-vol">${ic('volume')}<input type="range" min="0" max="100" value="${Math.round(vol * 100)}" id="rdVol" aria-label="Volume"><span>${Math.round(vol * 100)}%</span></div>` : ''}
     <div class="st-acties rd-acties">
@@ -2164,14 +2173,14 @@ function openRadio(){ rdOpen = true; rdMelding = ''; $('radioPaneel').classList.
 function sluitRadio(){ rdOpen = false; $('radioPaneel').classList.remove('on'); }
 function kiesRadio(soort, waarde){
   if(soort === 'zender') rdKeuze.zender = Number(waarde);
-  else { const l = rdKeuze.speakers; rdKeuze.speakers = l.includes(waarde) ? l.filter(x => x !== waarde) : [...l, waarde]; }
+  else rdKeuze.speakers = [waarde];                       // één doel: groep of losse speaker (synchroon afspelen)
   bewaarRadio(); tekenRadioPaneel();
 }
 async function radioActie(actie){
   const R = CONFIG.radio, z = R.zenders[rdKeuze.zender];
   if(actie === 'start'){
     const ids = [...rdKeuze.speakers];
-    rdMelding = `${z.naam} starten op ${ids.length} ${ids.length === 1 ? 'speaker' : 'speakers'}…`; tekenRadioPaneel();
+    rdMelding = `${z.naam} starten…`; tekenRadioPaneel();
     const ok = await opdracht(async () => {
       const res = await Promise.allSettled(ids.map(id => kaartActie(id, 'castRadio', { station_id:{ ...z.station, description:'' } })));
       const mis = res.filter(r => r.status === 'rejected').length;
