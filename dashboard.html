@@ -583,26 +583,6 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .gv-bar { height:5px; border-radius:100px; background:rgba(128,128,128,.2); margin-top:5px; overflow:hidden; }
 .gv-bar i { display:block; height:100%; background:var(--amber); border-radius:100px; }
 .var-keuze { grid-column:1 / -1; }
-/* Variabelen: compacte lijst in één kaart (zelfde bediening: dubbeltik → 0, potlood, ja/nee) */
-.var-lijst { gap:6px; }
-.var-lijst > .card-title { margin-bottom:2px; }
-#variabelen { display:flex; flex-direction:column; gap:5px; }
-#variabelen > .card { padding:4px 6px 4px 10px; border-radius:12px; background:var(--bg-inset); box-shadow:none; }
-#variabelen > .card .row { gap:10px; align-items:center; }
-#variabelen > .card .grow { display:flex; align-items:baseline; justify-content:space-between; gap:10px; min-width:0; }
-#variabelen > .card .card-title { text-transform:none; letter-spacing:0; font-size:var(--fs-sm); font-weight:600; color:var(--text-secondary);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#variabelen > .card .var-val { font-size:1.05rem; white-space:nowrap; }
-#variabelen > .card .ico, #variabelen > .card .var-pen { width:28px; height:28px; flex-shrink:0; }
-#variabelen > .card .ico svg, #variabelen > .card .var-pen svg { width:15px; height:15px; }
-#variabelen > .var-keuze { padding:4px 4px 4px 10px; flex-direction:row; align-items:center; gap:10px; }   /* label links, knoppen rechts op één regel */
-#variabelen > .var-keuze .e-head { flex-shrink:0; }
-#variabelen > .var-keuze .keuze-uitleg { display:none; }
-#variabelen > .var-keuze .segment { flex:1; min-width:0; padding:2px; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); }
-#variabelen > .var-keuze .segment button { min-height:34px; min-width:0; padding:0 4px; gap:4px; font-size:12.5px; }
-#variabelen > .var-keuze .segment button span { overflow:hidden; text-overflow:ellipsis; }
-#variabelen > .var-keuze .segment button svg { display:none; }
-#variabelen .nul-vraag { font-size:var(--fs-sm); }
 
 .var-nul { cursor:pointer; position:relative; overflow:hidden; transition:border-color .2s, background-color .2s, transform .1s; user-select:none; }
 .var-nul:active { transform:scale(.97); }
@@ -820,7 +800,8 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
         </div>
         <div class="g2" id="huisKaarten"></div>
         <div id="energieKaarten"></div>
-        <div class="card var-lijst"><div class="card-title">Variabelen</div><div id="variabelen"></div></div>
+        <div class="sec-label">Variabelen</div>
+        <div class="g2" id="variabelen"></div>
       </div>
 
       <!-- Midden: tegels -->
@@ -1110,7 +1091,7 @@ const CONFIG = {
     { id:'a8da1222-3694-4e4e-8549-308b15ac7bd4', naam:'Verlichting tuin aan',    bewerkbaar:true }, // ja/nee: tik wisselt direct
     // keuzes → knoppen om direct een stand te kiezen. Wil je namen i.p.v. cijfers:
     // keuzes:[{waarde:0,label:'Uit'},{waarde:1,label:'Sfeer'},{waarde:2,label:'Fel'}]
-    { id:'da2006d6-9f23-402a-a60c-3be9caaf47d7', naam:'Keukenverlichting', kort:'Keukenlicht', keuzes:[
+    { id:'da2006d6-9f23-402a-a60c-3be9caaf47d7', naam:'Keukenverlichting', keuzes:[
         { waarde:0, label:'Beweging', icoon:'run',  uitleg:'Aan bij beweging' },
         { waarde:1, label:'Aan',      icoon:'bulb', uitleg:'Altijd aan' },
         { waarde:2, label:'Koken',    icoon:'sun',  uitleg:'Op z\'n felst' } ] },
@@ -1249,7 +1230,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '88';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard past weer zonder scrollen: de ID.4-tegel is weg en de variabelen staan als compacte lijst in één kaart (dubbeltik, potlood en ja/nee werken hetzelfde).', 'Lege balk onder de gordijnen verwijderd, "Beweging" wordt niet meer afgekapt, "Begane grond" zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
+  { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
   { v:'87', datum:'28-10-2026', punten:[ 'Camera\'s: na "Nieuw beeld", aanbellen of een gebeurtenis wordt het beeld een paar keer opnieuw opgehaald, en verder elke minuut (in de grote weergave elke 10 s). De eufy-app past de tijd van het beeld in Homey niet aan, waardoor het dashboard een nieuwe snapshot niet opmerkte.', 'Onder het beeld staat nu wanneer het is opgehaald; de echte opnametijd staat in het beeld zelf.', 'Het instellingenknopje linksonder is nu een tandwiel (was een soort zonnetje).' ] },
   { v:'86', datum:'28-10-2026', punten:[ 'Camera\'s: lukt het ophalen van het nieuwste beeld niet (HTTP 500 van de eufy-app), dan probeert het dashboard het andere beeld (event of snapshot).', 'In de grote weergave zie je per beeld of het ophalen lukte, met de foutmelding van de app erbij.' ] },
   { v:'85', datum:'28-10-2026', punten:[ 'Camera\'s: "Nieuw beeld" en de snapshot bij aanbellen gebruiken nu de actiekaart "Maak Snapshot" van de eufy-app. De knop die het dashboard eerst gebruikte, mag je in Homey niet zetten ("Capability Not Setable"), vandaar de HTTP 500.' ] },
@@ -1321,7 +1302,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '28-10-2026 17:07';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '28-10-2026 18:46';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -1667,7 +1648,7 @@ function tekenVariabelen(){
     if(v.keuzes){
       const opties = v.keuzes.map(k => typeof k === 'object' ? k : { waarde:k, label:String(k) });
       const actief = opties.find(o => o.waarde === x.value);
-      return `<div class="card var-keuze"><div class="e-head"><div class="card-title">${esc(v.kort || v.naam)}</div>
+      return `<div class="card var-keuze"><div class="e-head"><div class="card-title">${esc(v.naam)}</div>
           ${actief?.uitleg ? `<span class="keuze-uitleg">${esc(actief.uitleg)}</span>` : ''}</div>
         <div class="segment" role="radiogroup" aria-label="${esc(v.naam)}">${opties.map(o =>
           `<button role="radio" aria-checked="${x.value === o.waarde}" class="${x.value === o.waarde ? 'on' : ''} ${o.icoon ? 'met-icoon' : ''}"
