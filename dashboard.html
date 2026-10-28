@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Thuis</title>
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 62 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 63 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -603,6 +603,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <div class="nav-item" data-page="systeem"><span class="ic" data-icon="hart"></span><span class="nav-label">Systeem</span></div>
   <div class="nav-spacer"></div>
   <div class="nav-item" data-actie="thema"><span class="ic" data-icon="moon"></span><span class="nav-label">Donker / licht</span></div>
+  <div class="nav-item" data-actie="claude" title="Claude openen om het dashboard aan te passen"><span class="ic" data-icon="chat"></span><span class="nav-label">Vraag Claude</span></div>
   <div class="nav-item" data-actie="instellingen"><span class="ic" data-icon="gear"></span><span class="nav-label">Instellingen</span></div>
   <div class="nav-versie" id="navVersie" data-actie="nieuw" role="button" title="Dashboardversie">v–</div>
 </nav>
@@ -961,9 +962,11 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '62';
+const DASHBOARD_VERSIE = '63';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'63', datum:'28-10-2026', punten:[
+    'Knop "Vraag Claude" onderaan het menu: opent de Claude-app (Homey-project) bovenop het dashboard, zodat je direct iets kunt laten aanpassen.' ] },
   { v:'62', datum:'27-10-2026', punten:[
     'Pop-up met het camerabeeld als een eufy-camera of de deurbel iets meldt: aanbellen, persoon, beweging, dier of voertuig.',
     'Bij aanbellen een zacht belgeluid en meteen een nieuwe snapshot van de deurbel.',
@@ -985,7 +988,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '27-10-2026 22:00';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '28-10-2026 07:31';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -1065,6 +1068,7 @@ const ICONS = {
   shuffle:'<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
   herhaal:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
   volume:'<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
+  chat:'<path d="M10 3.5c.6 3.6 2.4 5.4 6 6-3.6.6-5.4 2.4-6 6-.6-3.6-2.4-5.4-6-6 3.6-.6 5.4-2.4 6-6z"/><path d="M18 14.5c.3 1.7 1.1 2.5 2.8 2.8-1.7.3-2.5 1.1-2.8 2.8-.3-1.7-1.1-2.5-2.8-2.8 1.7-.3 2.5-1.1 2.8-2.8z"/>',
   plug:'<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8z"/>',
 };
 const ic = n => `<svg viewBox="0 0 24 24">${ICONS[n] || ICONS.bulb}</svg>`;
@@ -1676,6 +1680,22 @@ async function mediaVolume(id, pct){
   const oud = cap(d,'volume_set'); d.capabilitiesObj.volume_set.value = pct / 100;
   const ok = await opdracht(() => zetCap(id, 'volume_set', pct / 100));
   if(!ok){ d.capabilitiesObj.volume_set.value = oud; tekenMediaPaneel(); }
+}
+
+/* ── Claude openen (Homey-project) zonder het dashboard af te sluiten ──
+   Op de tablet: Fully Kiosk start de Claude-app bovenop het dashboard (vereist "Enable JavaScript Interface").
+   Elders (laptop): Claude opent in een nieuw tabblad. */
+const CLAUDE_PROJECT = 'https://claude.ai/project/01a12a5b-7390-753e-85f3-b00d8d34c0e6';
+function openClaude(){
+  try {
+    if(window.fully){
+      if(typeof fully.startIntent === 'function'){
+        fully.startIntent('intent://' + CLAUDE_PROJECT.replace(/^https:\/\//, '') + '#Intent;scheme=https;package=com.anthropic.claude;end'); return;
+      }
+      if(typeof fully.startApplication === 'function'){ fully.startApplication('com.anthropic.claude'); return; }
+    }
+  } catch(e){}
+  window.open(CLAUDE_PROJECT, '_blank', 'noopener');
 }
 
 /* ── Wat is er nieuw ── */
@@ -2988,7 +3008,7 @@ document.addEventListener('click', e => {
   if(t.dataset.acmode) return zetModus(t.dataset.ac, t.dataset.acmode);
   if(t.dataset.temp)  return temperatuur(t.dataset.temp, parseFloat(t.dataset.stap));
   if(t.dataset.page)  return goPage(t.dataset.page, t);
-  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat, 'nieuw':openNieuw, 'media':openMedia,
+  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat, 'claude':openClaude, 'nieuw':openNieuw, 'media':openMedia,
      'sluit':closeCfg, 'opslaan':saveCfg, 'lampen':openLampen, 'zone-aanuit':zoneAanUit,
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
