@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 80 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 81 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -82,6 +82,16 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .nav-versie { cursor:pointer; border-radius:8px; }
 .nav-versie:active { background:var(--bg-inset); }
 #nieuwPaneel .modal { max-width:540px; }
+#beeldPaneel .modal { max-width:900px; width:min(94vw, 900px); }
+.f-weer-knop { cursor:pointer; }
+.bg-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+.bg-kaart { border-radius:12px; overflow:hidden; background:var(--bg-inset); border:2px solid transparent; }
+.bg-kaart.nu { border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim); }
+.bg-kaart img { width:100%; aspect-ratio:3/2; object-fit:cover; display:block; background:#0B0F14; }
+.bg-tekst { padding:8px 10px 10px; }
+.bg-tekst b { display:block; font-size:var(--fs-md); }
+.bg-tekst b em { font-style:normal; font-size:var(--fs-micro); font-weight:800; color:#1B1200; background:var(--amber); padding:1px 7px; border-radius:100px; margin-left:4px; vertical-align:2px; }
+.bg-tekst small { display:block; font-size:var(--fs-sm); color:var(--text-muted); margin-top:2px; line-height:1.35; }
 .nw-blok { padding:12px 14px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); margin-bottom:10px; }
 .nw-blok.nieuwste { border-color:var(--blue); background:linear-gradient(180deg, var(--blue-dim), var(--bg-inset)); }
 .nw-kop { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
@@ -992,6 +1002,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="beeldPaneel">
+  <div class="modal lp" role="dialog" aria-label="Uitleg beelden">
+    <div class="lp-kop">
+      <div class="ico blue" data-icon="sun"></div>
+      <div class="grow"><h2 id="bgTitel">Huisbeelden</h2><div class="card-sub" id="bgSub"></div></div>
+      <button class="lp-knop" data-bg-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst" id="bgLijst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="sysPaneel" data-sys-achter="1">
   <div class="modal lp" role="dialog" aria-label="Details">
     <div class="lp-kop">
@@ -1202,9 +1223,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '80';
+const DASHBOARD_VERSIE = '81';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'81', datum:'28-10-2026', punten:[ 'Tik op de weertekst rechtsonder in de huisfoto (Energie) of tuinfoto (Tuin) voor alle beelden met uitleg wanneer je welke ziet; het huidige beeld is gemarkeerd.' ] },
   { v:'80', datum:'28-10-2026', punten:[ 'Media en Muziek gebruiken nu dezelfde regel voor "speelt": radio die je via Muziek start, telt ook in Media mee (met de zendernaam).' ] },
   { v:'79', datum:'28-10-2026', punten:[
     'Media: Spotify Boven/Beneden staan niet meer onterecht bij "Nu actief" met "Onbereikbaar"; als ze niet in gebruik zijn staat er "Niet actief in Spotify".',
@@ -2448,6 +2470,39 @@ async function radioVolume(pct){
 /* ── Verversen: pagina opnieuw laden. De lader haalt dan de nieuwste versie direct bij GitHub (via de API, zonder 5 minuten cache). ── */
 function verversNu(){ document.querySelector('.nav-ververs')?.classList.add('draait'); setTimeout(() => location.reload(), 150); }
 
+/* ── Uitleg huisbeelden: welk beeld wanneer (zelfde regels als kiesBeeld) ── */
+const BEELD_UITLEG = {
+  standaard:     ['Zon overdag',            'Zonnig in lente of zomer, zon hoger dan 15°. Ook bij half bewolkt (iets gedempter).'],
+  basis:         ['Zon overdag',            'Zonnig in lente of zomer, en de standaard als niets anders past.'],
+  zon_ochtend:   ['Ochtendzon',             'Zonnig en de zon staat laag in het oosten (lager dan 15°).'],
+  zon_avond:     ['Avondzon',               'Zonnig en de zon staat laag in het westen (lager dan 15°).'],
+  bewolkt:       ['Bewolkt',                'Overdag bij bewolking of mist in lente of zomer.'],
+  herfst:        ['Herfst',                 'Overdag in september t/m november, droog.'],
+  winter:        ['Winter',                 'Overdag in december t/m februari, droog. Bij regen in november–februari ook dit beeld, maar grauwer.'],
+  vorst:         ['Vorst',                  'Overdag bij 0° of kouder, zonder neerslag.'],
+  regen:         ['Regen',                  'Overdag bij regen, of als het net geregend heeft ("Nat"), in maart t/m oktober.'],
+  lichte_sneeuw: ['Lichte sneeuw',          'Bij sneeuw. \'s Avonds wordt dit beeld donker en blauwig gemaakt.'],
+  veel_sneeuw:   ['Veel sneeuw',            'Bij zware sneeuwval of als er een sneeuwdek ligt.'],
+  avond:         ['Avond',                  'Na zonsondergang in lente, zomer en herfst (droog).'],
+  avond_regen:   ['Avond met regen',        'Na zonsondergang bij regen of als het nat is.'],
+  avond_winter:  ['Winteravond',            'Na zonsondergang in november t/m februari of bij vorst (zonder sneeuw).'],
+};
+let bgOpen = false;
+function openBeelden(kant){
+  bgOpen = true;
+  const o = omstandigheden(), nu = kiesBeeld(kant, o, isDonker()).sleutel;
+  const volgorde = ['standaard','basis','zon_ochtend','zon_avond','bewolkt','herfst','winter','vorst','regen','lichte_sneeuw','veel_sneeuw','avond','avond_regen','avond_winter'];
+  const lijst = volgorde.filter(k => BEELDEN[kant].includes(k));
+  $('bgTitel').textContent = kant === 'voor' ? 'Huisbeelden · voorkant' : 'Tuinbeelden · achtertuin';
+  $('bgSub').textContent = `Nu: ${BEELD_UITLEG[nu]?.[0] || nu} · ${o.label}`;
+  $('bgLijst').innerHTML = `<div class="bg-grid">${lijst.map(k => `<div class="bg-kaart ${k === nu ? 'nu' : ''}">
+      <img src="${BEELD_MAP}${kant}_${k}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <div class="bg-tekst"><b>${esc(BEELD_UITLEG[k]?.[0] || k)}${k === nu ? ' <em>nu</em>' : ''}</b><small>${esc(BEELD_UITLEG[k]?.[1] || '')}</small></div></div>`).join('')}</div>
+    <div class="st-noot">Het weer komt van de KNMI-app in Homey, de zonnestand wordt berekend voor Bemmel en "donker" volgt zonsopkomst en -ondergang. Vallende regen en sneeuw worden over het beeld heen getekend.</div>`;
+  $('beeldPaneel').classList.add('on'); $('bgLijst').scrollTop = 0;
+}
+function sluitBeelden(){ bgOpen = false; $('beeldPaneel').classList.remove('on'); }
+
 /* ── Wat is er nieuw ── */
 let nwOpen = false;
 function openNieuw(){
@@ -2542,7 +2597,7 @@ function achterSvg(){
     <defs>${kleurFilter('awKleur', W.kleur)}${neerslagDefs('aw')}</defs>
     <image href="${W.basis}" width="1536" height="1024" preserveAspectRatio="none" filter="url(#awKleur)"/>
     ${W.lagen}${TOON_ACHTER_APPARATEN ? gloed.join('') + bev : ''}
-    <text x="1510" y="1000" class="f-weer" style="text-anchor:end">${esc(o.label)}</text>
+    <g class="f-weer-knop" data-beelden="achter"><rect x="1100" y="955" width="430" height="64" fill="transparent"/><text x="1510" y="1000" class="f-weer" style="text-anchor:end">${esc(o.label)} ⓘ</text></g>
   </svg>`;
 }
 const icS = n => `<svg viewBox="0 0 24 24" width="24" height="24">${ICONS[n] || ''}</svg>`;
@@ -3178,7 +3233,7 @@ function huisSvg(net, zon, auto, s){
     <image href="${W.basis}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="xMidYMid slice" filter="url(#wKleur)"/>
     ${W.lagen}
     <rect x="0" y="0" width="1536" height="230" fill="url(#fKop)"/>
-    <text x="1510" y="1000" class="f-weer" style="text-anchor:end">${esc(o.label)}</text>
+    <g class="f-weer-knop" data-beelden="voor"><rect x="1100" y="955" width="430" height="64" fill="transparent"/><text x="1510" y="1000" class="f-weer" style="text-anchor:end">${esc(o.label)} ⓘ</text></g>
     <polygon points="${PANELEN}" class="f-panelen"/>
     ${label(36, 'start', 'fNetW', 'fNetNaam', 'Stroomnet', afname ? KLEUR.net : terug ? KLEUR.groen : '')}
     ${label(570, 'middle', 'fHuisW', null, 'Huis')}
@@ -3747,6 +3802,8 @@ async function bewaarVar(){
 
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
+  if(bgOpen && (e.target === $('beeldPaneel') || e.target.closest('[data-bg-sluit]'))) return sluitBeelden();
+  const bgk = e.target.closest('[data-beelden]'); if(bgk) return openBeelden(bgk.dataset.beelden);
   if(nwOpen && (e.target === $('nieuwPaneel') || e.target.closest('[data-nw-sluit]'))) return sluitNieuw();
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
@@ -3808,6 +3865,7 @@ document.addEventListener('click', e => {
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
 document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && bgOpen) return sluitBeelden();
   if(e.key === 'Escape' && nwOpen) return sluitNieuw();
   if(e.key === 'Escape' && camGrootId) return sluitCam();
   if(e.key === 'Escape' && rdOpen) return sluitRadio();
