@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 75 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 76 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -635,6 +635,16 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .rd-eq b:nth-child(2) { animation-delay:-.3s; } .rd-eq b:nth-child(3) { animation-delay:-.6s; }
 @keyframes rdEq { 0%,100% { height:3px } 50% { height:12px } }
 .rd-acties { grid-template-columns:1fr; }
+.rd-start.bezig { position:relative; overflow:hidden; color:#1B1200; border-color:var(--amber); opacity:1 !important; cursor:progress;
+  background:linear-gradient(90deg, #F5A524, #FFD166, #F5A524); background-size:200% 100%; animation:rdGolf 1.4s linear infinite, rdPuls 1.4s ease-in-out infinite; }
+.rd-start.klaar { background:var(--green); border-color:var(--green); color:#06210F; opacity:1 !important; }
+.rd-start.klaar svg { width:22px; height:22px; }
+.rd-spin { width:20px; height:20px; border-radius:50%; border:3px solid rgba(27,18,0,.25); border-top-color:#1B1200; animation:draai .8s linear infinite; }
+@keyframes rdGolf { to { background-position:-200% 0; } }
+@keyframes rdPuls { 0%,100% { box-shadow:0 0 0 0 rgba(245,165,36,.55); } 50% { box-shadow:0 0 0 8px rgba(245,165,36,0); } }
+.rd-sp.start { border-color:var(--amber); color:var(--amber); animation:rdPuls 1.4s ease-in-out infinite; }
+.tile.tile-radio.start { border-color:var(--amber); animation:rdPuls 1.4s ease-in-out infinite; }
+.tile.tile-radio.start .t-state { color:var(--amber); }
 #bewegingPaneel .modal { max-width:520px; }
 .bwg-rij { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
 .bwg-rij b { display:block; font-size:var(--fs-md); }
@@ -1136,9 +1146,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '75';
+const DASHBOARD_VERSIE = '76';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'76', datum:'28-10-2026', punten:[ 'Radio: tijdens het starten pulseert de knop geel met een draaiend rondje ("Qmusic starten op …"), daarna kort groen "speelt".' ] },
   { v:'75', datum:'28-10-2026', punten:[ 'De tegel "Radio" kleurt paars als er radio speelt (zelfde kleur als Media).' ] },
   { v:'74', datum:'28-10-2026', punten:[
     'Radio: speakers die volgens Homey nog "spelen" maar stil zijn (titel "Homey") tellen niet meer mee.',
@@ -2139,7 +2150,7 @@ function openBeweging(){
 function sluitBeweging(){ bwgOpen = false; bwgZoneOpen = null; clearInterval(bwgZoneTimer); $('bewegingPaneel').classList.remove('on'); }
 
 /* ── Radio: zender kiezen, speakers kiezen, starten/stoppen (Chromecast-app: "Speel radio af") ── */
-let rdOpen = false, rdMelding = '';
+let rdOpen = false, rdMelding = '', rdBezig = null;            // rdBezig = { zender, ids, sinds, klaar }
 let rdKeuze = { zender:0, speakers:['a55ced45-ab31-488b-8ca8-d0e12916e7e6'] };
 try { rdKeuze = { ...rdKeuze, ...JSON.parse(localStorage.getItem('dashboard_radio') || '{}') }; } catch(e){}
 rdKeuze.speakers = rdKeuze.speakers.filter(id => CONFIG.radio.speakers.some(sp => sp.id === id)).slice(0, 1);
@@ -2184,8 +2195,9 @@ const spelendTekst = nu => {
 };
 function radioTegelHtml(t){
   const nu = radioSpelend();
-  const staat = nu.length ? spelendTekst(nu).replace(' op ', ' · ') : 'Uit · tik om te kiezen';
-  return `<div class="card tile tile-radio ${nu.length ? 'on' : ''}" data-tegel="radio" data-soort="radio">
+  const bezig = rdBezig && !rdBezig.gelukt;
+  const staat = bezig ? `${CONFIG.radio.zenders[rdBezig.zender].naam} starten…` : nu.length ? spelendTekst(nu).replace(' op ', ' · ') : 'Uit · tik om te kiezen';
+  return `<div class="card tile tile-radio ${nu.length || bezig ? 'on' : ''} ${bezig ? 'start' : ''}" data-tegel="radio" data-soort="radio">
     <div class="t-top"><div class="ico">${ic('radio')}</div><div class="pwr">${ic('rechts')}</div></div>
     <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">${esc(staat)}</div></div></div>`;
 }
@@ -2201,13 +2213,14 @@ function tekenRadioPaneel(){
       <span class="rd-logo"><img src="${esc(z.station.image)}" alt="" onerror="this.remove()"><b>${esc(z.naam[0])}</b></span><span>${esc(z.naam)}</span></button>`).join('')}</div>
     <div class="sec-label">Waar</div>
     <div class="rd-speakers">${kies.map((sp, i) => (i && sp.groep !== kies[i - 1].groep ? '<span class="rd-scheiding"></span>' : '') + (() => { const d = dev(sp.id), aan = rdKeuze.speakers.includes(sp.id), speelt = speeltEcht(d);
-      return `<button class="rd-sp ${aan ? 'on' : ''} ${sp.groep ? 'groep' : ''}" data-rdsp="${esc(sp.id)}" ${d.available === false ? 'disabled' : ''}>
+      const start = rdBezig && !rdBezig.gelukt && rdBezig.ids.includes(sp.id);
+      return `<button class="rd-sp ${aan ? 'on' : ''} ${sp.groep ? 'groep' : ''} ${start ? 'start' : ''}" data-rdsp="${esc(sp.id)}" ${d.available === false ? 'disabled' : ''}>
         ${speelt ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(sp.naam)}</button>${speelt ? `<button class="rd-stop1" data-rdstop1="${esc(sp.id)}" title="Stop ${esc(sp.naam)}" aria-label="Stop ${esc(sp.naam)}">${ic('kruis')}</button>` : ''}`; })()).join('')}</div>
     <div class="st-noot">Kies één ruimte of groep. Een groep speelt altijd precies tegelijk; meerdere losse speakers naast elkaar lopen net niet gelijk.</div>
     ${typeof vol === 'number' ? `<div class="sec-label">Volume</div>
       <div class="mz-vol">${ic('volume')}<input type="range" min="0" max="100" value="${Math.round(vol * 100)}" id="rdVol" aria-label="Volume"><span>${Math.round(vol * 100)}%</span></div>` : ''}
     <div class="st-acties rd-acties">
-      <button class="st-knop primair groot" data-rdactie="start" ${rdKeuze.speakers.length ? '' : 'disabled'}>${ic('play')}<span>${esc(R.zenders[rdKeuze.zender].naam)} afspelen</span></button>
+      ${radioStartKnop(R)}
     </div>
     <div class="st-acties rd-acties"><button class="st-knop groot" data-rdactie="stop" ${nu.length ? '' : 'disabled'}>${ic('pauze')}<span>${nu.length > 1 ? `Alles stoppen (${nu.length})` : 'Stop'}</span></button></div>
     ${rdMelding ? `<div class="st-noot">${esc(rdMelding)}</div>` : ''}`;
@@ -2223,7 +2236,8 @@ async function radioActie(actie){
   const R = CONFIG.radio, z = R.zenders[rdKeuze.zender];
   if(actie === 'start'){
     const ids = [...rdKeuze.speakers];
-    rdMelding = `${z.naam} starten…`; tekenRadioPaneel();
+    rdBezig = { zender:rdKeuze.zender, ids, sinds:Date.now() }; rdMelding = '';
+    tekenRadioPaneel(); tekenTegels();
     const ok = await opdracht(async () => {
       const res = await Promise.allSettled(ids.map(id => kaartActie(id, 'castRadio', { station_id:{ ...z.station, description:'' } })));
       const mis = res.filter(r => r.status === 'rejected').length;
@@ -2231,8 +2245,8 @@ async function radioActie(actie){
       if(mis) rdMelding = `${z.naam} gestart, maar ${mis} speaker(s) reageerden niet`;
     }, () => ids.forEach(id => { const c = dev(id).capabilitiesObj; c.speaker_playing = { value:true }; c.speaker_artist = { value:z.naam }; c.speaker_track = { value:z.naam }; }));
     if(ok){ ids.forEach(id => { rdGestart[id] = rdKeuze.zender; delete rdGestopt[id]; const c = dev(id)?.capabilitiesObj; if(c?.speaker_playing) c.speaker_playing.value = true; }); bewaarGestart(); }
-    if(ok && !/maar/.test(rdMelding)) rdMelding = `${z.naam} gestart`;
-    if(!ok) rdMelding = 'Starten mislukt — zie de melding bovenaan';
+    if(ok){ rdBezig = { ...rdBezig, klaar:Date.now() }; volgRadioStart(); }
+    else { rdBezig = null; rdMelding = 'Starten mislukt — zie de melding bovenaan'; }
   } else {
     const ids = actie.startsWith('stop1:') ? [actie.slice(6)] : radioSpelend().map(x => x.sp.id);
     rdMelding = 'Stoppen…'; tekenRadioPaneel();
@@ -2247,6 +2261,28 @@ async function radioActie(actie){
   tekenRadioPaneel(); tekenTegels();
   [1500, 4000, 9000].forEach(ms => setTimeout(verversApparaten, ms));
 }
+/* Na het starten even blijven kijken tot de speaker echt speelt; daarna kort "Speelt" tonen */
+function volgRadioStart(){
+  const B = rdBezig; if(!B) return;
+  const echt = B.ids.every(id => cap(dev(id),'speaker_playing') === true);
+  if(echt || Date.now() - B.sinds > 25000){
+    rdMelding = echt ? '' : 'Het duurt wat lang — de speaker reageert misschien traag';
+    rdBezig = { ...B, gelukt:Date.now() }; tekenRadioPaneel(); tekenTegels();
+    setTimeout(() => { if(rdBezig?.gelukt) { rdBezig = null; tekenRadioPaneel(); tekenTegels(); } }, 2500);
+    return;
+  }
+  verversApparaten().then(() => setTimeout(volgRadioStart, 1500));
+}
+function radioStartKnop(R){
+  const B = rdBezig, z = R.zenders[(B || rdKeuze).zender];
+  if(B && B.gelukt) return `<button class="st-knop groot rd-start klaar" disabled>${ic('check')}<span>${esc(z.naam)} speelt</span></button>`;
+  if(B){
+    const waar = B.ids.map(id => R.speakers.find(sp => sp.id === id)?.naam).filter(Boolean).join(', ');
+    return `<button class="st-knop groot rd-start bezig" disabled style="--z:${z.kleur}"><i class="rd-spin"></i><span>${esc(z.naam)} starten op ${esc(waar)}…</span></button>`;
+  }
+  return `<button class="st-knop primair groot rd-start" data-rdactie="start" ${rdKeuze.speakers.length ? '' : 'disabled'}>${ic('play')}<span>${esc(z.naam)} afspelen</span></button>`;
+}
+
 async function radioVolume(pct){
   const ids = rdKeuze.speakers.filter(id => dev(id));
   ids.forEach(id => { const c = dev(id).capabilitiesObj; if(c.volume_set) c.volume_set.value = pct / 100; });
