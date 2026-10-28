@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 77 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 78 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -137,6 +137,23 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .tile.on { border-color:var(--amber-border); background:linear-gradient(180deg, var(--amber-dim), var(--bg-card)); }
 .tile.on .ico, .tile.on .pwr { background:var(--amber-dim); color:var(--amber); }
 .tile.on .t-state { color:var(--amber); }
+.tile.tile-muziek { grid-column:span 2; flex-direction:row; align-items:center; gap:12px; justify-content:flex-start; }
+.tile.tile-muziek .pwr { margin-left:auto; flex-shrink:0; align-self:flex-start; }
+.mt-hoes { position:relative; width:72px; height:72px; border-radius:14px; overflow:hidden; flex-shrink:0; display:grid; place-items:center;
+  background:var(--z, rgba(128,128,128,.14)); color:var(--text-secondary); }
+.mt-hoes.sp { background:#1DB954; color:#08140C; }
+.mt-hoes img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
+.mt-hoes svg { width:28px; height:28px; }
+.tile-muziek.on .mt-hoes:not(.sp):not([style*="--z"]) { background:rgba(167,139,250,.16); color:var(--purple); }
+.mt-tekst { min-width:0; flex:1; display:flex; flex-direction:column; gap:2px; }
+.mt-kop { display:flex; align-items:center; gap:8px; }
+.mt-kop .t-name { font-size:var(--fs-micro); font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); }
+.mt-bron { font-size:10px; font-weight:800; padding:2px 7px; border-radius:100px; letter-spacing:.3px; }
+.mt-bron.rd { background:rgba(167,139,250,.18); color:var(--purple); }
+.mt-bron.sp { background:rgba(29,185,84,.18); color:#1DB954; }
+.mt-titel { font-size:var(--fs-md); font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tile-muziek .t-state { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rd-slaapt { font-size:10px; color:var(--text-muted); font-weight:600; }
 .tile.tile-radio.on { border-color:rgba(167,139,250,.45); background:linear-gradient(180deg, rgba(167,139,250,.16), var(--bg-card)); }
 .tile.tile-radio.on .ico, .tile.tile-radio.on .pwr { background:rgba(167,139,250,.16); color:var(--purple); }
 .tile.tile-radio.on .t-state { color:var(--purple); }
@@ -1187,9 +1204,12 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '77';
+const DASHBOARD_VERSIE = '78';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'78', datum:'28-10-2026', punten:[
+    'De tegel Muziek is twee keer zo breed, met het zenderlogo of de Spotify-hoes, wat er speelt, waar, en een label Radio of Spotify.',
+    'Spotify: Beneden en Boven zijn altijd te kiezen, ook als een speaker slaapt.' ] },
   { v:'77', datum:'28-10-2026', punten:[
     'De tegel "Radio" heet nu "Muziek", met twee tabbladen: Radio en Spotify.',
     'Spotify: kies Beneden of Boven, tik op een van de 8 favoriete afspeellijsten; met wat er nu speelt, vorige/pauze/volgende en volume.' ] },
@@ -2240,16 +2260,24 @@ const spelendTekst = nu => {
   return Object.entries(per).map(([w, l]) => `${w} op ${l.join(', ')}`).join(' · ');
 };
 function radioTegelHtml(t){
-  const nu = radioSpelend();
-  const bezig = (rdBezig && !rdBezig.gelukt) || (spBezig && !spBezig.gelukt);
-  const sp = spotifySpelend();
-  const staat = rdBezig && !rdBezig.gelukt ? `${CONFIG.radio.zenders[rdBezig.zender].naam} starten…`
-    : spBezig && !spBezig.gelukt ? `${spBezig.lijst} starten…`
-    : nu.length ? spelendTekst(nu).replace(' op ', ' · ')
-    : sp ? `${cap(sp.d,'speaker_track') || 'Spotify'} · ${sp.a.naam}` : 'Uit · tik om te kiezen';
-  return `<div class="card tile tile-radio ${nu.length || sp || bezig ? 'on' : ''} ${bezig ? 'start' : ''}" data-tegel="radio" data-soort="radio">
-    <div class="t-top"><div class="ico">${ic('music')}</div><div class="pwr">${ic('rechts')}</div></div>
-    <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">${esc(staat)}</div></div></div>`;
+  const nu = radioSpelend(), sp = spotifySpelend();
+  const bezigRd = rdBezig && !rdBezig.gelukt, bezigSp = spBezig && !spBezig.gelukt, bezig = bezigRd || bezigSp;
+  let bron = '', hoes = '', titel = 'Uit', sub = 'Radio of Spotify', kleur = '';
+  if(bezigRd){ const z = CONFIG.radio.zenders[rdBezig.zender]; bron = 'Radio'; hoes = z.station.image; kleur = z.kleur; titel = z.naam; sub = 'Starten…'; }
+  else if(bezigSp){ const l = CONFIG.spotify.lijsten[spBezig.i]; bron = 'Spotify'; hoes = l?.image; titel = spBezig.lijst; sub = 'Starten…'; }
+  else if(nu.length){ const z = zenderVan(nu[0].d); bron = 'Radio'; hoes = z?.station.image || ''; kleur = z?.kleur || '';
+    titel = z?.naam || watSpeelt(nu[0].d); sub = nu.map(x => x.sp.naam).join(', '); }
+  else if(sp){ bron = 'Spotify'; hoes = spLaatsteLijst?.image || '';
+    titel = cap(sp.d,'speaker_track') || 'Spotify'; sub = [cap(sp.d,'speaker_artist'), sp.a.naam].filter(Boolean).join(' · '); }
+  const aan = !!bron;
+  return `<div class="card tile tile-radio tile-muziek ${aan ? 'on' : ''} ${bezig ? 'start' : ''}" data-tegel="radio" data-soort="radio">
+    <div class="mt-hoes ${bron === 'Spotify' ? 'sp' : ''}" style="${kleur ? '--z:' + kleur : ''}">${hoes ? `<img src="${esc(hoes)}" alt="" onerror="this.remove()">` : ''}${ic(bron === 'Radio' ? 'radio' : 'music')}</div>
+    <div class="mt-tekst">
+      <div class="mt-kop"><span class="t-name">${esc(t.naam)}</span>${bron ? `<span class="mt-bron ${bron === 'Spotify' ? 'sp' : 'rd'}">${bron}</span>` : ''}</div>
+      <div class="mt-titel">${esc(titel)}</div>
+      <div class="t-state">${esc(sub)}</div>
+    </div>
+    <div class="pwr">${ic('rechts')}</div></div>`;
 }
 let rdTab = 'radio';
 try { rdTab = localStorage.getItem('dashboard_muziek_tab') || 'radio'; } catch(e){}
@@ -2342,8 +2370,8 @@ function tekenSpotify(){
       </div></div>` : ''}
     <div class="sec-label">Waar</div>
     <div class="rd-speakers">${S.apparaten.filter(a => dev(a.id)).map(a => { const x = dev(a.id), aan = a.id === spKeuze, sp = nu?.a.id === a.id;
-      return `<button class="rd-sp groep ${aan ? 'on' : ''} ${bezig && spBezig.id === a.id ? 'start' : ''}" data-spsp="${esc(a.id)}" ${x.available === false ? 'disabled' : ''}>
-        ${sp ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(a.naam)}</button>`; }).join('')}</div>
+      return `<button class="rd-sp groep ${aan ? 'on' : ''} ${bezig && spBezig.id === a.id ? 'start' : ''}" data-spsp="${esc(a.id)}" title="${x.available === false ? 'Speaker slaapt; start een afspeellijst om hem te wekken' : ''}">
+        ${sp ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(a.naam)}${x.available === false ? ' <small class="rd-slaapt">slaapt</small>' : ''}</button>`; }).join('')}</div>
     <div class="sec-label">Afspeellijsten</div>
     <div class="sp-lijsten">${S.lijsten.map((l, i) => `<button class="sp-lijst ${spBezig?.i === i ? (bezig ? 'start' : 'on') : ''}" data-splijst="${i}" ${bezig ? 'disabled' : ''}>
       <span class="sp-cover" style="--i:${i}"><img src="${esc(l.image)}" alt="" onerror="this.remove()"><b>${esc(l.naam[0])}</b></span><span>${esc(l.naam)}</span></button>`).join('')}</div>
@@ -3718,7 +3746,7 @@ document.addEventListener('click', e => {
   if(rdOpen && (e.target === $('radioPaneel') || e.target.closest('[data-rd-sluit]'))) return sluitRadio();
   const rdt = e.target.closest('[data-rdtab]'); if(rdt){ rdTab = rdt.dataset.rdtab; try { localStorage.setItem('dashboard_muziek_tab', rdTab); } catch(e){} return tekenRadioPaneel(); }
   const spl = e.target.closest('[data-splijst]'); if(spl) return spotifyLijst(+spl.dataset.splijst);
-  const sps = e.target.closest('[data-spsp]'); if(sps){ spKeuze = sps.dataset.spsp; try { localStorage.setItem('dashboard_spotify', spKeuze); } catch(e){} return tekenRadioPaneel(); }
+  const sps = e.target.closest('[data-spsp]'); if(sps){ e.preventDefault(); spKeuze = sps.dataset.spsp; try { localStorage.setItem('dashboard_spotify', spKeuze); } catch(e){} return tekenRadioPaneel(); }
   const spa = e.target.closest('[data-spactie]'); if(spa) return spotifyActie(spa.dataset.spactie);
   const rdz = e.target.closest('[data-rdzender]'); if(rdz) return kiesRadio('zender', rdz.dataset.rdzender);
   const rd1 = e.target.closest('[data-rdstop1]'); if(rd1) return radioActie('stop1:' + rd1.dataset.rdstop1);
