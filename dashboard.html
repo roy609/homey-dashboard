@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 67 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 68 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -598,7 +598,15 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .statusbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; }
 .kop-links { display:flex; align-items:center; gap:18px; min-width:0; }
 .bewoners { display:flex; gap:12px; }
-.bewoner { position:relative; width:46px; height:46px; flex-shrink:0; }
+.bewoner { position:relative; width:46px; height:46px; flex-shrink:0; cursor:pointer; }
+.bewoner:active { transform:scale(.94); }
+#bewonerPaneel .modal { max-width:420px; }
+.bw-kop { display:flex; align-items:center; gap:14px; }
+.bw-kop .bewoner { width:64px; height:64px; cursor:default; }
+.bw-kop .bewoner .foto { width:64px; height:64px; font-size:1.4rem; }
+.bw-seg button { display:flex; align-items:center; justify-content:center; gap:8px; flex:1; min-height:52px; font-weight:700; }
+.bw-seg button svg { width:20px; height:20px; }
+.bw-seg button[disabled] { opacity:.4; cursor:default; }
 .bewoner .foto { width:46px; height:46px; border-radius:50%; overflow:hidden; display:grid; place-items:center; font-weight:800; font-size:1.05rem;
   background:var(--bg-inset); color:var(--text-secondary); border:3px solid var(--border2); box-sizing:border-box; transition:border-color .4s, filter .4s, opacity .4s; }
 .bewoner .foto img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -834,6 +842,16 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="bewonerPaneel">
+  <div class="modal lp" role="dialog" aria-label="Status aanpassen">
+    <div class="lp-kop">
+      <div class="grow bw-kop" id="bwKop"></div>
+      <button class="lp-knop" data-bw-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst st-lijst" id="bwLijst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="sysPaneel" data-sys-achter="1">
   <div class="modal lp" role="dialog" aria-label="Details">
     <div class="lp-kop">
@@ -1005,9 +1023,11 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '67';
+const DASHBOARD_VERSIE = '68';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'68', datum:'28-10-2026', punten:[
+    'Tik op een rondje (Roy of Beau) om thuis/weg en wakker/slaapt zelf aan te passen.' ] },
   { v:'67', datum:'28-10-2026', punten:[
     'Naast "Hoofddashboard" staan nu rondjes met de foto\'s van Roy en Beau, met hun status uit de Homey-app: groene rand = thuis, grijs = weg, maantje = slaapt, zonnetje = wakker.' ] },
   { v:'66', datum:'28-10-2026', punten:[
@@ -1482,8 +1502,8 @@ function sluitStof(){ stOpen = false; $('stofPaneel').classList.remove('on'); }
 function kiesStof(veld, waarde){ stKeuze[veld] = veld === 'ruimte' ? Number(waarde) : waarde; bewaarStof(); tekenStofPaneel(); }
 
 /* Een actiekaart van het apparaat uitvoeren (zoals een flow dat doet) */
-async function kaartActie(id, kaart, args = {}){
-  const uri = 'homey:device:' + id;
+const kaartActie = (id, kaart, args = {}) => kaartUitvoeren('homey:device:' + id, kaart, args);
+async function kaartUitvoeren(uri, kaart, args = {}){
   let fout;
   for(const kid of [`${uri}:${kaart}`, kaart]){            // Homey-versies verschillen in de vorm van het kaart-id
     try { await homey(`/api/manager/flow/flowcardaction/${encodeURIComponent(uri)}/${encodeURIComponent(kid)}/run`,
@@ -1798,7 +1818,7 @@ let BEWONERS = null;
 const DEMO_BEWONERS = { u1:{ id:'u1', name:'Roy Frentz', role:'owner', present:true, asleep:false }, u2:{ id:'u2', name:'Beau Wemmers', present:false, asleep:false } };
 async function laadBewoners(){
   if(DEMO()){ BEWONERS = DEMO_BEWONERS; return tekenBewoners(); }
-  try { BEWONERS = await homey('/api/manager/users/user') || {}; tekenBewoners(); }
+  try { BEWONERS = await homey('/api/manager/users/user') || {}; tekenBewoners(); tekenBewonerPaneel(); }
   catch(e){ /* sleutel mag geen gebruikers lezen of Homey even weg: oude stand laten staan */ }
 }
 /* Eigen foto's in de map img/ op de Homey: img/bewoner_<voornaam>.jpg (bijv. bewoner_roy.jpg). Valt terug op de Homey-profielfoto. */
@@ -1817,11 +1837,44 @@ function tekenBewoners(){
     const thuis = u.present === true, slaapt = thuis && u.asleep === true;
     const naam = String(u.name || '?'), url = avatarUrl(u);
     const status = !thuis ? 'Niet thuis' : slaapt ? 'Thuis · slaapt' : 'Thuis · wakker';
-    return `<div class="bewoner ${thuis ? 'thuis' : 'weg'}" title="${esc(naam)}: ${status}" aria-label="${esc(naam)}: ${status}">
+    return `<div class="bewoner ${thuis ? 'thuis' : 'weg'}" data-bewoner="${esc(u.id)}" role="button" title="${esc(naam)}: ${status}" aria-label="${esc(naam)}: ${status}, tik om aan te passen">
       <div class="foto"><img src="${esc(eigenFoto(u))}" alt="" data-terug="${esc(url || '')}" data-letter="${esc(naam[0].toUpperCase())}"
         onerror="if(this.dataset.terug){ this.src = this.dataset.terug; this.dataset.terug = ''; } else this.replaceWith(document.createTextNode(this.dataset.letter))"></div>
       <span class="badge ${!thuis ? 'weg' : slaapt ? 'slaapt' : 'wakker'}">${ic(!thuis ? 'door' : slaapt ? 'moon' : 'sun')}</span></div>`;
   }).join('');
+}
+
+/* Status van een bewoner aanpassen via de aanwezigheidskaarten van Homey (zelfde als "Markeer … als thuis" in een flow).
+   Let op: flows die reageren op thuiskomen/weggaan/slapen gaan dan ook af. */
+let bwOpen = null, bwMelding = '';
+function tekenBewonerPaneel(){
+  const u = bwOpen && BEWONERS && BEWONERS[bwOpen]; if(!u) return;
+  const thuis = u.present === true, slaapt = thuis && u.asleep === true, naam = String(u.name || '?');
+  const html = $('bewoners').querySelector(`[data-bewoner="${CSS.escape(u.id)}"]`)?.outerHTML.replace('data-bewoner=', 'data-x=') || '';
+  $('bwKop').innerHTML = `${html}<div><h2>${esc(naam.split(' ')[0])}</h2><div class="card-sub">${!thuis ? 'Niet thuis' : slaapt ? 'Thuis · slaapt' : 'Thuis · wakker'}</div></div>`;
+  const knop = (actie, icoon, label, aan, uit = false) => `<button class="${aan ? 'on' : ''}" data-bwactie="${actie}" ${uit ? 'disabled' : ''}>${ic(icoon)}<span>${label}</span></button>`;
+  $('bwLijst').innerHTML = `
+    <div class="sec-label">Aanwezig</div>
+    <div class="segment bw-seg">${knop('set_home', 'home', 'Thuis', thuis)}${knop('set_away', 'door', 'Weg', !thuis)}</div>
+    <div class="sec-label">Slapen</div>
+    <div class="segment bw-seg">${knop('set_awake', 'sun', 'Wakker', thuis && !slaapt, !thuis)}${knop('set_asleep', 'moon', 'Slaapt', slaapt, !thuis)}</div>
+    <div class="st-noot">${bwMelding ? esc(bwMelding) : 'Normaal regelt de Homey-app dit zelf via jullie locatie. Flows die reageren op thuiskomen, weggaan of slapen gaan ook af als je het hier aanpast.'}</div>`;
+}
+function openBewoner(id){ bwOpen = id; bwMelding = ''; $('bewonerPaneel').classList.add('on'); tekenBewonerPaneel(); }
+function sluitBewoner(){ bwOpen = null; $('bewonerPaneel').classList.remove('on'); }
+async function bewonerActie(actie){
+  const u = BEWONERS && BEWONERS[bwOpen]; if(!u) return;
+  const oud = { present:u.present, asleep:u.asleep };
+  if(actie === 'set_home') u.present = true;
+  if(actie === 'set_away'){ u.present = false; u.asleep = false; }
+  if(actie === 'set_asleep') u.asleep = true;
+  if(actie === 'set_awake') u.asleep = false;
+  bwMelding = 'Bezig…'; tekenBewoners(); tekenBewonerPaneel();
+  const arg = { id:u.id, name:u.name, ...(u.athomId ? { athomId:u.athomId, image:`https://api.athom.com/user/${u.athomId}/avatar` } : {}) };
+  const ok = await opdracht(() => kaartUitvoeren('homey:manager:presence', actie, { user:arg }));
+  if(!ok){ Object.assign(u, oud); bwMelding = 'Aanpassen mislukt — zie de melding bovenaan'; }
+  else { bwMelding = 'Aangepast'; setTimeout(laadBewoners, 1500); }
+  tekenBewoners(); tekenBewonerPaneel();
 }
 
 /* ── Wat is er nieuw ── */
@@ -3114,6 +3167,9 @@ document.addEventListener('click', e => {
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
+  if(bwOpen && (e.target === $('bewonerPaneel') || e.target.closest('[data-bw-sluit]'))) return sluitBewoner();
+  const bwa = e.target.closest('[data-bwactie]'); if(bwa) return bewonerActie(bwa.dataset.bwactie);
+  const bw = e.target.closest('#bewoners [data-bewoner]'); if(bw) return openBewoner(bw.dataset.bewoner);
   if(stOpen && (e.target === $('stofPaneel') || e.target.closest('[data-st-sluit]'))) return sluitStof();
   const stk = e.target.closest('[data-stkies]'); if(stk) return kiesStof(stk.dataset.stkies, stk.dataset.stwaarde);
   const sta = e.target.closest('[data-stactie]'); if(sta) return stofActie(sta.dataset.stactie);
@@ -3157,6 +3213,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && nwOpen) return sluitNieuw();
+  if(e.key === 'Escape' && bwOpen) return sluitBewoner();
   if(e.key === 'Escape' && stOpen) return sluitStof();
   if(e.key === 'Escape' && klOpen) return sluitKlimaat();
   if(e.key === 'Escape' && mdOpen) return sluitMedia();
