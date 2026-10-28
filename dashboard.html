@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 68 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 69 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -601,6 +601,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .bewoner { position:relative; width:46px; height:46px; flex-shrink:0; cursor:pointer; }
 .bewoner:active { transform:scale(.94); }
 #bewonerPaneel .modal { max-width:420px; }
+#bewegingPaneel .modal { max-width:520px; }
+.bwg-rij { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
+.bwg-rij b { display:block; font-size:var(--fs-md); }
+.bwg-rij small { display:block; font-size:var(--fs-sm); color:var(--text-muted); }
+.bwg-rij .bwg-sensoren { font-size:var(--fs-micro); margin-top:2px; }
+.bwg-stip { width:12px; height:12px; border-radius:50%; background:var(--border2); flex-shrink:0; }
+.bwg-rij.actief { border-color:var(--blue); background:linear-gradient(90deg, var(--blue-dim), var(--bg-inset)); }
+.bwg-rij.actief .bwg-stip { background:var(--blue); box-shadow:0 0 0 0 rgba(84,191,240,.6); animation:bwgPuls 1.6s infinite; }
+.bwg-rij.actief small { color:var(--blue); font-weight:600; }
+.bwg-rij.zonder { opacity:.5; }
+@keyframes bwgPuls { 0% { box-shadow:0 0 0 0 rgba(84,191,240,.6); } 100% { box-shadow:0 0 0 10px rgba(84,191,240,0); } }
 .bw-kop { display:flex; align-items:center; gap:14px; }
 .bw-kop .bewoner { width:64px; height:64px; cursor:default; }
 .bw-kop .bewoner .foto { width:64px; height:64px; font-size:1.4rem; }
@@ -852,6 +863,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="bewegingPaneel">
+  <div class="modal lp" role="dialog" aria-label="Beweging per zone">
+    <div class="lp-kop">
+      <div class="ico blue" data-icon="run"></div>
+      <div class="grow"><h2>Beweging</h2><div class="card-sub" id="bwgSub"></div></div>
+      <button class="lp-knop" data-bwg-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst st-lijst" id="bwgLijst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="sysPaneel" data-sys-achter="1">
   <div class="modal lp" role="dialog" aria-label="Details">
     <div class="lp-kop">
@@ -1023,9 +1045,11 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '68';
+const DASHBOARD_VERSIE = '69';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'69', datum:'28-10-2026', punten:[
+    'Kaart "Beweging" toont welke zones actief zijn; een tik opent alle zones per verdieping, met beweging nu of hoe lang het rustig is.' ] },
   { v:'68', datum:'28-10-2026', punten:[
     'Tik op een rondje (Roy of Beau) om thuis/weg en wakker/slaapt zelf aan te passen.' ] },
   { v:'67', datum:'28-10-2026', punten:[
@@ -1321,7 +1345,9 @@ function tekenLinks(){
     (() => { const M = mediaSamenvatting();
       return miniKaart('music', M.speelt || M.aan ? 'purple' : '', 'Media', M.speelt ? `${M.speelt} ${M.speelt === 1 ? 'speelt' : 'spelen'} af` : M.aan ? `${M.aan} aan` : 'Stil', 'media',
         `${M.totaal} apparaten`); })() +
-    miniKaart('run','blue','Beweging', beweging ? 'Actief' : 'Rustig') +
+    (() => { const B = bewegingSamenvatting();
+      return miniKaart('run', B.actief ? 'blue' : '', 'Beweging', B.actief ? `${B.actief} actief` : 'Rustig', 'beweging',
+        B.actief ? esc(B.namen.slice(0, 2).join(', ') + (B.namen.length > 2 ? ' …' : '')) : `${B.sensoren} sensoren`); })() +
     miniKaart('bulb','amber','Lampen', `${lampenAan} aan`, 'lampen');
 
   // Energie: verbruik en opwek in één kaart
@@ -1876,6 +1902,62 @@ async function bewonerActie(actie){
   else { bwMelding = 'Aangepast'; setTimeout(laadBewoners, 1500); }
   tekenBewoners(); tekenBewonerPaneel();
 }
+
+/* ── Beweging: alle zones met hun bewegingssensoren, actief bovenaan ── */
+let bwgOpen = false, bwgZoneTimer = null;
+const isBewegingsSensor = d => heeft(d,'alarm_motion') && !['camera','doorbell'].includes(d.class);
+function bewegingPerZone(){
+  const per = {};
+  for(const d of Object.values(DEVS).filter(isBewegingsSensor)) (per[d.zone] ||= []).push(d);
+  return per;
+}
+function zoneActief(id, sensoren = []){
+  return sensoren.some(d => cap(d,'alarm_motion') === true && d.available !== false) || ZONES[id]?.active === true;
+}
+function bewegingSamenvatting(){
+  const per = bewegingPerZone(), ids = new Set([...Object.keys(per), ...Object.keys(ZONES).filter(id => ZONES[id]?.active === true && ZONES[id]?.parent)]);
+  const actief = [...ids].filter(id => zoneActief(id, per[id] || [])).map(id => zoneNaam(id).replace(/^\d+(\.\d+)*\.?\s+/, ''));
+  return { actief:actief.length, namen:actief, sensoren:Object.values(per).flat().length };
+}
+const sindsTekst = t => {
+  const ms = typeof t === 'number' ? t : Date.parse(t || ''); if(isNaN(ms)) return '';
+  const min = Math.round((Date.now() - ms) / 60000);
+  return min < 1 ? 'zojuist' : min < 60 ? `${min} min geleden` : min < 24 * 60 ? `om ${new Date(ms).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' })}`
+    : new Date(ms).toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' });
+};
+function tekenBewegingPaneel(){
+  if(!bwgOpen) return;
+  const per = bewegingPerZone();
+  // alle zones behalve "Thuis" zelf; verdiepingen (zones met kinderen) worden kopjes
+  const alle = Object.values(ZONES).filter(z => z.parent);
+  const heeftKind = id => alle.some(z => z.parent === id);
+  const bladeren = alle.filter(z => !heeftKind(z.id) || per[z.id]);
+  const groepNaam = z => heeftKind(z.parent) || !ZONES[z.parent]?.parent ? (ZONES[z.parent]?.parent ? ZONES[z.parent].name : 'Buiten en overig') : 'Overig';
+  const rij = z => {
+    const sensoren = per[z.id] || [], actief = zoneActief(z.id, sensoren);
+    const laatst = sensoren.map(d => d.capabilitiesObj?.alarm_motion?.lastUpdated).filter(Boolean).sort().pop() || ZONES[z.id]?.activeLastUpdated;
+    const sub = actief ? 'Beweging nu' : sensoren.length ? `Rustig${laatst ? ' · ' + sindsTekst(laatst) : ''}` : 'Geen bewegingssensor';
+    return `<div class="bwg-rij ${actief ? 'actief' : ''} ${sensoren.length ? '' : 'zonder'}">
+      <span class="bwg-stip"></span><div class="grow"><b>${esc(z.name.replace(/^\d+(\.\d+)*\.?\s+/, ''))}</b><small>${esc(sub)}</small>
+      ${sensoren.length > 1 ? `<small class="bwg-sensoren">${sensoren.map(d => `${cap(d,'alarm_motion') ? '●' : '○'} ${esc(d.name.trim())}`).join(' · ')}</small>` : ''}</div>
+      ${sensoren.some(d => d.available === false) ? '<span class="warn">offline</span>' : ''}</div>`;
+  };
+  const groepen = {};
+  for(const z of bladeren) (groepen[groepNaam(z)] ||= []).push(z);
+  const volgorde = Object.keys(groepen).sort((a, b) => (a === 'Buiten en overig') - (b === 'Buiten en overig') || a.localeCompare(b, 'nl', { numeric:true }));
+  const actief = bladeren.filter(z => zoneActief(z.id, per[z.id] || []));
+  const B = bewegingSamenvatting();
+  $('bwgSub').textContent = B.actief ? `${B.actief} ${B.actief === 1 ? 'zone' : 'zones'} actief · ${B.sensoren} sensoren` : `Overal rustig · ${B.sensoren} sensoren`;
+  $('bwgLijst').innerHTML = (actief.length ? `<div class="sec-label">Nu actief</div><div class="col" style="gap:6px">${actief.map(rij).join('')}</div>` : '')
+    + volgorde.map(g => `<div class="sec-label">${esc(g.replace(/^\d+\.\s*/, ''))}</div><div class="col" style="gap:6px">${
+        groepen[g].sort((a, b) => a.name.localeCompare(b.name, 'nl', { numeric:true })).map(rij).join('')}</div>`).join('');
+}
+function openBeweging(){
+  bwgOpen = true; $('bewegingPaneel').classList.add('on'); tekenBewegingPaneel();
+  laadZones().then(tekenBewegingPaneel);
+  clearInterval(bwgZoneTimer); bwgZoneTimer = setInterval(() => laadZones().then(tekenBewegingPaneel), 15000);   // "zone actief" vers houden
+}
+function sluitBeweging(){ bwgOpen = false; clearInterval(bwgZoneTimer); $('bewegingPaneel').classList.remove('on'); }
 
 /* ── Wat is er nieuw ── */
 let nwOpen = false;
@@ -3036,7 +3118,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenCameras(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenCameras(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -3167,6 +3249,7 @@ document.addEventListener('click', e => {
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
+  if(bwgOpen && (e.target === $('bewegingPaneel') || e.target.closest('[data-bwg-sluit]'))) return sluitBeweging();
   if(bwOpen && (e.target === $('bewonerPaneel') || e.target.closest('[data-bw-sluit]'))) return sluitBewoner();
   const bwa = e.target.closest('[data-bwactie]'); if(bwa) return bewonerActie(bwa.dataset.bwactie);
   const bw = e.target.closest('#bewoners [data-bewoner]'); if(bw) return openBewoner(bw.dataset.bewoner);
@@ -3207,12 +3290,13 @@ document.addEventListener('click', e => {
   if(t.dataset.acmode) return zetModus(t.dataset.ac, t.dataset.acmode);
   if(t.dataset.temp)  return temperatuur(t.dataset.temp, parseFloat(t.dataset.stap));
   if(t.dataset.page)  return goPage(t.dataset.page, t);
-  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat, 'claude':openClaude, 'nieuw':openNieuw, 'media':openMedia,
+  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat, 'beweging':openBeweging, 'claude':openClaude, 'nieuw':openNieuw, 'media':openMedia,
      'sluit':closeCfg, 'opslaan':saveCfg, 'lampen':openLampen, 'zone-aanuit':zoneAanUit,
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && nwOpen) return sluitNieuw();
+  if(e.key === 'Escape' && bwgOpen) return sluitBeweging();
   if(e.key === 'Escape' && bwOpen) return sluitBewoner();
   if(e.key === 'Escape' && stOpen) return sluitStof();
   if(e.key === 'Escape' && klOpen) return sluitKlimaat();
@@ -3622,7 +3706,7 @@ verversApparaten(); setInterval(verversApparaten, POLL_APPARATEN_MS);
 laadBewoners(); setInterval(laadBewoners, 30000);
 verversVariabelen(); setInterval(verversVariabelen, POLL_VARIABELEN_MS);
 laadEnergie(true); setInterval(() => laadEnergie(true), 5 * 60000);   // grafieken elke 5 minuten
-laadZones(); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
+laadZones().then(tekenLinks); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
 setInterval(() => { if($('page-systeem').classList.contains('on')) laadSysteem(true); }, 5 * 60000);   // namen van ruimtes en moods
 </script>
 </body>
