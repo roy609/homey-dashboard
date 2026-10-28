@@ -672,6 +672,8 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .rg-radar { margin-top:14px; border-radius:12px; overflow:hidden; background:#0b1a3a; text-align:center; }
 .rg-radar img { width:100%; max-width:520px; display:block; margin:0 auto; }
 .rg-regio iframe { display:block; width:550px; max-width:100%; height:512px; margin:0 auto; border:0; background:#0b1a3a; }
+.statusbar h1.met-icoon { display:flex; align-items:center; gap:10px; }
+.titel-icoon { width:34px; height:34px; border-radius:9px; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,.35); }
 .tarief-let { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px; border-radius:12px; background:var(--amber-dim, rgba(245,165,36,.12)); border:1px solid rgba(245,165,36,.45); color:var(--amber); font-size:var(--fs-sm); font-weight:600; }
 .tarief-let svg { width:18px; height:18px; flex-shrink:0; }
 .zone-moods { margin-top:6px; }
@@ -839,7 +841,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <!-- ═══════════ HOOFDDASHBOARD ═══════════ -->
   <section class="page on" id="page-home">
     <div class="statusbar">
-      <div class="kop-links"><h1>Hoofddashboard</h1><div class="bewoners" id="bewoners"></div></div>
+      <div class="kop-links"><h1 class="met-icoon"><img class="titel-icoon" id="titelIcoon" alt="">Hoofddashboard</h1><div class="bewoners" id="bewoners"></div></div>
       <div class="top-rechts"><div class="top-knoppen" id="huisKaarten"></div>
       <span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div>
     </div>
@@ -1306,7 +1308,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '90';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.', 'Regen: in de huiskaart staat onder het weer of het droog blijft of wanneer het gaat regenen (Buienradar, komende 2 uur). Tik op het weer voor een grafiek van de komende 2 uur, de Buienradar-kaart van de regio (ingesloten) en het radarbeeld van Nederland.' ] },
+  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.', 'Regen: in de huiskaart staat onder het weer of het droog blijft of wanneer het gaat regenen (Buienradar, komende 2 uur). Tik op het weer voor een grafiek van de komende 2 uur, de Buienradar-kaart van de regio (ingesloten) en het radarbeeld van Nederland.', 'Voor de titel Hoofddashboard staat nu het huisjes-icoon van de favoriet.' ] },
   { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.', 'Hoofddashboard: linksboven staat nu het huis van het tabblad Energie, met de energielijnen, klok en weer. Het verbruik van het huis kleurt mee (groen bij teruglevering, daarna geel, oranje, rood). Net, huis en zon staan gelijk verdeeld. Tik erop voor de energiepagina.', 'Klimaat, Media, Beweging en Lampen staan als ronde knoppen in de bovenbalk.' ] },
   { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
   { v:'87', datum:'28-10-2026', punten:[ 'Camera\'s: na "Nieuw beeld", aanbellen of een gebeurtenis wordt het beeld een paar keer opnieuw opgehaald, en verder elke minuut (in de grote weergave elke 10 s). De eufy-app past de tijd van het beeld in Homey niet aan, waardoor het dashboard een nieuwe snapshot niet opmerkte.', 'Onder het beeld staat nu wanneer het is opgehaald; de echte opnametijd staat in het beeld zelf.', 'Het instellingenknopje linksonder is nu een tandwiel (was een soort zonnetje).' ] },
@@ -4549,6 +4551,7 @@ verversApparaten(); setInterval(verversApparaten, POLL_APPARATEN_MS);
 laadBewoners(); setInterval(laadBewoners, 30000);
 verversVariabelen(); setInterval(verversVariabelen, POLL_VARIABELEN_MS);
 laadEnergie(true); setInterval(() => laadEnergie(true), 5 * 60000);   // grafieken elke 5 minuten
+{ const l = document.querySelector('link[rel="apple-touch-icon"]') || document.querySelector('link[rel="icon"]'); if(l && $('titelIcoon')) $('titelIcoon').src = l.href; }   // huisjes-icoon voor de titel
 laadRegen(); setInterval(laadRegen, 5 * 60000);                        // Buienradar: regen komende 2 uur
 laadZones().then(tekenLinks); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
 setInterval(() => { if($('page-systeem').classList.contains('on')) laadSysteem(true); }, 5 * 60000);   // namen van ruimtes en moods
