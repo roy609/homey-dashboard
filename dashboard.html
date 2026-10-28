@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Thuis</title>
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 63 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 64 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -448,6 +448,8 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
   filter:brightness(1.25) drop-shadow(0 0 5px var(--k)); opacity:.85; }
 @keyframes fGolf { from { stroke-dashoffset:100; } to { stroke-dashoffset:0; } }
 #flowSvg.foto .f-basis { stroke-linejoin:round; }
+#flowSvg.foto .f-verdeling rect { fill:rgba(10,14,20,.78); stroke:rgba(255,255,255,.18); }
+#flowSvg.foto .f-verdeling text { font:800 28px var(--sans); fill:#E5E7EB; }
 #flowSvg.foto .f-kabel-buiten { fill:none; stroke:#0B0F14; stroke-width:12; stroke-linecap:round; }
 #flowSvg.foto .f-kabel-binnen { fill:none; stroke:#3A4250; stroke-width:5; stroke-linecap:round; transition:stroke .6s; }
 #flowSvg.foto .f-kabel-binnen.aan { stroke:var(--k); stroke-opacity:.6; }
@@ -962,9 +964,12 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '63';
+const DASHBOARD_VERSIE = '64';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'64', datum:'28-10-2026', punten:[
+    'Energie: de lichtgolven lopen sneller naarmate er meer vermogen doorheen gaat.',
+    'Naar het huis lopen een groene (zon) en een blauwe (net) golf, elk op eigen snelheid: bij 50/50 even snel, met de verdeling in procenten erbij.' ] },
   { v:'63', datum:'28-10-2026', punten:[
     'Knop "Vraag Claude" onderaan het menu: opent de Claude-app (Homey-project) bovenop het dashboard, zodat je direct iets kunt laten aanpassen.' ] },
   { v:'62', datum:'27-10-2026', punten:[
@@ -988,7 +993,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '28-10-2026 07:31';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '28-10-2026 08:08';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -2375,10 +2380,26 @@ function huisSvg(net, zon, auto, s){
   const zonActief = zon > 20, autoActief = auto > 20;
   const KLEUR = { net:'#60A5FA', zon:'#FDE047', groen:'#4ADE80', kabel:'#5EEAD4' };
   // Snelheid: hoe meer vermogen, hoe sneller de lichtgolf door de lijn loopt
-  const duur = w => Math.max(.6, Math.min(4, 4 - Math.log10(Math.max(w, 20)) * 1.0)).toFixed(2);
+  // Snelheid evenredig met het vermogen: 1,5 kW = 1 rondje per seconde, 750 W = per 2 s, 300 W = per 5 s (begrensd tussen 0,5 en 6 s)
+  const duur = w => Math.max(.5, Math.min(6, 1500 / Math.max(w, 1))).toFixed(2);
   const golf = (k, kleur, w, vertraging = 0) => `<path d="${FOTO_PADEN[k]}" pathLength="100" class="f-golf"
       style="--k:${kleur}; animation-duration:${duur(w)}s; animation-delay:-${(duur(w) * vertraging).toFixed(2)}s"/>`;
   const basis = (k, kleur) => `<path d="${FOTO_PADEN[k]}" class="f-basis ${kleur ? 'aan' : ''}" style="${kleur ? '--k:' + kleur : ''}"/>`;
+  /* Huislijn: groene lichtgolf voor de zon en blauwe voor het net, elk met een snelheid naar zijn eigen vermogen.
+     Bij 50/50 lopen ze even snel; komt er meer van het net, dan loopt de blauwe sneller. */
+  const huisSplit = () => {
+    if(huis <= 20) return basis('huis', '');
+    const pZon = Math.round(huisZon / huis * 100);
+    const [x1, y1, x2, y2] = FOTO_PADEN.huis.match(/-?\d+(\.\d+)?/g).map(Number);
+    const L = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / L, ny = (x2 - x1) / L, mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    return basis('huis', huisKleur)
+      + (huisZon > 20 ? golf('huis', KLEUR.groen, huisZon) : '') + (huisNet > 20 ? golf('huis', KLEUR.net, huisNet, .5) : '')
+      + (huisZon > 20 && huisNet > 20 ? `<g class="f-verdeling" transform="translate(${(mx - nx * 44).toFixed(0)} ${(my - ny * 44).toFixed(0)})">
+          <rect x="-138" y="-22" width="276" height="44" rx="22"/>
+          <text x="-10" y="9" style="text-anchor:end;fill:${KLEUR.groen}">☀ ${pZon}%</text><text x="0" y="8" style="text-anchor:middle">·</text>
+          <text x="10" y="9" style="text-anchor:start;fill:${KLEUR.net}">${100 - pZon}% net</text></g>` : '');
+  };
+
   const label = (x, anker, idW, idNaam, naam, kleur) => `
     <text x="${x}" y="78" class="f-val" id="${idW}" style="text-anchor:${anker};${kleur ? 'fill:' + kleur : ''}">–</text>
     <text x="${x}" y="134" class="f-naam" style="text-anchor:${anker}" ${idNaam ? `id="${idNaam}"` : ''}>${naam}</text>`;
@@ -2388,7 +2409,7 @@ function huisSvg(net, zon, auto, s){
   const huisGolven = huis <= 20 ? '' : (huisZon > 20 ? golf('huis', KLEUR.groen, huis) : '') + (huisNet > 20 ? golf('huis', KLEUR.net, huis, .5) : '');
   // Laden: groen als het alleen zon is, blauw als het (deels) van het net komt; bij een mix lopen beide golven
   const autoKleur = !autoActief ? '' : autoNet > 20 && autoZon <= 20 ? KLEUR.net : autoZon > 20 && autoNet <= 20 ? KLEUR.groen : KLEUR.net;
-  const autoGolven = !autoActief ? '' : (autoZon > 20 ? golf('auto', KLEUR.groen, auto) : '') + (autoNet > 20 ? golf('auto', KLEUR.net, auto, .5) : '');
+  const autoGolven = !autoActief ? '' : (autoZon > 20 ? golf('auto', KLEUR.groen, autoZon) : '') + (autoNet > 20 ? golf('auto', KLEUR.net, autoNet, .5) : '');
   const K = KAST, kastAan = afname || terug || zonActief || huis > 20;
 
   return `<svg id="flowSvg" viewBox="0 0 1536 1024" class="foto ${zonActief ? 'zon-aan' : ''}" role="img"
@@ -2410,7 +2431,7 @@ function huisSvg(net, zon, auto, s){
     ${terug ? basis('netUit', KLEUR.groen) + golf('netUit', KLEUR.groen, -net)
             : basis('netIn', afname ? KLEUR.net : '') + (afname ? golf('netIn', KLEUR.net, net) : '')}
     ${basis('zon', zonActief ? KLEUR.zon : '')}${zonActief ? golf('zon', KLEUR.zon, zon) : ''}
-    ${basis('huis', huisKleur)}${huisGolven}
+    ${huisSplit()}
 
     ${autoActief ? `<!-- laadkabel: alleen zichtbaar tijdens laden, zelfde route in alle beelden -->
     <path d="${FOTO_PADEN.auto}" class="f-kabel-buiten"/>
