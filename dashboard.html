@@ -622,6 +622,8 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   font:inherit; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
 .rd-sp.groep { font-weight:800; }
 .rd-scheiding { flex-basis:100%; height:0; }
+.rd-stop1 { display:grid; place-items:center; width:22px; height:22px; margin:0 -6px 0 2px; border-radius:50%; background:rgba(242,84,91,.18); color:var(--red); }
+.rd-stop1 svg { width:12px; height:12px; }
 .rd-sp.on { border-color:var(--purple); background:rgba(167,139,250,.16); color:var(--text-primary); }
 .rd-sp[disabled] { opacity:.4; }
 .rd-eq { display:inline-flex; gap:2px; align-items:flex-end; height:12px; }
@@ -1035,9 +1037,9 @@ const CONFIG = {
   // Radio: zenders (TuneIn, via de Chromecast-app in Homey) en de speakers waarop je kunt afspelen
   radio: {
     zenders: [
-      { naam:'Qmusic',    kleur:'#E4002B', station:{ id:'s87683',  name:'Qmusic',       image:'http://cdn-profiles.tunein.com/s87683/images/logoq.png' } },
-      { naam:'JOE',       kleur:'#F59E0B', station:{ id:'s307829', name:'JOE Nederland', image:'http://cdn-profiles.tunein.com/s307829/images/logoq.png' } },
-      { naam:'Sky Radio', kleur:'#2563EB', station:{ id:'s9067',   name:'Sky Radio',    image:'http://cdn-profiles.tunein.com/s9067/images/logoq.png' } },
+      { naam:'Qmusic',    kleur:'#E4002B', herken:['qmusic','q sounds'], station:{ id:'s87683',  name:'Qmusic',       image:'http://cdn-profiles.tunein.com/s87683/images/logoq.png' } },
+      { naam:'JOE',       kleur:'#F59E0B', herken:['joe'], station:{ id:'s307829', name:'JOE Nederland', image:'http://cdn-profiles.tunein.com/s307829/images/logoq.png' } },
+      { naam:'Sky Radio', kleur:'#2563EB', herken:['sky radio','juke'], station:{ id:'s9067',   name:'Sky Radio',    image:'http://cdn-profiles.tunein.com/s9067/images/logoq.png' } },
     ],
     // Eén keuze tegelijk: zo speelt alles via één cast en lopen speakers in een groep altijd synchroon.
     // Meerdere ruimtes samen? Maak in de Google Home-app een speakergroep; die verschijnt dan in Homey en kan hier bij.
@@ -1135,7 +1137,8 @@ const DASHBOARD_VERSIE = '73';
 const WIJZIGINGEN = [
   { v:'73', datum:'28-10-2026', punten:[
     'Radio: Achtertuin en "Overal" (met de buitenspeakers) zijn weg uit de keuze.',
-    'Radio: je kiest nu één ruimte of groep, zodat alles precies tegelijk speelt (geen galm meer). Nieuwe groep erbij: Werk + badkamer.' ] },
+    'Radio: je kiest nu één ruimte of groep, zodat alles precies tegelijk speelt (geen galm meer). Nieuwe groep erbij: Werk + badkamer.',
+    'Radio: toont nu correct wat er speelt en waar; per speaker een rood kruisje om alleen die te stoppen, en "Alles stoppen" stopt echt alles.' ] },
   { v:'72', datum:'28-10-2026', punten:[
     'Ververs-knop naast de versie (linksonder): laadt direct de nieuwste versie, zonder op de automatische controle te wachten.' ] },
   { v:'71', datum:'28-10-2026', punten:[
@@ -2134,14 +2137,32 @@ try { rdKeuze = { ...rdKeuze, ...JSON.parse(localStorage.getItem('dashboard_radi
 rdKeuze.speakers = rdKeuze.speakers.filter(id => CONFIG.radio.speakers.some(sp => sp.id === id)).slice(0, 1);
 if(!rdKeuze.speakers.length) rdKeuze.speakers = [CONFIG.radio.speakers[0].id];
 const bewaarRadio = () => { try { localStorage.setItem('dashboard_radio', JSON.stringify(rdKeuze)); } catch(e){} };
-const zenderVan = d => { const t = [cap(d,'speaker_artist'), cap(d,'speaker_track')].join(' ').toLowerCase();
-  return CONFIG.radio.zenders.find(z => t.includes(z.naam.toLowerCase().split(' ')[0])) || null; };
+/* Welke zender speelt er? Eerst wat het dashboard zelf heeft gestart (Chromecast meldt vaak de programmanaam, niet de zender),
+   anders herkennen aan de tekst. Speelt de speaker iets anders, dan tonen we die titel. */
+let rdGestart = {};                                        // speaker-id → zender-index
+try { rdGestart = JSON.parse(localStorage.getItem('dashboard_radio_gestart') || '{}'); } catch(e){}
+const bewaarGestart = () => { try { localStorage.setItem('dashboard_radio_gestart', JSON.stringify(rdGestart)); } catch(e){} };
+const zenderVan = d => {
+  if(rdGestart[d.id] != null && CONFIG.radio.zenders[rdGestart[d.id]]) return CONFIG.radio.zenders[rdGestart[d.id]];
+  const t = [cap(d,'speaker_artist'), cap(d,'speaker_track'), cap(d,'speaker_album')].join(' ').toLowerCase();
+  return CONFIG.radio.zenders.find(z => (z.herken || [z.naam.toLowerCase()]).some(w => t.includes(w))) || null;
+};
+const watSpeelt = d => zenderVan(d)?.naam || cap(d,'speaker_track') || cap(d,'speaker_artist') || 'iets';
+/* Alles wat nu speelt op de radio-speakers (ook als het niet via het dashboard is gestart) */
 function radioSpelend(){
-  return CONFIG.radio.speakers.map(sp => ({ sp, d:dev(sp.id) })).filter(({ d }) => d && cap(d,'speaker_playing') === true && zenderVan(d));
+  const nu = CONFIG.radio.speakers.map(sp => ({ sp, d:dev(sp.id) })).filter(({ d }) => d && d.available !== false && cap(d,'speaker_playing') === true);
+  // speaker die niet meer speelt: onthouden zender vergeten
+  for(const id of Object.keys(rdGestart)) if(!nu.some(x => x.sp.id === id)){ delete rdGestart[id]; bewaarGestart(); }
+  return nu;
 }
+const spelendTekst = nu => {
+  const per = {};
+  nu.forEach(({ sp, d }) => (per[watSpeelt(d)] ||= []).push(sp.naam));
+  return Object.entries(per).map(([w, l]) => `${w} op ${l.join(', ')}`).join(' · ');
+};
 function radioTegelHtml(t){
   const nu = radioSpelend();
-  const staat = nu.length ? `${zenderVan(nu[0].d).naam} · ${nu.map(x => x.sp.naam).join(', ')}` : 'Uit · tik om te kiezen';
+  const staat = nu.length ? spelendTekst(nu).replace(' op ', ' · ') : 'Uit · tik om te kiezen';
   return `<div class="card tile ${nu.length ? 'on' : ''}" data-tegel="radio" data-soort="radio">
     <div class="t-top"><div class="ico">${ic('radio')}</div><div class="pwr">${ic('rechts')}</div></div>
     <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">${esc(staat)}</div></div></div>`;
@@ -2149,7 +2170,7 @@ function radioTegelHtml(t){
 function tekenRadioPaneel(){
   if(!rdOpen) return;
   const R = CONFIG.radio, nu = radioSpelend();
-  $('rdSub').textContent = nu.length ? `${zenderVan(nu[0].d).naam} speelt op ${nu.map(x => x.sp.naam).join(', ')}` : 'Er speelt nu geen radio';
+  $('rdSub').textContent = nu.length ? `Speelt: ${spelendTekst(nu)}` : 'Er speelt nu niets';
   const kies = R.speakers.filter(sp => dev(sp.id));
   const vol = rdKeuze.speakers.map(id => cap(dev(id),'volume_set')).find(v => typeof v === 'number');
   $('rdLijst').innerHTML = `
@@ -2159,14 +2180,14 @@ function tekenRadioPaneel(){
     <div class="sec-label">Waar</div>
     <div class="rd-speakers">${kies.map((sp, i) => (i && sp.groep !== kies[i - 1].groep ? '<span class="rd-scheiding"></span>' : '') + (() => { const d = dev(sp.id), aan = rdKeuze.speakers.includes(sp.id), speelt = cap(d,'speaker_playing') === true;
       return `<button class="rd-sp ${aan ? 'on' : ''} ${sp.groep ? 'groep' : ''}" data-rdsp="${esc(sp.id)}" ${d.available === false ? 'disabled' : ''}>
-        ${speelt ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(sp.naam)}</button>`; })()).join('')}</div>
+        ${speelt ? '<i class="rd-eq"><b></b><b></b><b></b></i>' : ''}${esc(sp.naam)}${speelt ? `<span class="rd-stop1" data-rdstop1="${esc(sp.id)}" title="Stop ${esc(sp.naam)}">${ic('kruis')}</span>` : ''}</button>`; })()).join('')}</div>
     <div class="st-noot">Kies één ruimte of groep. Een groep speelt altijd precies tegelijk; meerdere losse speakers naast elkaar lopen net niet gelijk.</div>
     ${typeof vol === 'number' ? `<div class="sec-label">Volume</div>
       <div class="mz-vol">${ic('volume')}<input type="range" min="0" max="100" value="${Math.round(vol * 100)}" id="rdVol" aria-label="Volume"><span>${Math.round(vol * 100)}%</span></div>` : ''}
     <div class="st-acties rd-acties">
       <button class="st-knop primair groot" data-rdactie="start" ${rdKeuze.speakers.length ? '' : 'disabled'}>${ic('play')}<span>${esc(R.zenders[rdKeuze.zender].naam)} afspelen</span></button>
     </div>
-    <div class="st-acties rd-acties"><button class="st-knop groot" data-rdactie="stop" ${nu.length || rdKeuze.speakers.length ? '' : 'disabled'}>${ic('pauze')}<span>Stop${nu.length ? ' (overal waar radio speelt)' : ''}</span></button></div>
+    <div class="st-acties rd-acties"><button class="st-knop groot" data-rdactie="stop" ${nu.length ? '' : 'disabled'}>${ic('pauze')}<span>${nu.length > 1 ? `Alles stoppen (${nu.length})` : 'Stop'}</span></button></div>
     ${rdMelding ? `<div class="st-noot">${esc(rdMelding)}</div>` : ''}`;
 }
 function openRadio(){ rdOpen = true; rdMelding = ''; $('radioPaneel').classList.add('on'); tekenRadioPaneel(); }
@@ -2187,17 +2208,21 @@ async function radioActie(actie){
       if(mis === ids.length) throw res.find(r => r.status === 'rejected').reason;
       if(mis) rdMelding = `${z.naam} gestart, maar ${mis} speaker(s) reageerden niet`;
     }, () => ids.forEach(id => { const c = dev(id).capabilitiesObj; c.speaker_playing = { value:true }; c.speaker_artist = { value:z.naam }; c.speaker_track = { value:z.naam }; }));
+    if(ok){ ids.forEach(id => { rdGestart[id] = rdKeuze.zender; const c = dev(id)?.capabilitiesObj; if(c?.speaker_playing) c.speaker_playing.value = true; }); bewaarGestart(); }
     if(ok && !/maar/.test(rdMelding)) rdMelding = `${z.naam} gestart`;
     if(!ok) rdMelding = 'Starten mislukt — zie de melding bovenaan';
   } else {
-    const ids = [...new Set([...radioSpelend().map(x => x.sp.id), ...rdKeuze.speakers])];
+    const ids = actie.startsWith('stop1:') ? [actie.slice(6)] : radioSpelend().map(x => x.sp.id);
     rdMelding = 'Stoppen…'; tekenRadioPaneel();
     const ok = await opdracht(() => Promise.allSettled(ids.map(id => kaartActie(id, 'stop'))),
-      () => ids.forEach(id => { const c = dev(id)?.capabilitiesObj; if(c?.speaker_playing) c.speaker_playing.value = false; }));
-    rdMelding = ok ? 'Gestopt' : 'Stoppen mislukt';
+      () => {});
+    if(ok) ids.forEach(id => { const c = dev(id)?.capabilitiesObj; if(c?.speaker_playing) c.speaker_playing.value = false; delete rdGestart[id]; });
+    bewaarGestart();
+    const namen = ids.map(id => CONFIG.radio.speakers.find(sp => sp.id === id)?.naam).filter(Boolean).join(', ');
+    rdMelding = ok ? `Gestopt: ${namen}` : 'Stoppen mislukt';
   }
   tekenRadioPaneel(); tekenTegels();
-  [2500, 7000].forEach(ms => setTimeout(verversApparaten, ms));
+  [1500, 4000, 9000].forEach(ms => setTimeout(verversApparaten, ms));
 }
 async function radioVolume(pct){
   const ids = rdKeuze.speakers.filter(id => dev(id));
@@ -3513,6 +3538,7 @@ document.addEventListener('click', e => {
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
   if(rdOpen && (e.target === $('radioPaneel') || e.target.closest('[data-rd-sluit]'))) return sluitRadio();
   const rdz = e.target.closest('[data-rdzender]'); if(rdz) return kiesRadio('zender', rdz.dataset.rdzender);
+  const rd1 = e.target.closest('[data-rdstop1]'); if(rd1) return radioActie('stop1:' + rd1.dataset.rdstop1);
   const rds = e.target.closest('[data-rdsp]'); if(rds) return kiesRadio('sp', rds.dataset.rdsp);
   const rda = e.target.closest('[data-rdactie]'); if(rda) return radioActie(rda.dataset.rdactie);
   if(bwgOpen && (e.target === $('bewegingPaneel') || e.target.closest('[data-bwg-sluit]'))) return sluitBeweging();
