@@ -621,10 +621,16 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .btn.primary { background:var(--amber-dim); border-color:var(--amber-border); color:var(--amber); }
 .moods { display:flex; flex-wrap:wrap; gap:10px; }
 /* Bovenbalk: Klimaat / Media / Beweging / Lampen als ronde knoppen */
-#page-home .statusbar { gap:14px; }
+/* Bovenbalk volgt de kolommen van het bord: knoppen precies boven de middelste kolom */
+/* knoppen beginnen precies boven de middelste kolom en lopen door tot vlak voor de verbindingsmelding */
+#page-home .statusbar { display:grid; grid-template-columns:1.05fr 1.15fr 1fr; gap:18px; }
+#page-home .statusbar .top-rechts { grid-column:2 / 4; display:flex; align-items:center; gap:14px; min-width:0; }
 #page-home #status { flex-shrink:0; }
-.top-knoppen { display:flex; gap:8px; flex:1; justify-content:center; min-width:0; }
-.top-knoppen > .card { flex-direction:row; padding:6px 12px 6px 6px; border-radius:999px; gap:0; min-height:46px; justify-content:center; min-width:0; }
+.top-knoppen { flex:1; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; min-width:0; }
+.top-knoppen > .card { flex-direction:row; padding:5px 8px 5px 5px; border-radius:999px; gap:0; min-height:46px; justify-content:flex-start; min-width:0; }
+.top-knoppen .row, .top-knoppen .grow { min-width:0; }
+.top-knoppen .card-sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:1100px){ #page-home .statusbar { grid-template-columns:1fr; } #page-home .statusbar .top-rechts { grid-column:auto; } }
 .top-knoppen > .card .row { gap:8px; align-items:center; min-width:0; }
 .top-knoppen .ico { width:34px; height:34px; border-radius:50%; flex-shrink:0; }
 .top-knoppen .ico svg { width:17px; height:17px; }
@@ -810,8 +816,8 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <section class="page on" id="page-home">
     <div class="statusbar">
       <div class="kop-links"><h1>Hoofddashboard</h1><div class="bewoners" id="bewoners"></div></div>
-      <div class="top-knoppen" id="huisKaarten"></div>
-      <span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span>
+      <div class="top-rechts"><div class="top-knoppen" id="huisKaarten"></div>
+      <span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div>
     </div>
     <div class="board">
       <!-- Links: huiskaart (energie, klok, weer) en variabelen -->
@@ -1255,9 +1261,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '89';
+const DASHBOARD_VERSIE = '90';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu recht boven de blokken in de middelste kolom en lopen door tot de verbindingsmelding, zodat alle tekst er weer in past.' ] },
   { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.', 'Hoofddashboard: linksboven staat nu het huis van het tabblad Energie, met de energielijnen, klok en weer. Het verbruik van het huis kleurt mee (groen bij teruglevering, daarna geel, oranje, rood). Net, huis en zon staan gelijk verdeeld. Tik erop voor de energiepagina.', 'Klimaat, Media, Beweging en Lampen staan als ronde knoppen in de bovenbalk.' ] },
   { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
   { v:'87', datum:'28-10-2026', punten:[ 'Camera\'s: na "Nieuw beeld", aanbellen of een gebeurtenis wordt het beeld een paar keer opnieuw opgehaald, en verder elke minuut (in de grote weergave elke 10 s). De eufy-app past de tijd van het beeld in Homey niet aan, waardoor het dashboard een nieuwe snapshot niet opmerkte.', 'Onder het beeld staat nu wanneer het is opgehaald; de echte opnametijd staat in het beeld zelf.', 'Het instellingenknopje linksonder is nu een tandwiel (was een soort zonnetje).' ] },
