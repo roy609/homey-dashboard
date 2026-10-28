@@ -1224,9 +1224,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '85';
+const DASHBOARD_VERSIE = '86';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'86', datum:'28-10-2026', punten:[ 'Camera\'s: lukt het ophalen van het nieuwste beeld niet (HTTP 500 van de eufy-app), dan probeert het dashboard het andere beeld (event of snapshot).', 'In de grote weergave zie je per beeld of het ophalen lukte, met de foutmelding van de app erbij.' ] },
   { v:'85', datum:'28-10-2026', punten:[ 'Camera\'s: "Nieuw beeld" en de snapshot bij aanbellen gebruiken nu de actiekaart "Maak Snapshot" van de eufy-app. De knop die het dashboard eerst gebruikte, mag je in Homey niet zetten ("Capability Not Setable"), vandaar de HTTP 500.' ] },
   { v:'84', datum:'28-10-2026', punten:[ 'Camera\'s: mislukt "Nieuw beeld", dan staat de volledige foutmelding van de eufy-app in rood in de grote weergave (in plaats van alleen "HTTP 500"). Het dashboard probeert het dan nog één keer via de actiekaart "Maak Snapshot".' ] },
   { v:'83', datum:'28-10-2026', punten:[ 'Camera\'s: het dashboard toont nu het nieuwste beeld van een camera. De eufy-app heeft een apart event-beeld en snapshot-beeld; voorheen werd altijd het eerste getoond, waardoor een nieuwe snapshot onzichtbaar bleef.', 'In de grote camera-weergave staat een klein regeltje met welke beelden Homey heeft en van wanneer.' ] },
@@ -3928,7 +3929,7 @@ const CAMERA_IDS = [                   // vaste volgorde (eufy, Homey Pro 2026).
   '6f3b6527-77ac-4a65-adac-d3a06d192b8e',   // Camera achtertuin
 ];
 const CAM_MS = 4000, CAM_GROOT_MS = 1500, CAM_OUD_MS = 30000;
-const camUrl = {}, camTijd = {}, camFout = {}, camBezig = {}, camGeladen = {};
+const camUrl = {}, camTijd = {}, camFout = {}, camBezig = {}, camGeladen = {}, camToont = {};
 let camGrootId = null, camLus = null;
 
 /* Alle beeldslots van een apparaat. De eufy-app heeft er twee: het event-beeld (bij beweging/persoon)
@@ -3980,7 +3981,8 @@ function camBeeldHtml(d){
 }
 function camTijdHtml(id){
   if(DEMO()) return 'Demo';
-  const st = DEVS[id] && camStempel(DEVS[id]);
+  const toon = DEVS[id] && camToont[id] && camSlots(DEVS[id]).find(x => x.bron === camToont[id]);
+  const st = toon ? toon.t : DEVS[id] && camStempel(DEVS[id]);   // tijd van het beeld dat je echt ziet
   if(st && camUrl[id]){
     const dt = new Date(st), vandaag = dt.toDateString() === new Date().toDateString();
     return `Laatste gebeurtenis: ${vandaag ? '' : dt.toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' }) + ' '}${tijdStr(st)}${camFout[id] ? ' · ophalen mislukt' : ''}`;
@@ -4017,7 +4019,8 @@ function camSlotsHtml(d){             // kleine regel: welke beelden Homey heeft
   const sl = camSlots(d), kies = camSlot(d);
   const fout = (snapStatus[d.id] || '').startsWith('fout:') ? `<br><small class="cam-slots fout">Snapshot mislukt: ${esc(snapStatus[d.id].slice(5))}</small>` : '';
   if(!sl.length) return '<br><small class="cam-slots">Homey heeft geen beeldslot voor dit apparaat</small>' + fout;
-  return '<br><small class="cam-slots">' + sl.map(s => `${kies && s.bron === kies.bron ? '▶ ' : ''}${esc(s.naam)}: ${s.t ? tijdStr(s.t) + (new Date(s.t).toDateString() === new Date().toDateString() ? '' : ' (' + new Date(s.t).toLocaleDateString('nl-NL', { day:'numeric', month:'short' }) + ')') : 'geen tijd'}`).join(' · ') + '</small>' + fout;
+  const sf = slotFout[d.id] || {}, getoond = camToont[d.id] || (kies && kies.bron);
+  return '<br><small class="cam-slots">' + sl.map(s => `${s.bron === getoond && camUrl[d.id] ? '▶ ' : ''}${esc(s.naam)}: ${s.t ? tijdStr(s.t) + (new Date(s.t).toDateString() === new Date().toDateString() ? '' : ' (' + new Date(s.t).toLocaleDateString('nl-NL', { day:'numeric', month:'short' }) + ')') : 'geen tijd'}${sf[s.bron] ? ' ✗ ' + esc(sf[s.bron]) : ''}`).join(' · ') + '</small>' + fout;
 }
 function tekenCamGroot(){
   const d = DEVS[camGrootId]; if(!d) return sluitCam();
@@ -4027,26 +4030,55 @@ function tekenCamGroot(){
   $('camGrootBeeld').innerHTML = camBeeldHtml(d);
 }
 /* Eén momentopname ophalen (met sleutel), als blob tonen; vorige blob vrijgeven */
+const slotFout = {}, camPauze = {};     // slotFout[id][bron] = melding; camPauze[id] = { sleutel, tot } na mislukken
+async function haalBeeld(bron, signal){
+  const r = await fetch((/^https?:\/\//.test(bron) ? bron : apiBase() + bron) + (bron.includes('?') ? '&' : '?') + 't=' + Date.now(),
+    { headers:{ 'Authorization':'Bearer ' + CFG.token }, signal, cache:'no-store' });
+  if(!r.ok){
+    let msg = 'HTTP ' + r.status;
+    try {                                                  // reden van Homey/eufy-app meenemen (JSON of platte tekst)
+      const t = (await r.text()).trim(); let m = t;
+      try { const j = JSON.parse(t); m = j && (j.error_description || j.error || j.message || ''); } catch(_){}
+      if(m && typeof m === 'object') m = m.message || JSON.stringify(m);
+      if(m) msg += ' – ' + String(m).slice(0, 200);
+    } catch(_){}
+    throw new Error(msg);
+  }
+  const blob = await r.blob();
+  if(!blob.size || !/^image\//.test(blob.type || 'image/')) throw new Error('geen beeld');
+  return blob;
+}
+/* Momentopname ophalen: eerst het nieuwste beeldslot, lukt dat niet dan de andere (eufy: event-beeld/snapshot) */
 async function haalCam(id){
   const d = DEVS[id]; if(!d || camBezig[id] || DEMO() || d.available === false || cap(d,'onoff') === false) return;
-  const bron = camBron(d); if(!bron) return;
-  const st = camStempel(d);
-  if(st && camUrl[id] && camGeladen[id] === st) return;          // eufy: zelfde gebeurtenisbeeld, niet opnieuw ophalen
-  camBezig[id] = true;
+  const sl = camSlots(d).sort((a, b) => (b.t ?? -1) - (a.t ?? -1)); if(!sl.length) return;
+  const sleutel = sl.map(s => s.bron + '@' + (s.t ?? '')).join('|');
+  if(camUrl[id] && camGeladen[id] === sleutel) return;            // niets veranderd sinds het laatst geladen beeld
+  if(camPauze[id] && camPauze[id].sleutel === sleutel && Date.now() < camPauze[id].tot) return;   // na een fout niet elke 4 s opnieuw
+  camBezig[id] = true; slotFout[id] = slotFout[id] || {};
   const stop = new AbortController(), timer = setTimeout(() => stop.abort(), API_TIMEOUT_MS);
+  let gelukt = false;
   try {
-    const r = await fetch((/^https?:\/\//.test(bron) ? bron : apiBase() + bron) + (bron.includes('?') ? '&' : '?') + 't=' + Date.now(),
-      { headers:{ 'Authorization':'Bearer ' + CFG.token }, signal:stop.signal, cache:'no-store' });
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    const blob = await r.blob();
-    if(!blob.size || !/^image\//.test(blob.type || 'image/')) throw new Error('geen beeld');
-    const oud = camUrl[id]; camUrl[id] = URL.createObjectURL(blob); camTijd[id] = Date.now(); camGeladen[id] = st; delete camFout[id];
-    const imgs = document.querySelectorAll(`img[data-camimg="${CSS.escape(id)}"]`);
-    if(imgs.length) imgs.forEach(im => im.src = camUrl[id]);
-    else document.querySelectorAll(`[data-camimg-wacht="${CSS.escape(id)}"]`).forEach(el => el.outerHTML = `<img data-camimg="${esc(id)}" src="${camUrl[id]}" alt="">`);
-    if(oud) setTimeout(() => URL.revokeObjectURL(oud), 2000);
-  } catch(e){ camFout[id] = e.name === 'AbortError' ? 'Camera antwoordt niet' : e.message; }
-  finally {
+    for(const s of sl){
+      try {
+        const blob = await haalBeeld(s.bron, stop.signal);
+        const oud = camUrl[id]; camUrl[id] = URL.createObjectURL(blob); camTijd[id] = Date.now(); camGeladen[id] = sleutel;
+        delete camFout[id]; delete slotFout[id][s.bron]; delete camPauze[id]; camToont[id] = s.bron; gelukt = true;
+        const imgs = document.querySelectorAll(`img[data-camimg="${CSS.escape(id)}"]`);
+        if(imgs.length) imgs.forEach(im => im.src = camUrl[id]);
+        else document.querySelectorAll(`[data-camimg-wacht="${CSS.escape(id)}"]`).forEach(el => el.outerHTML = `<img data-camimg="${esc(id)}" src="${camUrl[id]}" alt="">`);
+        if(oud) setTimeout(() => URL.revokeObjectURL(oud), 2000);
+        break;
+      } catch(e){
+        slotFout[id][s.bron] = e.name === 'AbortError' ? 'camera antwoordt niet' : e.message;
+        if(e.name === 'AbortError') break;
+      }
+    }
+    if(!gelukt){
+      camFout[id] = slotFout[id][sl[0].bron] || 'beeld ophalen mislukt';
+      camPauze[id] = { sleutel, tot:Date.now() + 30000 };
+    }
+  } finally {
     clearTimeout(timer); camBezig[id] = false;
     document.querySelectorAll(`[data-camtijd="${CSS.escape(id)}"]`).forEach(el => el.innerHTML = camTijdHtml(id));
     if(camGrootId === id && DEVS[id]) $('camGrootTijd').innerHTML = camTijdHtml(id) + camSlotsHtml(DEVS[id]);
@@ -4080,7 +4112,7 @@ async function nieuweSnapshot(id){
     if(heeft(d,'CMD_SNAPSHOT')){                       // eufy-app: de knop CMD_SNAPSHOT is niet schrijfbaar ("Capability Not Setable"),
       try {                                            // dus de actiekaart "Maak Snapshot" (action_CMD_SNAPSHOT) direct uitvoeren
         await kaartActie(id, 'action_CMD_SNAPSHOT');
-        zet('ok'); [3000, 8000, 15000, 30000].forEach(ms => setTimeout(verversApparaten, ms)); return;
+        zet('ok'); delete camPauze[id]; [3000, 8000, 15000, 30000].forEach(ms => setTimeout(() => { delete camPauze[id]; verversApparaten(); }, ms)); return;
       } catch(e){ if(/403/.test(e.message)) throw e; knopFout = e; }   // anders: kaart opzoeken in de lijst met actiekaarten
     }
     const k = await zoekSnapKaart(id).catch(() => null);
