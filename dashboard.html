@@ -288,6 +288,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .cam-groot-kop { display:flex; align-items:center; gap:12px; padding:8px 8px 8px 16px; font-weight:700; }
 .cam-groot-kop #camGrootNaam { flex:1; }
 .cam-groot-kop .cam-tijd { font-weight:500; font-size:var(--fs-sm); color:var(--text-muted); }
+.cam-slots { font-size:11px; opacity:.75; font-weight:400; }
 #achterSvg { stroke:none; }
 #achterSvg { width:100%; height:auto; display:block; }
 #achterSvg .f-weer { font-size:30px; font-weight:600; fill:rgba(255,255,255,.85); paint-order:stroke; stroke:rgba(0,0,0,.45); stroke-width:5px; }
@@ -1222,9 +1223,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '82';
+const DASHBOARD_VERSIE = '83';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'83', datum:'28-10-2026', punten:[ 'Camera\'s: het dashboard toont nu het nieuwste beeld van een camera. De eufy-app heeft een apart event-beeld en snapshot-beeld; voorheen werd altijd het eerste getoond, waardoor een nieuwe snapshot onzichtbaar bleef.', 'In de grote camera-weergave staat een klein regeltje met welke beelden Homey heeft en van wanneer.' ] },
   { v:'82', datum:'28-10-2026', punten:[ 'Gordijnen: achter de gordijnen zie je nu een wazig uitzicht op de tuin, gemaakt van een foto van de pui.' ] },
   { v:'81', datum:'28-10-2026', punten:[ 'Tik op de weertekst rechtsonder in de huisfoto (Energie) of tuinfoto (Tuin) voor alle beelden met uitleg wanneer je welke ziet; het huidige beeld is gemarkeerd.' , 'Energie: de grafieken Stroom en Zonne-energie waren leeg omdat Homey het vermogen van de P1-meter en omvormer niet meer onder measure_power logt. Ze gebruiken nu de vermogenslogs die wél gevuld worden.' ] },
   { v:'80', datum:'28-10-2026', punten:[ 'Media en Muziek gebruiken nu dezelfde regel voor "speelt": radio die je via Muziek start, telt ook in Media mee (met de zendernaam).' ] },
@@ -3920,19 +3922,31 @@ const CAM_MS = 4000, CAM_GROOT_MS = 1500, CAM_OUD_MS = 30000;
 const camUrl = {}, camTijd = {}, camFout = {}, camBezig = {}, camGeladen = {};
 let camGrootId = null, camLus = null;
 
-function camBron(d){
-  // Homey-versies verschillen: images = [{ id, imageObj:{ id, url } }] of [{ id, imageId }] of imageObj als id-tekst
+/* Alle beeldslots van een apparaat. De eufy-app heeft er twee: het event-beeld (bij beweging/persoon)
+   en het snapshot-beeld (alleen na "Maak snapshot"). Homey-versies verschillen in de vorm van images. */
+function camSlots(d){
   const lijst = Array.isArray(d.images) ? d.images : Object.values(d.images || {});
+  const uit = [];
   for(const im of lijst){
     if(!im) continue;
     const o = im.imageObj ?? im.image ?? null;
-    if(o && typeof o === 'object' && (o.url || o.id)) return o.url || `/api/image/${o.id}`;
-    if(typeof o === 'string') return `/api/image/${o}`;
-    if(im.imageId) return `/api/image/${im.imageId}`;
-    if(im.url) return im.url;
+    let bron = null;
+    if(o && typeof o === 'object' && (o.url || o.id)) bron = o.url || `/api/image/${o.id}`;
+    else if(typeof o === 'string') bron = `/api/image/${o}`;
+    else if(im.imageId) bron = `/api/image/${im.imageId}`;
+    else if(im.url) bron = im.url;
+    if(!bron) continue;
+    const ruw = o && typeof o === 'object' ? o.lastUpdated : null, t = typeof ruw === 'number' ? ruw : Date.parse(ruw || '');
+    uit.push({ naam:String(im.title || im.id || (o && o.id) || 'beeld'), bron, t:isNaN(t) ? null : t });
   }
-  return null;
+  return uit;
 }
+/* Het meest recent bijgewerkte slot; zonder tijdstempels het eerste */
+function camSlot(d){
+  const sl = camSlots(d); if(!sl.length) return null;
+  return sl.reduce((best, s) => (s.t ?? -1) > (best.t ?? -1) ? s : best, sl[0]);
+}
+function camBron(d){ const s = camSlot(d); return s ? s.bron : null; }
 function camLijst(){
   const alle = Object.values(DEVS);
   if(CAMERA_IDS.length && !DEMO()) return CAMERA_IDS.map(id => DEVS[id]).filter(Boolean);
@@ -3943,11 +3957,7 @@ function camLijst(){
     .sort((a, b) => rang(a) - rang(b) || a.name.localeCompare(b.name, 'nl'));
 }
 /* Moment waarop de app het beeld in Homey voor het laatst heeft vernieuwd (eufy: bij beweging/persoon). */
-function camStempel(d){
-  const im = (d.images || []).find(i => i && i.imageObj), t = im && im.imageObj.lastUpdated;
-  const ms = typeof t === 'number' ? t : Date.parse(t || '');
-  return isNaN(ms) ? null : ms;
-}
+function camStempel(d){ const s = camSlot(d); return s ? s.t : null; }
 const camIcoon = d => d.class === 'doorbell' || /deurbel|doorbell/i.test(d.name) ? 'door' : 'camera';
 const tijdStr = t => new Date(t).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
 
@@ -3993,10 +4003,16 @@ function tekenCameras(){
   $('camStand').lastElementChild.textContent = DEMO() ? 'Demo' : `${n} van ${lijst.length} online`;
   if(camGrootId) tekenCamGroot();
 }
+function camSlotsHtml(d){             // kleine regel: welke beelden Homey heeft en van wanneer (helpt bij storingen)
+  if(DEMO()) return '';
+  const sl = camSlots(d), kies = camSlot(d);
+  if(!sl.length) return '<br><small class="cam-slots">Homey heeft geen beeldslot voor dit apparaat</small>';
+  return '<br><small class="cam-slots">' + sl.map(s => `${kies && s.bron === kies.bron ? '▶ ' : ''}${esc(s.naam)}: ${s.t ? tijdStr(s.t) + (new Date(s.t).toDateString() === new Date().toDateString() ? '' : ' (' + new Date(s.t).toLocaleDateString('nl-NL', { day:'numeric', month:'short' }) + ')') : 'geen tijd'}`).join(' · ') + '</small>';
+}
 function tekenCamGroot(){
   const d = DEVS[camGrootId]; if(!d) return sluitCam();
   $('camGrootNaam').textContent = d.name.trim();
-  $('camGrootTijd').innerHTML = camTijdHtml(d.id);
+  $('camGrootTijd').innerHTML = camTijdHtml(d.id) + camSlotsHtml(d);
   $('camGrootSnap').innerHTML = snapKnop(d);
   $('camGrootBeeld').innerHTML = camBeeldHtml(d);
 }
@@ -4023,7 +4039,7 @@ async function haalCam(id){
   finally {
     clearTimeout(timer); camBezig[id] = false;
     document.querySelectorAll(`[data-camtijd="${CSS.escape(id)}"]`).forEach(el => el.innerHTML = camTijdHtml(id));
-    if(camGrootId === id) $('camGrootTijd').innerHTML = camTijdHtml(id);
+    if(camGrootId === id && DEVS[id]) $('camGrootTijd').innerHTML = camTijdHtml(id) + camSlotsHtml(DEVS[id]);
   }
 }
 /* ── Nieuwe snapshot: voert de "Take Snapshot"-actiekaart van de eufy-app uit voor deze camera.
