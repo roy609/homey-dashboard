@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 74 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 75 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -137,6 +137,9 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .tile.on { border-color:var(--amber-border); background:linear-gradient(180deg, var(--amber-dim), var(--bg-card)); }
 .tile.on .ico, .tile.on .pwr { background:var(--amber-dim); color:var(--amber); }
 .tile.on .t-state { color:var(--amber); }
+.tile.tile-radio.on { border-color:rgba(167,139,250,.45); background:linear-gradient(180deg, rgba(167,139,250,.16), var(--bg-card)); }
+.tile.tile-radio.on .ico, .tile.tile-radio.on .pwr { background:rgba(167,139,250,.16); color:var(--purple); }
+.tile.tile-radio.on .t-state { color:var(--purple); }
 .tile.busy { opacity:.6; }
 .tile.flash { border-color:var(--blue); }
 .tile.off-line { cursor:default; }
@@ -1133,9 +1136,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '74';
+const DASHBOARD_VERSIE = '75';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'75', datum:'28-10-2026', punten:[ 'De tegel "Radio" kleurt paars als er radio speelt (zelfde kleur als Media).' ] },
   { v:'74', datum:'28-10-2026', punten:[
     'Radio: speakers die volgens Homey nog "spelen" maar stil zijn (titel "Homey") tellen niet meer mee.',
     'Radio: het rode stopknopje is nu een eigen, grotere knop naast de speaker en werkt betrouwbaar.' ] },
@@ -2181,7 +2185,7 @@ const spelendTekst = nu => {
 function radioTegelHtml(t){
   const nu = radioSpelend();
   const staat = nu.length ? spelendTekst(nu).replace(' op ', ' · ') : 'Uit · tik om te kiezen';
-  return `<div class="card tile ${nu.length ? 'on' : ''}" data-tegel="radio" data-soort="radio">
+  return `<div class="card tile tile-radio ${nu.length ? 'on' : ''}" data-tegel="radio" data-soort="radio">
     <div class="t-top"><div class="ico">${ic('radio')}</div><div class="pwr">${ic('rechts')}</div></div>
     <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">${esc(staat)}</div></div></div>`;
 }
