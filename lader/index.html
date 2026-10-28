@@ -21,12 +21,16 @@
    Geen internet? Dan de laatst opgehaalde versie uit deze browser. */
 (async function(){
   var BRON = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/dashboard.html';
+  var API  = 'https://api.github.com/repos/Roy609/homey-dashboard/contents/dashboard.html?ref=main';   // altijd de nieuwste (geen 5 min cache)
   var SLEUTEL = 'dashboard_kopie';
   var html = null;
   try {
-    var r = await fetch(BRON + '?t=' + Date.now(), { cache:'no-store' });
+    var r = await fetch(API, { headers:{ Accept:'application/vnd.github.raw' }, cache:'no-store' });
+    if(!r.ok) r = await fetch(BRON + '?t=' + Date.now(), { cache:'no-store' });     // terugval (bijv. bij te veel verzoeken)
     if(r.ok){ html = await r.text(); try { localStorage.setItem(SLEUTEL, html); } catch(e){} }
-  } catch(e){}
+  } catch(e){
+    try { var r2 = await fetch(BRON + '?t=' + Date.now(), { cache:'no-store' }); if(r2.ok){ html = await r2.text(); try { localStorage.setItem(SLEUTEL, html); } catch(e2){} } } catch(e3){}
+  }
   if(!html){ try { html = localStorage.getItem(SLEUTEL); } catch(e){} }
   if(!html){
     document.getElementById('melding').textContent = 'Kan het dashboard niet ophalen (geen internet?). Probeer het straks opnieuw.';

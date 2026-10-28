@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0F1319">
 
 <meta name="color-scheme" content="dark light">
-<!-- Homey-wanddashboard voor Roy — versie 71 (27 oktober 2026)
+<!-- Homey-wanddashboard voor Roy — versie 72 (27 oktober 2026)
      Gebaseerd op startpagina.html uit de handleiding.
      - Zonder instellingen: demo met een momentopname van je echte apparaten.
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
@@ -72,6 +72,13 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .nav-item.active .ic { background:var(--amber-dim); color:var(--amber); }
 .sidebar.collapsed .nav-label { display:none; }
 .nav-spacer { flex:1; }
+.nav-versie-rij { display:flex; align-items:center; justify-content:center; gap:2px; flex-wrap:wrap; }
+.nav-ververs { width:30px; height:30px; border-radius:50%; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-muted);
+  display:grid; place-items:center; cursor:pointer; margin-bottom:6px; }
+.nav-ververs svg { width:15px; height:15px; }
+.nav-ververs:active { transform:scale(.9); }
+.nav-ververs.draait svg { animation:draai .8s linear infinite; }
+@keyframes draai { to { transform:rotate(360deg); } }
 .nav-versie { cursor:pointer; border-radius:8px; }
 .nav-versie:active { background:var(--bg-inset); }
 #nieuwPaneel .modal { max-width:540px; }
@@ -696,7 +703,10 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <div class="nav-item" data-actie="thema"><span class="ic" data-icon="moon"></span><span class="nav-label">Donker / licht</span></div>
   <div class="nav-item" data-actie="claude" title="Claude openen om het dashboard aan te passen"><span class="ic" data-icon="chat"></span><span class="nav-label">Vraag Claude</span></div>
   <div class="nav-item" data-actie="instellingen"><span class="ic" data-icon="gear"></span><span class="nav-label">Instellingen</span></div>
-  <div class="nav-versie" id="navVersie" data-actie="nieuw" role="button" title="Dashboardversie">v–</div>
+  <div class="nav-versie-rij">
+    <div class="nav-versie" id="navVersie" data-actie="nieuw" role="button" title="Dashboardversie">v–</div>
+    <button class="nav-ververs" data-actie="ververs" title="Nieuwste versie laden" aria-label="Nieuwste versie laden"><span class="ic" data-icon="ververs"></span></button>
+  </div>
 </nav>
 
 <main class="main">
@@ -1117,9 +1127,11 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '71';
+const DASHBOARD_VERSIE = '72';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'72', datum:'28-10-2026', punten:[
+    'Ververs-knop naast de versie (linksonder): laadt direct de nieuwste versie, zonder op de automatische controle te wachten.' ] },
   { v:'71', datum:'28-10-2026', punten:[
     'Nieuwe tegel "Radio": kies Qmusic, JOE of Sky Radio, kies op welke speakers, en start of stop; met volume.' ] },
   { v:'70', datum:'28-10-2026', punten:[
@@ -1168,7 +1180,8 @@ const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/mai
 async function checkNieuweVersie(){
   if(!window.__VIA_LADER) return;
   try {
-    const r = await fetch(GITHUB_RAW + 'versie.txt?t=' + Date.now(), { cache:'no-store' });
+    let r = await fetch('https://api.github.com/repos/Roy609/homey-dashboard/contents/versie.txt?ref=main', { headers:{ Accept:'application/vnd.github.raw' }, cache:'no-store' }).catch(() => null);
+    if(!r || !r.ok) r = await fetch(GITHUB_RAW + 'versie.txt?t=' + Date.now(), { cache:'no-store' });
     if(!r.ok) return;
     const v = (await r.text()).trim();
     if(v && v !== DASHBOARD_VERSIE) location.reload();
@@ -1243,6 +1256,7 @@ const ICONS = {
   herhaal:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
   volume:'<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
   chat:'<path d="M10 3.5c.6 3.6 2.4 5.4 6 6-3.6.6-5.4 2.4-6 6-.6-3.6-2.4-5.4-6-6 3.6-.6 5.4-2.4 6-6z"/><path d="M18 14.5c.3 1.7 1.1 2.5 2.8 2.8-1.7.3-2.5 1.1-2.8 2.8-.3-1.7-1.1-2.5-2.8-2.8 1.7-.3 2.5-1.1 2.8-2.8z"/>',
+  ververs:'<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
   plug:'<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8z"/>',
 };
 const ic = n => `<svg viewBox="0 0 24 24">${ICONS[n] || ICONS.bulb}</svg>`;
@@ -2181,6 +2195,9 @@ async function radioVolume(pct){
   ids.forEach(id => { const c = dev(id).capabilitiesObj; if(c.volume_set) c.volume_set.value = pct / 100; });
   await opdracht(() => Promise.allSettled(ids.map(id => zetCap(id, 'volume_set', pct / 100))));
 }
+
+/* ── Verversen: pagina opnieuw laden. De lader haalt dan de nieuwste versie direct bij GitHub (via de API, zonder 5 minuten cache). ── */
+function verversNu(){ document.querySelector('.nav-ververs')?.classList.add('draait'); setTimeout(() => location.reload(), 150); }
 
 /* ── Wat is er nieuw ── */
 let nwOpen = false;
@@ -3532,7 +3549,7 @@ document.addEventListener('click', e => {
   if(t.dataset.acmode) return zetModus(t.dataset.ac, t.dataset.acmode);
   if(t.dataset.temp)  return temperatuur(t.dataset.temp, parseFloat(t.dataset.stap));
   if(t.dataset.page)  return goPage(t.dataset.page, t);
-  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'klimaat':openKlimaat, 'beweging':openBeweging, 'claude':openClaude, 'nieuw':openNieuw, 'media':openMedia,
+  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'ververs':verversNu, 'klimaat':openKlimaat, 'beweging':openBeweging, 'claude':openClaude, 'nieuw':openNieuw, 'media':openMedia,
      'sluit':closeCfg, 'opslaan':saveCfg, 'lampen':openLampen, 'zone-aanuit':zoneAanUit,
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
