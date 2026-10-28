@@ -622,22 +622,31 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .moods { display:flex; flex-wrap:wrap; gap:10px; }
 /* Bovenbalk: Klimaat / Media / Beweging / Lampen als ronde knoppen */
 /* Bovenbalk volgt de kolommen van het bord: knoppen precies boven de middelste kolom */
-/* knoppen beginnen precies boven de middelste kolom en lopen door tot vlak voor de verbindingsmelding */
+/* knoppen precies boven de middelste kolom (zelfde breedte als de tegels eronder), melding rechts in de derde kolom */
 #page-home .statusbar { display:grid; grid-template-columns:1.05fr 1.15fr 1fr; gap:18px; }
-#page-home .statusbar .top-rechts { grid-column:2 / 4; display:flex; align-items:center; gap:14px; min-width:0; }
-#page-home #status { flex-shrink:0; }
-.top-knoppen { flex:1; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; min-width:0; }
+#page-home .statusbar .top-rechts { display:contents; }
+#page-home #status { justify-self:end; flex-shrink:0; }
+.top-knoppen { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; min-width:0; container-type:inline-size; }
 .top-knoppen > .card { flex-direction:row; padding:5px 8px 5px 5px; border-radius:999px; gap:0; min-height:46px; justify-content:flex-start; min-width:0; }
 .top-knoppen .row, .top-knoppen .grow { min-width:0; }
 .top-knoppen .card-sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-@media (max-width:1100px){ #page-home .statusbar { grid-template-columns:1fr; } #page-home .statusbar .top-rechts { grid-column:auto; } }
+
+@media (max-width:1100px){ #page-home .statusbar { grid-template-columns:1fr; } #page-home #status { justify-self:start; } }
 .top-knoppen > .card .row { gap:8px; align-items:center; min-width:0; }
 .top-knoppen .ico { width:34px; height:34px; border-radius:50%; flex-shrink:0; }
 .top-knoppen .ico svg { width:17px; height:17px; }
 .top-knoppen .card-title, .top-knoppen .pijltje { display:none; }
 .top-knoppen .card-sub { font-size:var(--fs-sm) !important; line-height:1.15; }
 .top-knoppen .mini-sub { font-size:10.5px; margin:0; max-width:120px; }
-/* Huiskaart linksboven */
+/* smalle kolom (tablet): alleen icoon + korte waarde */
+@container (max-width:600px){
+  .top-knoppen > .card { padding:4px 6px 4px 4px; }
+  .top-knoppen > .card .row { gap:5px; }
+  .top-knoppen .ico { width:28px; height:28px; }
+  .top-knoppen .ico svg { width:14px; height:14px; }
+  .top-knoppen .mini-sub, .top-knoppen .mini-licht, .top-knoppen .lang { display:none; }
+  .top-knoppen .card-sub { font-size:12.5px !important; letter-spacing:-.1px; }
+}/* Huiskaart linksboven */
 .huiskaart { position:relative; padding:0; overflow:hidden; aspect-ratio:1536/1024; }
 .huiskaart .hk-tekening, .huiskaart .hk-tekening svg { position:absolute; inset:0; width:100%; height:100%; display:block; }
 .huiskaart::after { content:''; position:absolute; left:0; right:0; bottom:0; height:38%; pointer-events:none; background:linear-gradient(0deg, rgba(8,11,17,.6), transparent); }
@@ -1264,7 +1273,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '90';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu recht boven de blokken in de middelste kolom en lopen door tot de verbindingsmelding, zodat alle tekst er weer in past.' ] },
+  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.' ] },
   { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.', 'Hoofddashboard: linksboven staat nu het huis van het tabblad Energie, met de energielijnen, klok en weer. Het verbruik van het huis kleurt mee (groen bij teruglevering, daarna geel, oranje, rood). Net, huis en zon staan gelijk verdeeld. Tik erop voor de energiepagina.', 'Klimaat, Media, Beweging en Lampen staan als ronde knoppen in de bovenbalk.' ] },
   { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
   { v:'87', datum:'28-10-2026', punten:[ 'Camera\'s: na "Nieuw beeld", aanbellen of een gebeurtenis wordt het beeld een paar keer opnieuw opgehaald, en verder elke minuut (in de grote weergave elke 10 s). De eufy-app past de tijd van het beeld in Homey niet aan, waardoor het dashboard een nieuwe snapshot niet opmerkte.', 'Onder het beeld staat nu wanneer het is opgehaald; de echte opnametijd staat in het beeld zelf.', 'Het instellingenknopje linksonder is nu een tandwiel (was een soort zonnetje).' ] },
@@ -1612,7 +1621,7 @@ function tekenLinks(){
       return miniKaart('thermo', S.aan ? 'amber' : '', 'Klimaat', t != null ? `${nl(t)}°${h != null ? ` <span class="mini-licht">${Math.round(h)}%</span>` : ''}` : '–', 'klimaat',
         S.aan ? `<b class="aan-amber">${S.aan} van ${S.totaal} aan</b>` : `Alles uit · ${S.totaal} apparaten`); })() +
     (() => { const M = mediaSamenvatting();
-      return miniKaart('music', M.speelt || M.aan ? 'purple' : '', 'Media', M.speelt ? `${M.speelt} ${M.speelt === 1 ? 'speelt' : 'spelen'} af` : M.aan ? `${M.aan} aan` : 'Stil', 'media',
+      return miniKaart('music', M.speelt || M.aan ? 'purple' : '', 'Media', M.speelt ? `${M.speelt} <span class="lang">${M.speelt === 1 ? 'speelt' : 'spelen'} af</span>` : M.aan ? `${M.aan} aan` : 'Stil', 'media',
         `${M.totaal} apparaten`); })() +
     (() => { const B = bewegingSamenvatting();
       return miniKaart('run', B.actief ? 'blue' : '', 'Beweging', B.actief ? `${B.actief} actief` : 'Rustig', 'beweging',
