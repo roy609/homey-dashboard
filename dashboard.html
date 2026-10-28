@@ -671,6 +671,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .rg-grafiek .rg-nu { stroke:var(--amber); stroke-width:1.5; stroke-dasharray:3 3; }
 .rg-radar { margin-top:14px; border-radius:12px; overflow:hidden; background:#0b1a3a; text-align:center; }
 .rg-radar img { width:100%; max-width:520px; display:block; margin:0 auto; }
+.rg-regio iframe { display:block; width:550px; max-width:100%; height:512px; margin:0 auto; border:0; background:#0b1a3a; }
 .tarief-let { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px; border-radius:12px; background:var(--amber-dim, rgba(245,165,36,.12)); border:1px solid rgba(245,165,36,.45); color:var(--amber); font-size:var(--fs-sm); font-weight:600; }
 .tarief-let svg { width:18px; height:18px; flex-shrink:0; }
 .zone-moods { margin-top:6px; }
@@ -1001,7 +1002,8 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     </div>
     <div class="segment" role="tablist">
       <button data-rgtab="grafiek" class="on">Komende 2 uur</button>
-      <button data-rgtab="radar">Radar</button>
+      <button data-rgtab="regio">Radar regio</button>
+      <button data-rgtab="radar">Radar NL</button>
     </div>
     <div id="rgInhoud"></div>
     <p class="note">Bron: Buienradar. Ververst elke 5 minuten.</p>
@@ -1304,7 +1306,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '90';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.', 'Regen: in de huiskaart staat onder het weer of het droog blijft of wanneer het gaat regenen (Buienradar, komende 2 uur). Tik op het weer voor een grafiek van de komende 2 uur en het radarbeeld.' ] },
+  { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.', 'Regen: in de huiskaart staat onder het weer of het droog blijft of wanneer het gaat regenen (Buienradar, komende 2 uur). Tik op het weer voor een grafiek van de komende 2 uur, de Buienradar-kaart van de regio (ingesloten) en het radarbeeld van Nederland.' ] },
   { v:'89', datum:'28-10-2026', punten:[ 'Energie: de bedragen gebruiken nu de tarieven van je contract bij BudgetEnergie (stroom € 0,25474/kWh, teruglevering € 0,01/kWh, gas € 1,38182/m³), net als de HomeWizard-app. Teruglevering wordt met € 0,01 verrekend in plaats van gesaldeerd. Houd je vinger op een bedrag voor de berekening.', 'Na afloop van het contract (20-03-2027) verschijnt bovenaan Energie een herinnering om de tarieven aan te passen, hier én in de HomeWizard-app.', 'Hoofddashboard: linksboven staat nu het huis van het tabblad Energie, met de energielijnen, klok en weer. Het verbruik van het huis kleurt mee (groen bij teruglevering, daarna geel, oranje, rood). Net, huis en zon staan gelijk verdeeld. Tik erop voor de energiepagina.', 'Klimaat, Media, Beweging en Lampen staan als ronde knoppen in de bovenbalk.' ] },
   { v:'88', datum:'28-10-2026', punten:[ 'Hoofddashboard: de ID.4-tegel is weg en de lege balk onder de gordijnen ook.', '"Beweging" wordt niet meer afgekapt, "Begane grond" staat zonder nummer en de knop "Woonkamer normaal" staat nu in die kaart.' ] },
   { v:'87', datum:'28-10-2026', punten:[ 'Camera\'s: na "Nieuw beeld", aanbellen of een gebeurtenis wordt het beeld een paar keer opnieuw opgehaald, en verder elke minuut (in de grote weergave elke 10 s). De eufy-app past de tijd van het beeld in Homey niet aan, waardoor het dashboard een nieuwe snapshot niet opmerkte.', 'Onder het beeld staat nu wanneer het is opgehaald; de echte opnametijd staat in het beeld zelf.', 'Het instellingenknopje linksonder is nu een tandwiel (was een soort zonnetje).' ] },
@@ -4002,7 +4004,9 @@ function tekenRegenPaneel(){
   $('rgPlaats').textContent = R.plaats;
   $('rgSub').textContent = S ? `${S.tekst}${S.max >= REGEN_DREMPEL ? ' · maximaal ' + nl(S.max, 1) + ' mm/u (' + regenSterkte(S.max) + ')' : ''}` : (regenFout ? 'Buienradar niet bereikbaar' : 'Laden…');
   document.querySelectorAll('[data-rgtab]').forEach(b => b.classList.toggle('on', b.dataset.rgtab === rgTab));
-  $('rgInhoud').innerHTML = rgTab === 'radar'
+  $('rgInhoud').innerHTML = rgTab === 'regio'
+    ? `<div class="rg-radar rg-regio"><iframe src="https://gadgets.buienradar.nl/gadget/zoommap/?lat=${R.lat}&lng=${R.lon}&overname=2&zoom=11&naam=${encodeURIComponent(R.plaats)}&size=3&voor=1" title="Buienradar regio ${esc(R.plaats)}" loading="lazy"></iframe></div>`
+    : rgTab === 'radar'
     ? `<div class="rg-radar"><img src="https://image.buienradar.nl/2.0/image/animation/RadarMapRainNL?height=512&width=500&t=${Math.floor(Date.now() / 300000)}" alt="Buienradar: neerslag in Nederland"></div>`
     : regenGrafiek();
 }
