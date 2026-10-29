@@ -626,7 +626,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 #page-home .statusbar { display:grid; grid-template-columns:1.05fr 1.15fr 1fr; gap:18px; }
 #page-home .statusbar .top-rechts { display:contents; }
 #page-home #status { justify-self:end; flex-shrink:0; }
-.top-knoppen { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; min-width:0; container-type:inline-size; }
+.top-knoppen { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; min-width:0; container-type:inline-size; }
 .top-knoppen > .card { flex-direction:row; padding:5px 8px 5px 5px; border-radius:999px; gap:0; min-height:46px; justify-content:flex-start; min-width:0; }
 .top-knoppen .row, .top-knoppen .grow { min-width:0; }
 .top-knoppen .card-sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -639,7 +639,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .top-knoppen .card-sub { font-size:var(--fs-sm) !important; line-height:1.15; }
 .top-knoppen .mini-sub { font-size:10.5px; margin:0; max-width:120px; }
 /* smalle kolom (tablet): alleen icoon + korte waarde */
-@container (max-width:600px){
+@container (max-width:360px){
   .top-knoppen > .card { padding:4px 6px 4px 4px; }
   .top-knoppen > .card .row { gap:5px; }
   .top-knoppen .ico { width:28px; height:28px; }
@@ -889,7 +889,6 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 
       <!-- Rechts: woonkamer en klimaat -->
       <div class="col">
-        <div class="sec-label">Lampen</div>
         <div class="card lo-kaart" id="lampenOverzicht"></div>
         <div class="sec-label">Klimaat</div>
         <div class="col" id="klimaat"></div>
@@ -1330,7 +1329,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '93';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'93', datum:'29-10-2026', punten:[ 'Rechts staat nu een rustig overzicht van alle lampen in huis: per verdieping de ruimtes, met een amber bolletje waar iets brandt. Tik op een ruimte voor de moods, aan/uit en de helderheid per lamp of voor de hele ruimte.' ] },
+  { v:'93', datum:'29-10-2026', punten:[ 'Rechts staat nu een rustig overzicht van alle lampen in huis: per verdieping de ruimtes, met een amber bolletje waar iets brandt. Tik op een ruimte voor de moods, aan/uit en de helderheid per lamp of voor de hele ruimte.', 'De knop Lampen bovenin is weg (stond dubbel); Klimaat, Media en Beweging staan nu precies boven de drie tegels eronder. Het lampenblok begint op dezelfde hoogte als de blokken ernaast.' ] },
   { v:'92', datum:'28-10-2026', punten:[ 'Het huisje voor Hoofddashboard is groter en zonder donkergrijze achtergrond: alleen de witte lijnen met amberkleurige ramen.' ] },
   { v:'91', datum:'28-10-2026', punten:[ 'Regen in de huiskaart: blauw als het regent of binnen 15 minuten gaat regenen, wit "Droog tot …" als de regen later komt, en geen regel als er de komende 2 uur geen regen wordt voorspeld.' ] },
   { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.', 'Regen: in de huiskaart staat onder het weer of het droog blijft of wanneer het gaat regenen (Buienradar, komende 2 uur). Tik op het weer voor een grafiek van de komende 2 uur, de Buienradar-kaart van de regio (ingesloten) en het radarbeeld van Nederland.', 'Voor de titel Hoofddashboard staat nu het huisjes-icoon van de favoriet.' ] },
@@ -1686,7 +1685,7 @@ function tekenLinks(){
     (() => { const B = bewegingSamenvatting();
       return miniKaart('run', B.actief ? 'blue' : '', 'Beweging', B.actief ? `${B.actief} actief` : 'Rustig', 'beweging',
         B.actief ? esc(B.namen.slice(0, 2).join(', ') + (B.namen.length > 2 ? ' …' : '')) : `${B.sensoren} sensoren`); })() +
-    miniKaart('bulb','amber','Lampen', `${lampenAan} aan`, 'lampen');
+    '';   // Lampen staat nu als overzicht in de rechterkolom
 
   // Energie: verbruik en opwek in één kaart
   const p1 = dev(CONFIG.apparaten.p1), zon = dev(CONFIG.apparaten.zon);
