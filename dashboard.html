@@ -676,6 +676,26 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .statusbar h1.met-icoon { display:flex; align-items:center; gap:8px; font-size:1.4rem; }
 #page-home .kop-links { gap:12px; min-width:0; }
 .titel-icoon { height:42px; width:auto; flex-shrink:0; filter:drop-shadow(0 2px 4px rgba(0,0,0,.4)); }   /* huisje van de favoriet, alleen de lijnen */
+/* Lampenoverzicht rechts: alle ruimtes per verdieping, tik = ruimte openen */
+.lo-kaart { gap:8px; padding:12px 14px; }
+.lo-kop { display:flex; align-items:center; gap:10px; }
+.lo-kop b { font-size:var(--fs-md); }
+.lo-verdieping { font-size:var(--fs-micro); font-weight:600; letter-spacing:.8px; text-transform:uppercase; color:var(--text-muted); margin:2px 2px -4px; }
+.lo-ruimtes { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
+.lo-ruimte { display:flex; flex-direction:column; align-items:flex-start; gap:0; min-height:42px; padding:4px 8px; border-radius:11px; border:1px solid var(--border2);
+  background:var(--bg-inset); color:var(--text-secondary); font:inherit; text-align:left; cursor:pointer; min-width:0; }
+.lo-ruimte b { font-size:12.5px; letter-spacing:-.1px; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.lo-ruimte small { font-size:11px; }
+.lo-ruimte.aan { border-color:rgba(245,165,36,.55); background:linear-gradient(180deg, rgba(245,165,36,.20), rgba(245,165,36,.06)); }
+.lo-ruimte.aan small { color:var(--amber); font-weight:600; }
+/* Lampenpaneel: helderheid per lamp en voor de hele ruimte */
+.lp-dim { display:flex; align-items:center; gap:10px; width:100%; margin-top:6px; }
+.lp-dim input { flex:1; height:30px; }
+.lp-lijst > * { flex-shrink:0; }
+.lp-dim span { width:38px; text-align:right; font-size:var(--fs-sm); color:var(--text-muted); }
+.lp-rij.met-dim { flex-wrap:wrap; align-content:flex-start; row-gap:0; }
+.lp-rij.met-dim .lp-dim { margin-top:2px; }
+.lp-rij.met-dim .lp-dim { flex-basis:100%; padding-left:52px; }
 .tarief-let { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px; border-radius:12px; background:var(--amber-dim, rgba(245,165,36,.12)); border:1px solid rgba(245,165,36,.45); color:var(--amber); font-size:var(--fs-sm); font-weight:600; }
 .tarief-let svg { width:18px; height:18px; flex-shrink:0; }
 .zone-moods { margin-top:6px; }
@@ -869,8 +889,8 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 
       <!-- Rechts: woonkamer en klimaat -->
       <div class="col">
-        <div class="sec-label">Verlichting</div>
-        <div class="card" id="zoneGroep"></div>
+        <div class="sec-label">Lampen</div>
+        <div class="card lo-kaart" id="lampenOverzicht"></div>
         <div class="sec-label">Klimaat</div>
         <div class="col" id="klimaat"></div>
       </div>
@@ -1307,9 +1327,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '92';
+const DASHBOARD_VERSIE = '93';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'93', datum:'29-10-2026', punten:[ 'Rechts staat nu een overzicht van alle lampen in huis, per verdieping en ruimte. Tik op een ruimte om de lampen daar aan/uit te zetten, de helderheid per lamp of voor de hele ruimte te kiezen en de moods van die ruimte te starten.' ] },
   { v:'92', datum:'28-10-2026', punten:[ 'Het huisje voor Hoofddashboard is groter en zonder donkergrijze achtergrond: alleen de witte lijnen met amberkleurige ramen.' ] },
   { v:'91', datum:'28-10-2026', punten:[ 'Regen in de huiskaart: blauw als het regent of binnen 15 minuten gaat regenen, wit "Droog tot …" als de regen later komt, en geen regel als er de komende 2 uur geen regen wordt voorspeld.' ] },
   { v:'90', datum:'28-10-2026', punten:[ 'Hoofddashboard: de knoppen Klimaat, Media, Beweging en Lampen staan nu precies boven de blokken in de middelste kolom (zelfde linker- en rechterrand). Op de tablet tonen ze icoon + korte waarde, op een breder scherm ook de tweede regel.', 'Regen: in de huiskaart staat onder het weer of het droog blijft of wanneer het gaat regenen (Buienradar, komende 2 uur). Tik op het weer voor een grafiek van de komende 2 uur, de Buienradar-kaart van de regio (ingesloten) en het radarbeeld van Nederland.', 'Voor de titel Hoofddashboard staat nu het huisjes-icoon van de favoriet.' ] },
@@ -2003,6 +2024,7 @@ function zoneLampen(){
 }
 let sleeptSlider = false;
 function tekenZoneGroep(){
+  if(!$('zoneGroep')) return;                // vervangen door het lampenoverzicht (v93)
   if(sleeptSlider) return;               // niet overschrijven terwijl je schuift
   const lampen = zoneLampen();
   const aan = lampen.filter(d => cap(d,'onoff'));
@@ -3543,8 +3565,10 @@ function lampenPerZone(){
   })).sort((a,b) => a.naam.localeCompare(b.naam, 'nl', { numeric:true }));
 }
 
+let lpSleept = false;
 function tekenLampPaneel(){
-  if(!lpOpen) return;
+  tekenLampenOverzicht();
+  if(!lpOpen || lpSleept) return;
   const zones = lampenPerZone();
   const schakel = (aan, attr, label) => `<button class="toggle ${aan ? 'on' : ''}" role="switch" aria-checked="${aan}" aria-label="${esc(label)}" ${attr}></button>`;
   if(!lpZone){
@@ -3565,25 +3589,58 @@ function tekenLampPaneel(){
   } else {
     const z = zones.find(x => x.zone === lpZone);
     if(!z){ lpZone = null; return tekenLampPaneel(); }
-    $('lpTitel').textContent = z.naam;
+    $('lpTitel').textContent = kaleNaam(z.naam);
     $('lpSub').textContent = (z.lampen.length ? `${z.aan} van ${z.lampen.length} aan` : 'Geen lampen') + (z.moods.length ? ` · ${z.moods.length} ${z.moods.length === 1 ? 'mood' : 'moods'}` : '');
     $('lpTerug').style.visibility = 'visible';
     const moodsHtml = z.moods.length ? `<div class="lp-moods"><div class="sec-label" style="margin:0 2px 6px">Moods</div>
         <div class="moods">${z.moods.map(m => `<button class="btn" data-mood="${esc(m.id)}">${ic('bulb')} ${esc(m.name)}</button>`).join('')}</div></div>` : '';
     $('lpLijst').innerHTML = moodsHtml + (z.lampen.length ? '' : '<p class="leeg">In deze ruimte staan geen lampen.</p>') +
-      (z.lampen.length ? `<div class="lp-rij lp-alles">
-        <span class="grow"><b>Alle lampen in ${esc(z.naam)}</b></span>${schakel(z.aan > 0, `data-lp-zt="${esc(z.zone)}"`, 'Alle lampen')}</div>` : '') + (z.lampen.length ?
+      (z.lampen.length ? (() => {
+        const dimbaar = z.lampen.filter(d => heeft(d,'dim') && d.available !== false), aanDim = dimbaar.filter(d => cap(d,'onoff') === true);
+        const gem = aanDim.length ? Math.round(aanDim.reduce((n, d) => n + (cap(d,'dim') || 0), 0) / aanDim.length * 100) : 0;
+        return `<div class="lp-rij lp-alles ${dimbaar.length ? 'met-dim' : ''}">
+        <span class="grow"><b>Alle lampen in ${esc(kaleNaam(z.naam))}</b></span>${schakel(z.aan > 0, `data-lp-zt="${esc(z.zone)}"`, 'Alle lampen')}
+        ${dimbaar.length ? `<div class="lp-dim" style="padding-left:0"><input type="range" min="1" max="100" value="${gem || 1}" data-lp-zdim="${esc(z.zone)}" aria-label="Helderheid hele ruimte"><span>${gem ? gem + '%' : '–'}</span></div>` : ''}</div>`; })() : '') + (z.lampen.length ?
       z.lampen.map(d => {
         const aan = cap(d,'onoff') === true, weg = d.available === false, dim = cap(d,'dim');
-        return `<div class="lp-rij ${aan ? 'aan' : ''} ${weg ? 'weg' : ''}">
+        const kanDim = !weg && heeft(d,'dim');
+        return `<div class="lp-rij ${aan ? 'aan' : ''} ${weg ? 'weg' : ''} ${kanDim ? 'met-dim' : ''}">
           <span class="ico ${aan ? 'amber' : ''}">${ic('bulb')}</span>
-          <span class="grow"><b>${esc(d.name.trim())}</b><small>${weg ? 'Niet bereikbaar' : aan ? 'Aan' + (typeof dim === 'number' ? ` · ${Math.round(dim * 100)}%` : '') : 'Uit'}</small></span>
-          ${weg ? '' : schakel(aan, `data-lp-l="${esc(d.id)}"`, d.name)}</div>`;
+          <span class="grow"><b>${esc(d.name.trim())}</b><small>${weg ? 'Niet bereikbaar' : aan ? 'Aan' : 'Uit'}</small></span>
+          ${weg ? '' : schakel(aan, `data-lp-l="${esc(d.id)}"`, d.name)}
+          ${kanDim ? `<div class="lp-dim"><input type="range" min="1" max="100" value="${aan && typeof dim === 'number' ? Math.round(dim * 100) || 1 : 1}" data-lp-dim="${esc(d.id)}" aria-label="Helderheid ${esc(d.name)}"><span>${aan && typeof dim === 'number' ? Math.round(dim * 100) + '%' : '–'}</span></div>` : ''}</div>`;
       }).join('') : '');
   }
 }
 
-function openLampen(){ lpOpen = true; lpZone = null; $('lampPaneel').classList.add('on'); Promise.all([laadZones(), laadMoods()]).then(tekenLampPaneel); tekenLampPaneel(); }
+/* Lampenoverzicht in de rechterkolom: ruimtes gegroepeerd per verdieping (bovenste zone onder "Thuis") */
+const kaleNaam = n => (String(n || '').replace(/^\s*(\d+(\.\d+)*\.?|[A-Z]\.)\s+/, '').trim() || n).replace(/^Beganegrond$/i, 'Begane grond');
+function verdiepingVan(zone){
+  let z = ZONES[zone], vorige = zone;
+  while(z && z.parent && ZONES[z.parent] && ZONES[z.parent].parent) { vorige = z.parent; z = ZONES[z.parent]; }
+  return z && z.parent ? vorige : null;                                     // null = lampen direct in "Thuis"
+}
+function tekenLampenOverzicht(){
+  const el = $('lampenOverzicht'); if(!el) return;
+  const zones = lampenPerZone().filter(z => z.lampen.length);
+  const tot = zones.reduce((n, z) => n + z.lampen.length, 0), aan = zones.reduce((n, z) => n + z.aan, 0);
+  const tuin = CONFIG.tuinZones || [], groepen = new Map();
+  for(const z of zones){
+    let v = tuin.includes(z.zone) ? 'buiten' : verdiepingVan(z.zone) || 'overig';
+    if(v !== 'buiten' && v !== 'overig' && v === z.zone && !zones.some(x => x !== z && verdiepingVan(x.zone) === v)) v = 'overig';   // bv. Zolder
+    if(!groepen.has(v)) groepen.set(v, []);
+    groepen.get(v).push(z);
+  }
+  const naamGroep = v => v === 'buiten' ? 'Buiten' : v === 'overig' ? 'Overig' : kaleNaam(zoneNaam(v));
+  const volgorde = [...groepen.keys()].sort((a, b) => (a === 'buiten' || a === 'overig') - (b === 'buiten' || b === 'overig') || (a === 'overig') - (b === 'overig')
+    || zoneNaam(a).localeCompare(zoneNaam(b), 'nl', { numeric:true }));
+  el.innerHTML = `<div class="lo-kop"><div class="ico ${aan ? 'amber' : ''}">${ic('bulb')}</div>
+      <div class="grow"><b>Lampen in huis</b><div class="card-sub">${aan} van ${tot} aan · tik op een ruimte</div></div></div>` +
+    volgorde.map(v => `<div class="lo-verdieping">${esc(naamGroep(v))}</div><div class="lo-ruimtes">${groepen.get(v).map(z =>
+      `<button class="lo-ruimte ${z.aan ? 'aan' : ''}" data-lp-open="${esc(z.zone)}"><b>${esc(z.zone === v ? 'Algemeen' : kaleNaam(ZONES[z.zone]?.name || z.naam))}</b>
+        <small>${z.aan ? `${z.aan} van ${z.lampen.length} aan` : 'uit'}</small></button>`).join('')}</div>`).join('');
+}
+function openLampen(zone){ lpOpen = true; lpZone = typeof zone === 'string' ? zone : null; $('lampPaneel').classList.add('on'); Promise.all([laadZones(), laadMoods()]).then(tekenLampPaneel); tekenLampPaneel(); }
 function sluitLampen(){ lpOpen = false; $('lampPaneel').classList.remove('on'); }
 
 async function lampSchakel(ids, nieuw){
@@ -3854,6 +3911,12 @@ async function zoneAanUit(){
   await opdracht(() => Promise.allSettled(lampen.map(d => zetCap(d.id, 'onoff', nieuw))),
                  () => lampen.forEach(d => d.capabilitiesObj.onoff.value = nieuw));
 }
+async function lampDimmen(ids, pct){
+  const lampen = ids.map(dev).filter(d => d && heeft(d,'dim') && d.available !== false), v = pct / 100;
+  await opdracht(() => Promise.allSettled(lampen.map(d => zetCap(d.id, 'dim', v))),
+                 () => lampen.forEach(d => { d.capabilitiesObj.dim.value = v; if(d.capabilitiesObj.onoff) d.capabilitiesObj.onoff.value = true; }));
+  tekenLampPaneel();
+}
 async function zoneDimmen(pct){
   const lampen = zoneLampen().filter(d => heeft(d,'dim')), v = pct / 100;
   await opdracht(() => Promise.allSettled(lampen.map(d => zetCap(d.id, 'dim', v))),
@@ -4060,6 +4123,7 @@ document.addEventListener('click', e => {
     if(sp.dataset.sysSluit || e.target === sp) return sluitSysDetail();
     return;
   }
+  const lpo = e.target.closest('[data-lp-open]'); if(lpo) return openLampen(lpo.dataset.lpOpen);
   const lp = e.target.closest('[data-mood],[data-lp-zone],[data-lp-zt],[data-lp-l],[data-lp-terug],[data-lp-sluit],[data-lp-achter]');
   if(lp && !lp.dataset.mood){
     if(lp.dataset.lpZt)    return zoneSchakel(lp.dataset.lpZt);
@@ -4111,12 +4175,15 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('input',  e => {
   if(e.target.id === 'zoneDim') sleeptSlider = true;
+  if(e.target.dataset.lpDim || e.target.dataset.lpZdim){ lpSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
   if(e.target.id === 'rdVol' || e.target.id === 'spVol') e.target.nextElementSibling.textContent = e.target.value + '%';
   if(e.target.dataset.mdvol){ mdSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
   if(e.target.id === 'muziekVol'){ mzSleept = true; e.target.nextElementSibling.textContent = e.target.value + '%'; }
 });
 document.addEventListener('change', e => {
   if(e.target.id === 'zoneDim'){ sleeptSlider = false; zoneDimmen(+e.target.value); }
+  if(e.target.dataset.lpDim){ lpSleept = false; lampDimmen([e.target.dataset.lpDim], +e.target.value); }
+  if(e.target.dataset.lpZdim){ lpSleept = false; lampDimmen(Object.values(DEVS).filter(d => isLamp(d) && d.zone === e.target.dataset.lpZdim).map(d => d.id), +e.target.value); }
   if(e.target.id === 'rdVol') radioVolume(+e.target.value);
   if(e.target.id === 'spVol') spotifyVolume(+e.target.value);
   if(e.target.dataset.mdvol){ mdSleept = false; mediaVolume(e.target.dataset.mdvol, +e.target.value); }
@@ -4562,7 +4629,7 @@ laadBewoners(); setInterval(laadBewoners, 30000);
 verversVariabelen(); setInterval(verversVariabelen, POLL_VARIABELEN_MS);
 laadEnergie(true); setInterval(() => laadEnergie(true), 5 * 60000);   // grafieken elke 5 minuten
 laadRegen(); setInterval(laadRegen, 5 * 60000);                        // Buienradar: regen komende 2 uur
-laadZones().then(tekenLinks); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
+laadZones().then(() => { tekenLinks(); tekenLampenOverzicht(); }); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
 setInterval(() => { if($('page-systeem').classList.contains('on')) laadSysteem(true); }, 5 * 60000);   // namen van ruimtes en moods
 </script>
 </body>
