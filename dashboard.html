@@ -1369,9 +1369,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '96';
+const DASHBOARD_VERSIE = '97';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'97', datum:'30-10-2026', punten:[ 'Pakje toevoegen: een los volgnummer gaat nu via "Volg een pakje" (dat werkt betrouwbaar); een link of mailtekst via "Volg de pakjes in een tekst". Verschijnt het pakje niet binnen een minuut in het overzicht, dan krijg je een melding.' ] },
   { v:'96', datum:'30-10-2026', punten:[ 'Pakjes: rechtsboven staat nu altijd een rond knopje met een pakketje en een plusje. Tik erop om meteen een pakje toe te voegen (plak een volgnummer, link of verzendmail).' ] },
   { v:'95', datum:'30-10-2026', punten:[ 'Pakjes (app Parcel Tracker): rechtsboven verschijnt een klein label als er pakjes onderweg zijn, amber als de bezorger onderweg is. Tik erop voor de volgende levering, het laatste nieuws en om een pakje toe te voegen door een volgnummer, link of verzendmail te plakken.' ] },
   { v:'94', datum:'30-10-2026', punten:[ 'Zonnepanelen: de omvormer stuurt \'s avonds niets meer en Homey houdt dan de laatste waarde vast (bv. de hele nacht 84 W). Het dashboard telt het zonnevermogen nu als 0 W zodra de zon onder is of er 20 minuten geen nieuwe meting kwam, en toont dan "Zon · in rust". Dat geldt voor de huiskaart, het tabblad Energie, het huisverbruik en de zonnegrafiek.', 'Mist: het huisbeeld toont nu ook mist als het KNMI-weer "bewolkt" zegt maar het zicht 1 km of minder is (of tot 3 km bij 95% luchtvochtigheid of meer).' ] },
@@ -4209,11 +4210,24 @@ async function pakjeVolgen(){
   const tekst = ($('pkTekst')?.value || '').trim();
   if(!tekst){ pkMelding = { soort:'fout', tekst:'Plak eerst een volgnummer, link of verzendmail.' }; return tekenPakjePaneel(); }
   pkBezig = true; pkMelding = null; tekenPakjePaneel();
+  const kaalNummer = /^[A-Za-z0-9-]{8,40}$/.test(tekst.replace(/\s+/g, ''));   // alleen een volgnummer → "Volg een pakje"
+  const voor = Number(cap(pakjesDev(), 'parcels_active')) || 0;
   try {
-    if(!DEMO()) await kaartUitvoeren(PK_APP, 'track_from_text', { text:tekst, owner:pkVoor || '' });
-    pkMelding = { soort:'ok', tekst:'Toegevoegd. De app zoekt de vervoerder erbij; het pakje verschijnt zo in de lijst.' };
+    if(!DEMO()){
+      if(kaalNummer) await kaartUitvoeren(PK_APP, 'track_parcel', { number:tekst.replace(/\s+/g, '').toUpperCase(), label:'', owner:pkVoor || '', postcode:'' });
+      else await kaartUitvoeren(PK_APP, 'track_from_text', { text:tekst, owner:pkVoor || '' });
+    }
+    pkMelding = { soort:'ok', tekst:'Doorgegeven aan Parcel Tracker. Het pakje verschijnt zo in de lijst.' };
     $('pkTekst').value = '';
-    setTimeout(verversApparaten, 4000);
+    [4000, 15000, 30000].forEach(ms => setTimeout(verversApparaten, ms));
+    // controle: zien we het pakje binnen een minuut terug in het overzicht?
+    if(!DEMO()) setTimeout(() => {
+      const na = Number(cap(pakjesDev(), 'parcels_active')) || 0;
+      if(na <= voor && pkMelding?.soort === 'ok'){
+        pkMelding = { soort:'fout', tekst:'Het pakje is nog niet in het overzicht verschenen. Kijk in de Homey-app bij Parcel Tracker; bij PostNL is vaak de postcode nodig (in te stellen in de app).' };
+        tekenPakjePaneel(); tekenPakjes();
+      }
+    }, 60000);
   } catch(e){ pkMelding = { soort:'fout', tekst:'Lukte niet: ' + (/403/.test(e.message) ? 'de API-sleutel mag geen flows starten' : e.message) }; }
   pkBezig = false; tekenPakjePaneel();
 }
