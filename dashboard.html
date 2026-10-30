@@ -735,6 +735,10 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .bel-form .breed { grid-column:1/-1; }
 .bel-form .knoppen { grid-column:1/-1; display:flex; gap:8px; justify-content:flex-end; }
 .bel-klein { font-size:11.5px; color:var(--text-muted); }
+.bel-perioden { margin:0; } .bel-perioden button { min-height:34px; font-size:var(--fs-sm); }
+.bel-uitleg { padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:var(--bg-inset); font-size:var(--fs-sm); color:var(--text-secondary); }
+.bel-uitleg summary { cursor:pointer; font-weight:700; color:var(--text-primary); }
+.bel-uitleg p { margin-top:8px; line-height:1.45; }
 .pk-tellers { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
 .pk-tellers div { padding:8px 10px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
 .pk-tellers b { display:block; font-size:1.3rem; }
@@ -1408,7 +1412,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '99';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'99', datum:'30-10-2026', punten:[ 'Beleggingen: rechtsboven staat de bitcoinkoers met de verandering in 24 uur. Tik erop voor een pop-up met grafiek, je bitcoin en beleggingen die je met de hand bijhoudt. Bedragen zijn verborgen: tik 4× snel op het totaal om ze 2 minuten te zien. Je bezit staat alleen op de tablet.' ] },
+  { v:'99', datum:'31-10-2026', punten:[ 'Beleggingen: rechtsboven de bitcoinkoers met de verandering in 24 uur. Tik erop voor je totaal, rendement, een grafiek per dag/week/maand/alles en je beleggingen. Bedragen zie je na 4× snel tikken op het totaal (2 minuten).', 'Je bezit staat in Homey (Logic-variabele), dus tablet, telefoon en laptop tonen hetzelfde. Homey Insights houdt de historie bij. Uitleg staat onder "Hoe werkt dit?" in de pop-up.' ] },
   { v:'98', datum:'30-10-2026', punten:[ 'Pakjes: onder de tekst in het label staat nu klein wanneer de volgende levering komt, bijvoorbeeld "morgen 08:30–21:30".' ] },
   { v:'97', datum:'30-10-2026', punten:[ 'Pakje toevoegen: een los volgnummer gaat nu via "Volg een pakje" (dat werkt betrouwbaar); een link of mailtekst via "Volg de pakjes in een tekst". Verschijnt het pakje niet binnen een minuut in het overzicht, dan krijg je een melding.' ] },
   { v:'96', datum:'30-10-2026', punten:[ 'Pakjes: rechtsboven staat nu altijd een rond knopje met een pakketje en een plusje. Tik erop om meteen een pakje toe te voegen (plak een volgnummer, link of verzendmail).' ] },
@@ -4289,10 +4293,54 @@ async function pakjesNakijken(){
    BELEGGINGEN — bitcoinkoers live (CoinGecko, terugval Bitvavo); bezit alleen op deze tablet (localStorage),
    nooit in de code. Bedragen standaard verborgen; 4× snel tikken op het totaal toont ze 2 minuten.
 ═════════════════════════════════════════════ */
-const BEL_KEY = 'dashboard_beleggingen', BEL_ZICHT_MS = 2 * 60000;
-let BTC = null, belOpen = false, belZichtTot = 0, belTikken = [], belBewerk = null, belFout = null;
-function belData(){ try { return Object.assign({ btc:0, btcInleg:0, posten:[] }, JSON.parse(localStorage.getItem(BEL_KEY) || '{}')); } catch(e){ return { btc:0, btcInleg:0, posten:[] }; } }
-function belBewaar(d){ try { localStorage.setItem(BEL_KEY, JSON.stringify(d)); } catch(e){} }
+const BEL_KEY = 'dashboard_beleggingen', BEL_ZICHT_MS = 2 * 60000, BEL_LOG_MS = 15 * 60000;
+/* Logic-variabelen in Homey (aangemaakt op 31-10-2026). Bezit in de tekstvariabele; de getallen bouwen in Insights de historie op. */
+const BEL_VAR = { data:'27db5047-d12d-4a72-9120-b78e201e0748', totaal:'137fa71b-1455-4c93-8863-43d368a91184',
+  bitcoin:'9d9309e5-b1d9-4d81-ae52-f902550ce6fb', hand:'e001f205-4763-4ea2-a6ae-0a989f84fb19', koers:'45fe331b-21d6-4ea6-b797-9d9c8e5cddc1' };
+let BTC = null, belOpen = false, belZichtTot = 0, belTikken = [], belBewerk = null, belFout = null, belPeriode = 'dag', belHist = {}, belLaatsteLog = 0, belOpslagFout = null;
+const belLeeg = () => ({ btc:0, btcInleg:0, posten:[] });
+function belLokaal(){ try { const j = JSON.parse(localStorage.getItem(BEL_KEY) || 'null'); return j && (j.btc || j.posten?.length) ? j : null; } catch(e){ return null; } }
+function belData(){
+  const v = VARS[BEL_VAR.data];
+  if(v && typeof v.value === 'string'){ try { return Object.assign(belLeeg(), JSON.parse(v.value || '{}')); } catch(e){} }
+  return Object.assign(belLeeg(), belLokaal() || {});                       // terugval: geen verbinding met Homey
+}
+async function belBewaar(d){
+  const tekst = JSON.stringify(d);
+  if(VARS[BEL_VAR.data]) VARS[BEL_VAR.data].value = tekst;                 // meteen tonen
+  try { localStorage.setItem(BEL_KEY, tekst); } catch(e){}
+  if(DEMO()) return;
+  try { await zetVar(BEL_VAR.data, tekst); belOpslagFout = null; belSchrijfGetallen(true); }
+  catch(e){ belOpslagFout = 'Niet opgeslagen in Homey: ' + e.message; tekenBelPaneel(); }
+}
+/* Eenmalig: wat eerder alleen op dit apparaat stond, naar Homey zetten */
+function belMigreer(){
+  const v = VARS[BEL_VAR.data], lok = belLokaal();
+  if(v && (v.value === '{}' || !v.value) && lok) belBewaar(Object.assign(belLeeg(), lok));
+}
+/* Getallen naar Homey (Insights houdt de historie bij). Hooguit elke 15 min, of direct na een wijziging. */
+async function belSchrijfGetallen(nu){
+  if(DEMO() || !BTC || !VARS[BEL_VAR.data] || (!nu && Date.now() - belLaatsteLog < BEL_LOG_MS)) return;
+  belLaatsteLog = Date.now();
+  const T = belTotalen(), r = n => Math.round(n * 100) / 100;
+  const paren = [[BEL_VAR.koers, r(BTC.koers)], [BEL_VAR.bitcoin, r(T.btcW)], [BEL_VAR.hand, r(T.tot - T.btcW)], [BEL_VAR.totaal, r(T.tot)]];
+  for(const [id, w] of paren){ if(VARS[id] && VARS[id].value !== w){ try { await zetVar(id, w); VARS[id].value = w; } catch(e){} } }
+}
+/* Historie uit Insights (Logic-variabele) */
+const BEL_RES = { dag:'last24Hours', week:'last7Days', maand:'last31Days', alles:'last2Years' };
+async function belLaadHist(periode){
+  if(DEMO()) return;
+  const id = BEL_VAR.totaal, vormen = [
+    `/api/manager/insights/log/${encodeURIComponent('homey:manager:logic')}/${id}/entry`,
+    `/api/manager/insights/log/${encodeURIComponent('homey:manager:logic:' + id)}/entry`,
+    `/api/manager/insights/log/homey:manager:logic/${id}/entry` ];
+  for(const v of vormen){
+    try { const r = await homey(v + '?resolution=' + BEL_RES[periode]); const l = Array.isArray(r) ? r : (r?.values || r?.entries || []);
+      belHist[periode] = { t:Date.now(), pts:l.filter(e => e && typeof e.v === 'number' && e.v > 0).map(e => e.v) }; break; }
+    catch(e){ if(!/40[04]/.test(e.message)) break; }
+  }
+  if(belOpen) tekenBelPaneel();
+}
 const belZicht = () => Date.now() < belZichtTot;
 const euroHeel = n => typeof n === 'number' ? '€ ' + Math.round(n).toLocaleString('nl-NL') : '–';
 const pctTekst = p => typeof p === 'number' ? `${p >= 0 ? '▲' : '▼'} ${nl(Math.abs(p), 1)}%` : '–';
@@ -4308,6 +4356,7 @@ async function laadBtc(){
       const k = +j.last, o = +j.open; BTC = { koers:k, pct:o ? (k - o) / o * 100 : null, reeks:[], t:Date.now() }; belFout = null; }
     catch(e2){ belFout = 'Koers niet bereikbaar'; }
   }
+  belSchrijfGetallen(false);
   tekenBeleg();
 }
 function belTotalen(){
@@ -4326,12 +4375,14 @@ function tekenBeleg(){
   }
   if(belOpen) tekenBelPaneel();
 }
-function belGrafiek(r){
+function belGrafiek(r, label){
   if(!r || r.length < 2) return '';
   const min = Math.min(...r), max = Math.max(...r), W = 520, H = 90, y = v => H - 6 - (v - min) / ((max - min) || 1) * (H - 12);
   const pts = r.map((v, i) => `${(i / (r.length - 1) * W).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
   const kl = r[r.length - 1] >= r[0] ? 'var(--green)' : 'var(--red)';
-  return `<div class="bel-grafiek"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${kl}" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg><div class="bel-klein">Bitcoin, laatste 24 uur</div></div>`;
+  const pct = (r[r.length - 1] - r[0]) / r[0] * 100;
+  return `<div class="bel-grafiek"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${kl}" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg>
+    <div class="bel-klein">${label} · <span class="${pct >= 0 ? 'bel-op' : 'bel-neer'}" style="font-weight:700">${pctTekst(pct)}</span></div></div>`;
 }
 function tekenBelPaneel(){
   const T = belTotalen(), d = T.d, zicht = belZicht(), verb = '••••••';
@@ -4344,7 +4395,12 @@ function tekenBelPaneel(){
       <b class="${zicht ? '' : 'verborgen'}">${zicht ? euroHeel(T.tot) : verb}</b>
       <div>${typeof T.rend === 'number' ? `<span class="${T.rend >= 0 ? 'bel-op' : 'bel-neer'}" style="font-weight:700">${pctTekst(T.rend)}</span> <span class="bel-klein">t.o.v. je inleg</span>` : '<span class="bel-klein">Vul je inleg in voor winst/verlies</span>'}</div>
       <div class="hint">${zicht ? 'Bedragen zichtbaar · verdwijnen vanzelf na 2 minuten' : 'Tik 4× snel op dit vak om bedragen te zien'}</div></div>`;
-  html += BTC ? belGrafiek(BTC.reeks) : '';
+  const H = belHist[belPeriode];
+  if(!H || Date.now() - H.t > 10 * 60000) belLaadHist(belPeriode);
+  const pNaam = { dag:'dag', week:'week', maand:'maand', alles:'alles' };
+  html += `<div class="segment bel-perioden" role="tablist">${Object.keys(pNaam).map(k => `<button class="${belPeriode === k ? 'on' : ''}" data-bel-periode="${k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}</div>`;
+  html += H && H.pts.length >= 2 ? belGrafiek(H.pts, 'Totale waarde, ' + ({ dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'sinds de start' })[belPeriode])
+       : (BTC ? belGrafiek(BTC.reeks, 'Bitcoin, laatste 24 uur') : '') + `<p class="bel-klein">De historie van je totaal wordt opgebouwd in Homey Insights (elke 15 minuten een punt). Daarna verschijnt hier de grafiek per periode.</p>`;
   html += rij('₿', false, 'Bitcoin', zicht ? `${nl(+d.btc || 0, 6)} BTC` : 'koers live', T.btcW, btcRend);
   d.posten.forEach((p, i) => { const r = p.inleg ? (p.waarde - p.inleg) / p.inleg * 100 : null;
     html += rij(esc((p.naam || '?').slice(0, 2).toUpperCase()), true, p.naam, leeftijd(p.datum), +p.waarde || 0, r); });
@@ -4360,7 +4416,14 @@ function tekenBelPaneel(){
         <label>Totaal ingelegd (€)<input id="belInleg" inputmode="decimal" value="${p.inleg || ''}"></label>
         <div class="knoppen">${belBewerk !== 'nieuw' ? `<button class="btn" data-bel-weg="${belBewerk}">Verwijderen</button>` : ''}<button class="btn" data-bel-annuleer="1">Annuleren</button><button class="pk-knop" data-bel-opslaan="hand">Opslaan</button></div></div>`; }
   }
-  html += `<p class="note">Je bezit staat alleen op dit apparaat, niet in Homey en niet op GitHub. Koers: CoinGecko.</p>`;
+  if(belOpslagFout) html += `<p class="pk-melding fout">${esc(belOpslagFout)}</p>`;
+  html += `<details class="bel-uitleg"><summary>Hoe werkt dit?</summary>
+    <p><b>Opbouw.</b> Bovenin het totaal (bedragen verborgen tot je 4× snel op het totaal tikt; na 2 minuten weer verborgen), daaronder de grafiek per periode en je beleggingen met rendement t.o.v. je inleg.</p>
+    <p><b>Koers.</b> De bitcoinkoers komt live van CoinGecko (reserve: Bitvavo) en ververst elke 5 minuten. De waarde van je bitcoin = aantal BTC × koers.</p>
+    <p><b>Opslag in Homey.</b> Je bezit staat in de Logic-variabele <i>Beleggingen (dashboard)</i> (tekst). Daardoor zie je hetzelfde op tablet, telefoon en laptop (alleen thuis, met dezelfde Homey-sleutel). Niets staat in de code op GitHub.</p>
+    <p><b>Historie.</b> Elke 15 minuten zet het dashboard <i>Beleggingen totaal €</i>, <i>Beleggingen bitcoin €</i>, <i>Beleggingen handmatig €</i> en <i>Bitcoinkoers €</i> in Homey. Homey Insights bewaart die getallen (tot 2 jaar) en daar komt de grafiek vandaan. Staat geen enkel dashboard open, dan ontstaat er een gat in de lijn.</p>
+    <p><b>Handmatige beleggingen</b> (zoals DEGIRO of ING) hebben geen koppeling: vul af en toe de actuele waarde in. Bij elke belegging staat hoe lang geleden je dat deed.</p>
+    <p><b>Let op.</b> 4× tikken is een drempel, geen beveiliging. Wie toegang heeft tot jullie Homey kan de variabelen en Insights zien.</p></details>`;
   $('belInhoud').innerHTML = html;
 }
 const getal = v => { const n = parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')); return isNaN(n) ? 0 : n; };
@@ -4385,6 +4448,7 @@ document.addEventListener('click', e => {
   if(belOpen && (e.target === $('belPaneel') || e.target.closest('[data-bel-sluit]'))) return sluitBeleg();
   if(e.target.closest('[data-beleg]')) return openBeleg();
   if(e.target.closest('[data-bel-tik]')) return belTik();
+  const bp = e.target.closest('[data-bel-periode]'); if(bp){ belPeriode = bp.dataset.belPeriode; return tekenBelPaneel(); }
   const bb = e.target.closest('[data-bel-bewerk]'); if(bb){ belBewerk = bb.dataset.belBewerk === 'btc' || bb.dataset.belBewerk === 'nieuw' ? bb.dataset.belBewerk : +bb.dataset.belBewerk; belZichtTot = Date.now() + BEL_ZICHT_MS; return tekenBelPaneel(); }
   if(e.target.closest('[data-bel-annuleer]')){ belBewerk = null; return tekenBelPaneel(); }
   const bo = e.target.closest('[data-bel-opslaan]'); if(bo) return belOpslaan(bo.dataset.belOpslaan);
@@ -4894,7 +4958,7 @@ async function verversApparaten(){
 }
 async function verversVariabelen(){
   if(DEMO()){ VARS = DEMO_VARS; tekenVariabelen(); if(energieGeladen) tekenEnergie(); return; }
-  try { VARS = await homey('/api/manager/logic/variable') || {}; tekenVariabelen(); if(energieGeladen) tekenEnergie(); }
+  try { VARS = await homey('/api/manager/logic/variable') || {}; tekenVariabelen(); if(energieGeladen) tekenEnergie(); belMigreer(); tekenBeleg(); }
   catch(e){ /* variabelen zijn bijzaak: oude waarden blijven staan */ }
 }
 
