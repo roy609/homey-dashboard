@@ -1326,9 +1326,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '93';
+const DASHBOARD_VERSIE = '94';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'94', datum:'30-10-2026', punten:[ 'Zonnepanelen: de omvormer stuurt \'s avonds niets meer en Homey houdt dan de laatste waarde vast (bv. de hele nacht 84 W). Het dashboard telt het zonnevermogen nu als 0 W zodra de zon onder is of er 20 minuten geen nieuwe meting kwam, en toont dan "Zon · in rust". Dat geldt voor de huiskaart, het tabblad Energie, het huisverbruik en de zonnegrafiek.' ] },
   { v:'93', datum:'29-10-2026', punten:[ 'Rechts staat nu een rustig overzicht van alle lampen in huis: per verdieping de ruimtes, met een amber bolletje waar iets brandt. Tik op een ruimte voor de moods, aan/uit en de helderheid per lamp of voor de hele ruimte.', 'De knop Lampen bovenin is weg (stond dubbel); Klimaat, Media en Beweging staan nu precies boven de drie tegels eronder. Het lampenblok begint op dezelfde hoogte als de blokken ernaast.' ] },
   { v:'92', datum:'28-10-2026', punten:[ 'Het huisje voor Hoofddashboard is groter en zonder donkergrijze achtergrond: alleen de witte lijnen met amberkleurige ramen.' ] },
   { v:'91', datum:'28-10-2026', punten:[ 'Regen in de huiskaart: blauw als het regent of binnen 15 minuten gaat regenen, wit "Droog tot …" als de regen later komt, en geen regel als er de komende 2 uur geen regen wordt voorspeld.' ] },
@@ -1690,7 +1691,7 @@ function tekenLinks(){
   // Energie: verbruik en opwek in één kaart
   const p1 = dev(CONFIG.apparaten.p1), zon = dev(CONFIG.apparaten.zon);
   const net = cap(p1,'measure_power');                                       // + afname, − teruglevering
-  const opwek = Math.max(0, cap(zon,'measure_power') ?? cap(zon,'measure_solar_power') ?? 0);
+  const opwek = zonVermogen().w;                                              // 's nachts 0, ook als de app een oude waarde vasthoudt
   const verbruik = typeof net === 'number' ? Math.max(0, net + opwek) : null;
   const vanZon = verbruik ? Math.min(opwek, verbruik) : 0;                     // deel van het verbruik dat de zon levert
   const terug = typeof net === 'number' && net < -20 ? -net : 0;
@@ -2849,7 +2850,7 @@ function tekenEnergie(){
   // Zon
   $('zonTot').innerHTML = `<div><b style="color:var(--amber)">${kWh(T.zon)}</b> kWh<small>Opgewekt</small></div>
     <div><b>${kWh(T.zelf)}</b> kWh<small>Zelf gebruikt</small></div>`;
-  $('zonChart').innerHTML = lijnGrafiek(REEKS.zon, { pos:'var(--amber)', neg:'var(--amber)' });
+  $('zonChart').innerHTML = lijnGrafiek(zonReeks(REEKS.zon), { pos:'var(--amber)', neg:'var(--amber)' });
 
   // Gas
   $('gasTot').innerHTML = `<div><b style="color:var(--red)">${typeof T.gas === 'number' ? nl(T.gas, 2) : '–'}</b> m³<small>Verbruikt</small></div>`;
@@ -2885,7 +2886,7 @@ function tekenEnergieLive(){
   if(!$('flow')) return;
   const P1 = dev(CONFIG.apparaten.p1), ZON = dev(CONFIG.apparaten.zon), AUTO = dev(CONFIG.apparaten.auto);
   const net = cap(P1,'measure_power') ?? 0;                                  // + afname, − teruglevering
-  const zon = Math.max(0, cap(ZON,'measure_power') ?? cap(ZON,'measure_solar_power') ?? 0);
+  const ZV = zonVermogen(), zon = ZV.w;                                         // 's nachts 0 (omvormer in rust)
   const huis = Math.max(0, net + zon);
   const laadt = cap(AUTO,'is_charging') === true;
   const auto = laadt ? (cap(AUTO,'measure_charging_power') || 0) * 1000 : 0;
@@ -2910,6 +2911,7 @@ function tekenEnergieLive(){
   zet('fNetW', net < -20 ? '← ' + wTekst(-net) : net > 20 ? '→ ' + wTekst(net) : '0 W');
   zet('fNetSub', T.imp != null ? `↓ ${kWh(T.imp)} · ↑ ${kWh(T.exp)} kWh` : '');
   zet('fZonW', wTekst(zon));
+  { const n = $('fZonNaam'); if(n) zet('fZonNaam', (n.dataset.naam || 'Zon') + (ZV.rust ? ' · in rust' : '')); }
   zet('fZonSub', typeof T.zon === 'number' ? `${kWh(T.zon)} kWh vandaag` : '');
   zet('fHuisW', wTekst(huis));
   zet('fHuisSub', T.huis != null ? `${kWh(T.huis)} kWh vandaag` : '');
@@ -3151,7 +3153,7 @@ function huisSvgLijn(net, zon, auto, s){
   };
   const label = (x, anker, idW, idNaam, naam, kleur) => `
     <text x="${x}" y="24" text-anchor="${anker}" class="h-val" id="${idW}" ${kleur ? `style="fill:${kleur}"` : ''}>–</text>
-    <text x="${x}" y="42" text-anchor="${anker}" class="h-naam" ${idNaam ? `id="${idNaam}"` : ''}>${naam}</text>`;
+    <text x="${x}" y="42" text-anchor="${anker}" class="h-naam" ${idNaam ? `id="${idNaam}" data-naam="${naam}"` : ''}>${naam}</text>`;
   const pm = P(paneelMidden), ad = P(autoDak);
 
   return `<svg id="flowSvg" viewBox="0 0 ${W} ${H}" class="${zon > 20 ? 'zon-aan' : ''}" role="img" aria-label="Energiestroom door ons huis">
@@ -3162,7 +3164,7 @@ function huisSvgLijn(net, zon, auto, s){
     </defs>
     ${label(22, 'start', 'fNetW', 'fNetNaam', 'Stroomnet', afname ? 'var(--blue)' : terug ? 'var(--green)' : '')}
     ${label(215, 'middle', 'fHuisW', null, 'Huis')}
-    ${label(420, 'middle', 'fZonW', null, 'Zonnepanelen', 'var(--amber)')}
+    ${label(420, 'middle', 'fZonW', 'fZonNaam', 'Zonnepanelen', 'var(--amber)')}
     ${label(585, 'end', 'fAutoW', 'fAutoSub', 'ID.4', 'var(--green)')}
     <path d="M 420 50 L ${pm[0].toFixed(1)} ${pm[1].toFixed(1)}" class="h-hulp"/>
     ${s.autoThuis ? `<path d="M 585 50 L 585 ${(ad[1] - 30).toFixed(1)} L ${ad[0].toFixed(1)} ${ad[1].toFixed(1)}" class="h-hulp"/>` : ''}
@@ -3257,6 +3259,21 @@ const PAAL = '1022,612 1046,602 1088,676 1088,828 1062,828 1062,686';
 const PANELEN = '772,143 948,140 1020,211 840,216';                  // jullie zonnepanelen op het dak
 
 /* Is het donker? Op basis van zonsopkomst/-ondergang van de KNMI-app; anders 07:30–18:00. */
+/* Zonnevermogen zoals het dashboard het gebruikt. De omvormer gaat 's avonds slapen en de app in Homey
+   houdt dan de laatste meting vast (bv. de hele nacht 84 W). Daarom: zon onder de horizon, of al 20 minuten
+   geen nieuwe meting → 0 W ("in rust"). */
+const ZON_OUD_MS = 20 * 60000;
+function zonVermogen(){
+  const Z = dev(CONFIG.apparaten.zon); if(!Z) return { w:0, rust:false };
+  const c = heeft(Z,'measure_power') ? 'measure_power' : 'measure_solar_power';
+  const w = Math.max(0, cap(Z, c) ?? 0);
+  const t = Date.parse(Z.capabilitiesObj?.[c]?.lastUpdated || '');
+  const oud = !isNaN(t) && Date.now() - t > ZON_OUD_MS;
+  const onder = zonStand().el < 0;
+  return (onder || oud) && w > 0 ? { w:0, rust:true } : { w, rust:onder || oud };
+}
+/* Zelfde regel voor de grafiek: punten met de zon onder de horizon tellen als 0 */
+const zonReeks = r => (r || []).map(p => zonStand(new Date(p.t)).el < 0 ? { ...p, v:0 } : p);
 function isDonker(){
   const w = dev(CONFIG.apparaten.weer), nu = new Date();
   const uurMin = (t, standaard) => { const m = /^(\d{1,2}):(\d{2})/.exec(String(t ?? '')); return m ? +m[1] * 60 + +m[2] : standaard; };
@@ -3376,7 +3393,7 @@ function huisSvg(net, zon, auto, s){
 
   const label = (x, anker, idW, idNaam, naam, kleur) => `
     <text x="${x}" y="78" class="f-val" id="${idW}" style="text-anchor:${anker};${kleur ? 'fill:' + kleur : ''}">–</text>
-    <text x="${x}" y="134" class="f-naam" style="text-anchor:${anker}" ${idNaam ? `id="${idNaam}"` : ''}>${naam}</text>`;
+    <text x="${x}" y="134" class="f-naam" style="text-anchor:${anker}" ${idNaam ? `id="${idNaam}" data-naam="${naam}"` : ''}>${naam}</text>`;
 
   // Huislijn: groen voor stroom van de zon, blauw voor stroom van het net; bij een mix lopen beide golven
   const huisKleur = huis <= 20 ? '' : huisZon >= huisNet ? KLEUR.groen : KLEUR.net;
@@ -3399,7 +3416,7 @@ function huisSvg(net, zon, auto, s){
     <polygon points="${PANELEN}" class="f-panelen"/>
     ${label(36, 'start', 'fNetW', 'fNetNaam', 'Stroomnet', afname ? KLEUR.net : terug ? KLEUR.groen : '')}
     ${label(570, 'middle', 'fHuisW', null, 'Huis')}
-    ${label(985, 'middle', 'fZonW', null, 'Zon', KLEUR.zon)}
+    ${label(985, 'middle', 'fZonW', 'fZonNaam', 'Zon', KLEUR.zon)}
     ${label(1500, 'end', 'fAutoW', 'fAutoSub', 'ID.4', autoActief ? autoKleur : KLEUR.kabel)}
 
     ${terug ? basis('netUit', KLEUR.groen) + golf('netUit', KLEUR.groen, -net)
