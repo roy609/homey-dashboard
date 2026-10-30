@@ -700,7 +700,10 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 /* Pakjes: klein label in de bovenbalk (alleen als er iets onderweg is) + pop-up */
 .pakje-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 9px; border-radius:999px; border:1px solid var(--border2);
   background:var(--bg-inset); color:var(--text-secondary); font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
-.pakje-chip svg { width:15px; height:15px; color:var(--amber); }
+.pakje-chip svg { width:15px; height:15px; color:var(--amber); flex-shrink:0; }
+.pk-chip-tekst { display:flex; flex-direction:column; align-items:flex-start; line-height:1.15; text-align:left; }
+.pk-chip-tekst small { font-size:10.5px; font-weight:600; opacity:.8; }
+.pakje-chip:has(small) { padding-top:4px; padding-bottom:4px; }
 .pakje-chip.onderweg { border-color:rgba(245,165,36,.6); background:rgba(245,165,36,.12); color:var(--amber); }
 .pakje-chip.probleem { border-color:rgba(239,68,68,.55); background:var(--red-dim); color:var(--red); }
 .pakje-chip.probleem svg { color:var(--red); }
@@ -1369,9 +1372,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '97';
+const DASHBOARD_VERSIE = '98';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'98', datum:'30-10-2026', punten:[ 'Pakjes: onder de tekst in het label staat nu klein wanneer de volgende levering komt, bijvoorbeeld "morgen 08:30–21:30".' ] },
   { v:'97', datum:'30-10-2026', punten:[ 'Pakje toevoegen: een los volgnummer gaat nu via "Volg een pakje" (dat werkt betrouwbaar); een link of mailtekst via "Volg de pakjes in een tekst". Verschijnt het pakje niet binnen een minuut in het overzicht, dan krijg je een melding.' ] },
   { v:'96', datum:'30-10-2026', punten:[ 'Pakjes: rechtsboven staat nu altijd een rond knopje met een pakketje en een plusje. Tik erop om meteen een pakje toe te voegen (plak een volgnummer, link of verzendmail).' ] },
   { v:'95', datum:'30-10-2026', punten:[ 'Pakjes (app Parcel Tracker): rechtsboven verschijnt een klein label als er pakjes onderweg zijn, amber als de bezorger onderweg is. Tik erop voor de volgende levering, het laatste nieuws en om een pakje toe te voegen door een volgnummer, link of verzendmail te plakken.' ] },
@@ -4167,6 +4171,15 @@ function pakjesDev(){
   const P = CONFIG.pakjes || {};
   return (P.id && DEVS[P.id]) || Object.values(DEVS).find(d => heeft(d,'parcels_active')) || null;
 }
+/* Korte tijd uit "Toverdoeken: morgen tussen 08:30 en 21:30" → "morgen 08:30–21:30" */
+function pakjeTijd(t){
+  t = String(t || ''); if(!t || /niets onderweg/i.test(t)) return '';
+  const dag = (t.match(/\b(vandaag|morgen|overmorgen|maandag|dinsdag|woensdag|donderdag|vrijdag|zaterdag|zondag|\d{1,2}[ -]\w+)\b/i) || [])[1] || '';
+  const tussen = t.match(/(\d{1,2}:\d{2})\s*(?:en|tot|-|–)\s*(\d{1,2}:\d{2})/);
+  const om = t.match(/\bom\s+(\d{1,2}:\d{2})/i) || t.match(/(\d{1,2}:\d{2})/);
+  const tijd = tussen ? `${tussen[1]}–${tussen[2]}` : om ? om[1] : '';
+  return [dag.toLowerCase(), tijd].filter(Boolean).join(' ');
+}
 function tekenPakjes(){
   const el = $('pakjeChip'); if(!el) return;
   const d = pakjesDev(), n = k => Number(cap(d, k)) || 0;
@@ -4177,7 +4190,8 @@ function tekenPakjes(){
     el.className = 'pakje-chip' + (probleem ? ' probleem' : bezorger ? ' onderweg' : '');
     const tekst = probleem ? 'Probleem met pakje' : bezorger ? 'Bezorger onderweg'
       : [actief ? `${actief} onderweg` : '', vandaag ? `${vandaag} vandaag` : '', afhaal ? `${afhaal} afhalen` : ''].filter(Boolean).join(' · ');
-    el.innerHTML = `${ic('pakket')}<span>${esc(tekst)}</span>`;
+    const wanneer = pakjeTijd(cap(d,'parcel_next'));
+    el.innerHTML = `${ic('pakket')}<span class="pk-chip-tekst"><span>${esc(tekst)}</span>${wanneer ? `<small>${esc(wanneer)}</small>` : ''}</span>`;
     el.setAttribute('aria-label', 'Pakjes: ' + tekst);
   }
   if(pkOpen) tekenPakjePaneel();
