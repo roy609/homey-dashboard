@@ -712,7 +712,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .pakje-plus svg { width:18px; height:18px; }
 .pakje-plus b { position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%; background:var(--amber); color:#1a1205;
   font-size:14px; line-height:16px; font-weight:800; text-align:center; box-shadow:0 0 0 2px var(--bg-base, #10141c); }
-/* Beleggingen: klein label in de bovenbalk + pop-up. Bedragen pas zichtbaar na 4× tikken op het totaal. */
+/* Beleggingen: klein label in de bovenbalk + pop-up */
 .bel-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 8px; border-radius:999px; border:1px solid var(--border2);
   background:var(--bg-inset); color:var(--text-secondary); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap; }
 .bel-chip .munt { width:20px; height:20px; border-radius:50%; background:#F7931A; color:#fff; display:grid; place-items:center; font-size:12px; font-weight:800; }
@@ -1409,10 +1409,11 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '99';
+const DASHBOARD_VERSIE = '100';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'99', datum:'31-10-2026', punten:[ 'Beleggingen: rechtsboven de bitcoinkoers met de verandering in 24 uur. Tik erop voor je totaal, rendement, een grafiek per dag/week/maand/alles en je beleggingen. Bedragen zie je na 4× snel tikken op het totaal (2 minuten).', 'Je bezit staat in Homey (Logic-variabele), dus tablet, telefoon en laptop tonen hetzelfde. Homey Insights houdt de historie bij. Uitleg staat onder "Hoe werkt dit?" in de pop-up.' ] },
+  { v:'100', datum:'31-10-2026', punten:[ 'Beleggingen: de knoppen Dag/Week/Maand/Alles werken nu ook zolang je eigen historie nog wordt opgebouwd (dan zie je de bitcoinkoers over die periode). De uitleg hoe je bedragen zichtbaar maakt is weggehaald.' ] },
+  { v:'99', datum:'31-10-2026', punten:[ 'Beleggingen: rechtsboven de bitcoinkoers met de verandering in 24 uur. Tik erop voor je totaal, rendement, een grafiek per dag/week/maand/alles en je beleggingen.', 'Je bezit staat in Homey (Logic-variabele), dus tablet, telefoon en laptop tonen hetzelfde. Homey Insights houdt de historie bij. Uitleg staat onder "Hoe werkt dit?" in de pop-up.' ] },
   { v:'98', datum:'30-10-2026', punten:[ 'Pakjes: onder de tekst in het label staat nu klein wanneer de volgende levering komt, bijvoorbeeld "morgen 08:30–21:30".' ] },
   { v:'97', datum:'30-10-2026', punten:[ 'Pakje toevoegen: een los volgnummer gaat nu via "Volg een pakje" (dat werkt betrouwbaar); een link of mailtekst via "Volg de pakjes in een tekst". Verschijnt het pakje niet binnen een minuut in het overzicht, dan krijg je een melding.' ] },
   { v:'96', datum:'30-10-2026', punten:[ 'Pakjes: rechtsboven staat nu altijd een rond knopje met een pakketje en een plusje. Tik erop om meteen een pakje toe te voegen (plak een volgnummer, link of verzendmail).' ] },
@@ -4291,7 +4292,7 @@ async function pakjesNakijken(){
 
 /* ═════════════════════════════════════════════
    BELEGGINGEN — bitcoinkoers live (CoinGecko, terugval Bitvavo); bezit alleen op deze tablet (localStorage),
-   nooit in de code. Bedragen standaard verborgen; 4× snel tikken op het totaal toont ze 2 minuten.
+   nooit in de code. Bedragen standaard verborgen.
 ═════════════════════════════════════════════ */
 const BEL_KEY = 'dashboard_beleggingen', BEL_ZICHT_MS = 2 * 60000, BEL_LOG_MS = 15 * 60000;
 /* Logic-variabelen in Homey (aangemaakt op 31-10-2026). Bezit in de tekstvariabele; de getallen bouwen in Insights de historie op. */
@@ -4326,6 +4327,19 @@ async function belSchrijfGetallen(nu){
   const paren = [[BEL_VAR.koers, r(BTC.koers)], [BEL_VAR.bitcoin, r(T.btcW)], [BEL_VAR.hand, r(T.tot - T.btcW)], [BEL_VAR.totaal, r(T.tot)]];
   for(const [id, w] of paren){ if(VARS[id] && VARS[id].value !== w){ try { await zetVar(id, w); VARS[id].value = w; } catch(e){} } }
 }
+/* Bitcoinkoers per periode (CoinGecko), als terugval zolang de eigen historie nog wordt opgebouwd */
+const BTC_DAGEN = { dag:1, week:7, maand:31, alles:365 }, btcHist = {};
+async function laadBtcHist(periode){
+  if(btcHist[periode]?.bezig || (btcHist[periode] && Date.now() - btcHist[periode].t < 15 * 60000)) return;
+  btcHist[periode] = { ...(btcHist[periode] || {}), bezig:true };
+  try { const st = new AbortController(), tm = setTimeout(() => st.abort(), 12000);
+    const r = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=eur&days=${BTC_DAGEN[periode]}`, { signal:st.signal, cache:'no-store' });
+    clearTimeout(tm); if(!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json(), pr = (j.prices || []).map(x => x[1]), stap = Math.max(1, Math.floor(pr.length / 150));
+    btcHist[periode] = { t:Date.now(), pts:pr.filter((_, i) => i % stap === 0 || i === pr.length - 1) };
+  } catch(e){ btcHist[periode] = { t:Date.now(), pts:periode === 'dag' && BTC?.reeks?.length ? BTC.reeks : [] }; }
+  if(belOpen) tekenBelPaneel();
+}
 /* Historie uit Insights (Logic-variabele) */
 const BEL_RES = { dag:'last24Hours', week:'last7Days', maand:'last31Days', alles:'last2Years' };
 async function belLaadHist(periode){
@@ -4339,6 +4353,7 @@ async function belLaadHist(periode){
       belHist[periode] = { t:Date.now(), pts:l.filter(e => e && typeof e.v === 'number' && e.v > 0).map(e => e.v) }; break; }
     catch(e){ if(!/40[04]/.test(e.message)) break; }
   }
+  if(!belHist[periode]) belHist[periode] = { t:Date.now(), pts:[] };
   if(belOpen) tekenBelPaneel();
 }
 const belZicht = () => Date.now() < belZichtTot;
@@ -4394,13 +4409,18 @@ function tekenBelPaneel(){
   let html = `<div class="bel-totaal" data-bel-tik="1"><small>Totaal</small>
       <b class="${zicht ? '' : 'verborgen'}">${zicht ? euroHeel(T.tot) : verb}</b>
       <div>${typeof T.rend === 'number' ? `<span class="${T.rend >= 0 ? 'bel-op' : 'bel-neer'}" style="font-weight:700">${pctTekst(T.rend)}</span> <span class="bel-klein">t.o.v. je inleg</span>` : '<span class="bel-klein">Vul je inleg in voor winst/verlies</span>'}</div>
-      <div class="hint">${zicht ? 'Bedragen zichtbaar · verdwijnen vanzelf na 2 minuten' : 'Tik 4× snel op dit vak om bedragen te zien'}</div></div>`;
+      </div>`;
   const H = belHist[belPeriode];
   if(!H || Date.now() - H.t > 10 * 60000) belLaadHist(belPeriode);
   const pNaam = { dag:'dag', week:'week', maand:'maand', alles:'alles' };
   html += `<div class="segment bel-perioden" role="tablist">${Object.keys(pNaam).map(k => `<button class="${belPeriode === k ? 'on' : ''}" data-bel-periode="${k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}</div>`;
-  html += H && H.pts.length >= 2 ? belGrafiek(H.pts, 'Totale waarde, ' + ({ dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'sinds de start' })[belPeriode])
-       : (BTC ? belGrafiek(BTC.reeks, 'Bitcoin, laatste 24 uur') : '') + `<p class="bel-klein">De historie van je totaal wordt opgebouwd in Homey Insights (elke 15 minuten een punt). Daarna verschijnt hier de grafiek per periode.</p>`;
+  const pTekst = { dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'sinds de start' }, bTekst = { dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'laatste jaar' };
+  if(H && H.pts.length >= 2) html += belGrafiek(H.pts, 'Totale waarde, ' + pTekst[belPeriode]);
+  else {
+    const B = btcHist[belPeriode]; if(!B || (!B.pts && !B.bezig)) laadBtcHist(belPeriode);
+    html += B && B.pts?.length >= 2 ? belGrafiek(B.pts, 'Bitcoinkoers, ' + bTekst[belPeriode]) : `<p class="bel-klein" style="padding:30px 0;text-align:center">Grafiek laden…</p>`;
+    html += `<p class="bel-klein">Je eigen totaal wordt nog opgebouwd in Homey Insights; tot die tijd zie je hier de bitcoinkoers.</p>`;
+  }
   html += rij('₿', false, 'Bitcoin', zicht ? `${nl(+d.btc || 0, 6)} BTC` : 'koers live', T.btcW, btcRend);
   d.posten.forEach((p, i) => { const r = p.inleg ? (p.waarde - p.inleg) / p.inleg * 100 : null;
     html += rij(esc((p.naam || '?').slice(0, 2).toUpperCase()), true, p.naam, leeftijd(p.datum), +p.waarde || 0, r); });
@@ -4418,12 +4438,12 @@ function tekenBelPaneel(){
   }
   if(belOpslagFout) html += `<p class="pk-melding fout">${esc(belOpslagFout)}</p>`;
   html += `<details class="bel-uitleg"><summary>Hoe werkt dit?</summary>
-    <p><b>Opbouw.</b> Bovenin het totaal (bedragen verborgen tot je 4× snel op het totaal tikt; na 2 minuten weer verborgen), daaronder de grafiek per periode en je beleggingen met rendement t.o.v. je inleg.</p>
+    <p><b>Opbouw.</b> Bovenin het totaal (bedragen zijn standaard verborgen), daaronder de grafiek per periode en je beleggingen met rendement t.o.v. je inleg.</p>
     <p><b>Koers.</b> De bitcoinkoers komt live van CoinGecko (reserve: Bitvavo) en ververst elke 5 minuten. De waarde van je bitcoin = aantal BTC × koers.</p>
     <p><b>Opslag in Homey.</b> Je bezit staat in de Logic-variabele <i>Beleggingen (dashboard)</i> (tekst). Daardoor zie je hetzelfde op tablet, telefoon en laptop (alleen thuis, met dezelfde Homey-sleutel). Niets staat in de code op GitHub.</p>
     <p><b>Historie.</b> Elke 15 minuten zet het dashboard <i>Beleggingen totaal €</i>, <i>Beleggingen bitcoin €</i>, <i>Beleggingen handmatig €</i> en <i>Bitcoinkoers €</i> in Homey. Homey Insights bewaart die getallen (tot 2 jaar) en daar komt de grafiek vandaan. Staat geen enkel dashboard open, dan ontstaat er een gat in de lijn.</p>
     <p><b>Handmatige beleggingen</b> (zoals DEGIRO of ING) hebben geen koppeling: vul af en toe de actuele waarde in. Bij elke belegging staat hoe lang geleden je dat deed.</p>
-    <p><b>Let op.</b> 4× tikken is een drempel, geen beveiliging. Wie toegang heeft tot jullie Homey kan de variabelen en Insights zien.</p></details>`;
+    <p><b>Let op.</b> Het verbergen van bedragen is een drempel, geen beveiliging. Wie toegang heeft tot jullie Homey kan de variabelen en Insights zien.</p></details>`;
   $('belInhoud').innerHTML = html;
 }
 const getal = v => { const n = parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')); return isNaN(n) ? 0 : n; };
