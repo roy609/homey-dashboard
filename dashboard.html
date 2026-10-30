@@ -1329,7 +1329,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '94';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'94', datum:'30-10-2026', punten:[ 'Zonnepanelen: de omvormer stuurt \'s avonds niets meer en Homey houdt dan de laatste waarde vast (bv. de hele nacht 84 W). Het dashboard telt het zonnevermogen nu als 0 W zodra de zon onder is of er 20 minuten geen nieuwe meting kwam, en toont dan "Zon · in rust". Dat geldt voor de huiskaart, het tabblad Energie, het huisverbruik en de zonnegrafiek.' ] },
+  { v:'94', datum:'30-10-2026', punten:[ 'Zonnepanelen: de omvormer stuurt \'s avonds niets meer en Homey houdt dan de laatste waarde vast (bv. de hele nacht 84 W). Het dashboard telt het zonnevermogen nu als 0 W zodra de zon onder is of er 20 minuten geen nieuwe meting kwam, en toont dan "Zon · in rust". Dat geldt voor de huiskaart, het tabblad Energie, het huisverbruik en de zonnegrafiek.', 'Mist: het huisbeeld toont nu ook mist als het KNMI-weer "bewolkt" zegt maar het zicht 1 km of minder is (of tot 3 km bij 95% luchtvochtigheid of meer).' ] },
   { v:'93', datum:'29-10-2026', punten:[ 'Rechts staat nu een rustig overzicht van alle lampen in huis: per verdieping de ruimtes, met een amber bolletje waar iets brandt. Tik op een ruimte voor de moods, aan/uit en de helderheid per lamp of voor de hele ruimte.', 'De knop Lampen bovenin is weg (stond dubbel); Klimaat, Media en Beweging staan nu precies boven de drie tegels eronder. Het lampenblok begint op dezelfde hoogte als de blokken ernaast.' ] },
   { v:'92', datum:'28-10-2026', punten:[ 'Het huisje voor Hoofddashboard is groter en zonder donkergrijze achtergrond: alleen de witte lijnen met amberkleurige ramen.' ] },
   { v:'91', datum:'28-10-2026', punten:[ 'Regen in de huiskaart: blauw als het regent of binnen 15 minuten gaat regenen, wit "Droog tot …" als de regen later komt, en geen regel als er de komende 2 uur geen regen wordt voorspeld.' ] },
@@ -3299,6 +3299,12 @@ function zonStand(t = new Date(), lat = 51.9, lon = 5.9){   // regio Bemmel, afg
   return { el: el / r, az: (az / r + 360) % 360 };                         // az: 0 = noord, 90 = oost, 180 = zuid
 }
 
+/* Mist volgens de metingen: zicht (km) ≤ 1, of ≤ 3 km bij een luchtvochtigheid van 95% of meer (nevel/mist) */
+function zichtMist(w){
+  const zicht = cap(w,'sight'), vocht = cap(w,'humidity');
+  if(typeof zicht !== 'number') return false;
+  return zicht <= 1 || (zicht <= 3 && typeof vocht === 'number' && vocht >= 95);
+}
 function omstandigheden(){
   const w = dev(CONFIG.apparaten.weer);
   const maand = new Date().getMonth() + 1;
@@ -3310,6 +3316,7 @@ function omstandigheden(){
   if(/sneeuw|hagel|ijzel|winterse/.test(tekst)) weer = 'sneeuw';
   else if(!droog && /regen|bui|motregen|onweer/.test(tekst)) weer = 'regen';
   else if(/mist|nevel/.test(tekst)) weer = 'mist';
+  else if(zichtMist(w)) weer = 'mist';                                     // recap zegt bv. "Zwaar bewolkt", maar het zicht is 1 km
   else if(/half|wisselend|opklaring/.test(tekst)) weer = 'half';
   else if(/bewolkt|grijs|betrokken/.test(tekst)) weer = 'bewolkt';
   const zwaar = weer === 'sneeuw' && /zware|hevige|flinke|veel|sneeuwdek|cm/.test(tekst + ' ' + String(cap(w,'expected') ?? '').toLowerCase());
