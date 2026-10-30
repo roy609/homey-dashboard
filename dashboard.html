@@ -625,13 +625,14 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 /* knoppen precies boven de middelste kolom (zelfde breedte als de tegels eronder), melding rechts in de derde kolom */
 #page-home .statusbar { display:grid; grid-template-columns:1.05fr 1.15fr 1fr; gap:18px; }
 #page-home .statusbar .top-rechts { display:contents; }
-#page-home #status { justify-self:end; flex-shrink:0; }
+#page-home #status { flex-shrink:0; }
+#page-home .top-eind { justify-self:end; display:flex; align-items:center; gap:10px; min-width:0; }
 .top-knoppen { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; min-width:0; container-type:inline-size; }
 .top-knoppen > .card { flex-direction:row; padding:5px 8px 5px 5px; border-radius:999px; gap:0; min-height:46px; justify-content:flex-start; min-width:0; }
 .top-knoppen .row, .top-knoppen .grow { min-width:0; }
 .top-knoppen .card-sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-@media (max-width:1100px){ #page-home .statusbar { grid-template-columns:1fr; } #page-home #status { justify-self:start; } }
+@media (max-width:1100px){ #page-home .statusbar { grid-template-columns:1fr; } #page-home .top-eind { justify-self:start; } }
 .top-knoppen > .card .row { gap:8px; align-items:center; min-width:0; }
 .top-knoppen .ico { width:34px; height:34px; border-radius:50%; flex-shrink:0; }
 .top-knoppen .ico svg { width:17px; height:17px; }
@@ -696,6 +697,29 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .lp-rij.met-dim { flex-wrap:wrap; align-content:flex-start; row-gap:0; }
 .lp-rij.met-dim .lp-dim { margin-top:2px; }
 .lp-rij.met-dim .lp-dim { flex-basis:100%; padding-left:52px; }
+/* Pakjes: klein label in de bovenbalk (alleen als er iets onderweg is) + pop-up */
+.pakje-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 9px; border-radius:999px; border:1px solid var(--border2);
+  background:var(--bg-inset); color:var(--text-secondary); font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.pakje-chip svg { width:15px; height:15px; color:var(--amber); }
+.pakje-chip.onderweg { border-color:rgba(245,165,36,.6); background:rgba(245,165,36,.12); color:var(--amber); }
+.pakje-chip.probleem { border-color:rgba(239,68,68,.55); background:var(--red-dim); color:var(--red); }
+.pakje-chip.probleem svg { color:var(--red); }
+.pk-tellers { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
+.pk-tellers div { padding:8px 10px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
+.pk-tellers b { display:block; font-size:1.3rem; }
+.pk-tellers small { font-size:11px; color:var(--text-muted); }
+.pk-tellers .aan { border-color:rgba(245,165,36,.55); } .pk-tellers .aan b { color:var(--amber); }
+.pk-regel { padding:10px 12px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
+.pk-regel small { display:block; font-size:11px; font-weight:600; letter-spacing:.6px; text-transform:uppercase; color:var(--text-muted); margin-bottom:3px; }
+.pk-toevoegen { display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:12px; border:1px dashed var(--border2); }
+.pk-toevoegen textarea { width:100%; min-height:64px; resize:vertical; padding:10px 12px; border-radius:10px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-primary); font:inherit; font-size:var(--fs-sm); }
+.pk-rij { display:flex; gap:8px; align-items:center; }
+.pk-rij .segment { flex:1; margin:0; }
+.pk-rij .segment button { min-height:40px; }
+.pk-knop { min-height:40px; padding:0 16px; border-radius:10px; border:1px solid rgba(245,165,36,.6); background:rgba(245,165,36,.15); color:var(--amber); font:inherit; font-weight:700; cursor:pointer; }
+.pk-knop[disabled] { opacity:.5; }
+.pk-melding { font-size:var(--fs-sm); color:var(--text-muted); min-height:1.2em; }
+.pk-melding.ok { color:var(--green); } .pk-melding.fout { color:var(--red); }
 .tarief-let { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px; border-radius:12px; background:var(--amber-dim, rgba(245,165,36,.12)); border:1px solid rgba(245,165,36,.45); color:var(--amber); font-size:var(--fs-sm); font-weight:600; }
 .tarief-let svg { width:18px; height:18px; flex-shrink:0; }
 .zone-moods { margin-top:6px; }
@@ -865,7 +889,8 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     <div class="statusbar">
       <div class="kop-links"><h1 class="met-icoon"><img class="titel-icoon" id="titelIcoon" alt="" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%224%2015%2056%2037%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22a%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23232B38%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23121821%22/%3E%3C/linearGradient%3E%3ClinearGradient%20id%3D%22z%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFC24D%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F59E0B%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath%20d%3D%22M37.2%2021.4%2046%2030.2%2048.8%2027.4%2040%2018.6Z%22%20fill%3D%22url%28%23z%29%22/%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23EAF0F7%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M9%2050V30.5L17.5%2020%2024.5%2028.5%2033%2017.5%2057%2041.5%22/%3E%3Cpath%20d%3D%22M41%2025.5V50%22/%3E%3Cpath%20d%3D%22M52.5%2037V50%22/%3E%3Cpath%20d%3D%22M6%2050H58%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23F5A524%22%3E%3Crect%20x%3D%2214%22%20y%3D%2233%22%20width%3D%225%22%20height%3D%226%22%20rx%3D%221%22/%3E%3Crect%20x%3D%2228%22%20y%3D%2233%22%20width%3D%225%22%20height%3D%226%22%20rx%3D%221%22/%3E%3C/g%3E%3C/svg%3E">Hoofddashboard</h1><div class="bewoners" id="bewoners"></div></div>
       <div class="top-rechts"><div class="top-knoppen" id="huisKaarten"></div>
-      <span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div>
+      <div class="top-eind"><button class="pakje-chip" id="pakjeChip" hidden data-pakjes="1"></button>
+      <span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div></div>
     </div>
     <div class="board">
       <!-- Links: huiskaart (energie, klok, weer) en variabelen -->
@@ -1016,6 +1041,16 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="pakjePaneel">
+  <div class="modal lp" role="dialog" aria-label="Pakjes">
+    <div class="lp-kop">
+      <div class="ico amber" data-icon="pakket"></div>
+      <div class="grow"><h2>Pakjes</h2><div class="card-sub" id="pkSub"></div></div>
+      <button class="lp-knop" data-pk-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst" id="pkInhoud"></div>
+  </div>
+</div>
 <div class="overlay" id="regenPaneel">
   <div class="modal lp" role="dialog" aria-label="Regen">
     <div class="lp-kop">
@@ -1295,6 +1330,8 @@ const CONFIG = {
   },
   // Regen: verwachting per 5 minuten (komende 2 uur) en radarbeeld van Buienradar
   regen: { lat:51.89, lon:5.90, plaats:'Bemmel' },
+  // Pakjes: apparaat "Pakjes" van de app Parcel Tracker (leeg = automatisch het apparaat met parcels_active)
+  pakjes: { id:'f6d1803c-bb0a-40b7-aa34-e602d3d9b408', voor:['Roy','Beau'] },
   tuinZones: [
     '5204dc44-8e9c-49e7-aed8-9d5c93330126', // Achtertuin
     '9fc1dda8-dae7-4bde-a0e7-0506f85762f3', // Voortuin
@@ -1326,9 +1363,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '94';
+const DASHBOARD_VERSIE = '95';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'95', datum:'30-10-2026', punten:[ 'Pakjes (app Parcel Tracker): rechtsboven verschijnt een klein label als er pakjes onderweg zijn, amber als de bezorger onderweg is. Tik erop voor de volgende levering, het laatste nieuws en om een pakje toe te voegen door een volgnummer, link of verzendmail te plakken.' ] },
   { v:'94', datum:'30-10-2026', punten:[ 'Zonnepanelen: de omvormer stuurt \'s avonds niets meer en Homey houdt dan de laatste waarde vast (bv. de hele nacht 84 W). Het dashboard telt het zonnevermogen nu als 0 W zodra de zon onder is of er 20 minuten geen nieuwe meting kwam, en toont dan "Zon · in rust". Dat geldt voor de huiskaart, het tabblad Energie, het huisverbruik en de zonnegrafiek.', 'Mist: het huisbeeld toont nu ook mist als het KNMI-weer "bewolkt" zegt maar het zicht 1 km of minder is (of tot 3 km bij 95% luchtvochtigheid of meer).' ] },
   { v:'93', datum:'29-10-2026', punten:[ 'Rechts staat nu een rustig overzicht van alle lampen in huis: per verdieping de ruimtes, met een amber bolletje waar iets brandt. Tik op een ruimte voor de moods, aan/uit en de helderheid per lamp of voor de hele ruimte.', 'De knop Lampen bovenin is weg (stond dubbel); Klimaat, Media en Beweging staan nu precies boven de drie tegels eronder. Het lampenblok begint op dezelfde hoogte als de blokken ernaast.' ] },
   { v:'92', datum:'28-10-2026', punten:[ 'Het huisje voor Hoofddashboard is groter en zonder donkergrijze achtergrond: alleen de witte lijnen met amberkleurige ramen.' ] },
@@ -3895,7 +3933,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenPakjes(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -4111,8 +4149,80 @@ function tekenRegenPaneel(){
 function openRegen(){ rgOpen = true; $('regenPaneel').classList.add('on'); tekenRegenPaneel(); if(!REGEN) laadRegen(); }
 function sluitRegen(){ rgOpen = false; $('regenPaneel').classList.remove('on'); }
 
+/* ═════════════════════════════════════════════
+   PAKJES — app Parcel Tracker: apparaat "Pakjes" (aantallen, volgende levering, laatste nieuws)
+   Toevoegen via de actiekaart "Volg de pakjes in een tekst" (plak een volgnummer, link of verzendmail).
+═════════════════════════════════════════════ */
+let pkOpen = false, pkVoor = null, pkBezig = false, pkMelding = null;
+const PK_APP = 'homey:app:be.parceltracker';
+function pakjesDev(){
+  const P = CONFIG.pakjes || {};
+  return (P.id && DEVS[P.id]) || Object.values(DEVS).find(d => heeft(d,'parcels_active')) || null;
+}
+function tekenPakjes(){
+  const el = $('pakjeChip'); if(!el) return;
+  const d = pakjesDev(), n = k => Number(cap(d, k)) || 0;
+  const actief = n('parcels_active'), vandaag = n('parcels_today'), uit = n('parcels_out'), afhaal = n('parcels_pickup');
+  const probleem = cap(d,'alarm_parcel_problem') === true, bezorger = cap(d,'alarm_parcel_out') === true || uit > 0;
+  el.hidden = !d || (!actief && !afhaal && !probleem);
+  if(!el.hidden){
+    el.className = 'pakje-chip' + (probleem ? ' probleem' : bezorger ? ' onderweg' : '');
+    const tekst = probleem ? 'Probleem met pakje' : bezorger ? 'Bezorger onderweg'
+      : [actief ? `${actief} onderweg` : '', vandaag ? `${vandaag} vandaag` : '', afhaal ? `${afhaal} afhalen` : ''].filter(Boolean).join(' · ');
+    el.innerHTML = `${ic('pakket')}<span>${esc(tekst)}</span>`;
+    el.setAttribute('aria-label', 'Pakjes: ' + tekst);
+  }
+  if(pkOpen) tekenPakjePaneel();
+}
+function tekenPakjePaneel(){
+  const d = pakjesDev(), n = k => Number(cap(d, k)) || 0, voor = (CONFIG.pakjes?.voor) || [];
+  if(pkVoor == null) pkVoor = '';
+  $('pkSub').textContent = d ? (n('parcels_active') ? `${n('parcels_active')} onderweg` : 'Niets onderweg') : 'Apparaat "Pakjes" niet gevonden in Homey';
+  const teller = (w, t, aan) => `<div class="${aan && w ? 'aan' : ''}"><b>${w}</b><small>${t}</small></div>`;
+  const tekstveld = $('pkTekst')?.value || '';
+  $('pkInhoud').innerHTML = (d ? `<div class="pk-tellers">${teller(n('parcels_active'), 'onderweg')}${teller(n('parcels_today'), 'vandaag', 1)}${teller(n('parcels_out'), 'bezorger onderweg', 1)}${teller(n('parcels_pickup'), 'afhaalpunt', 1)}</div>
+      ${cap(d,'parcel_next') ? `<div class="pk-regel"><small>Volgende levering</small>${esc(cap(d,'parcel_next'))}</div>` : ''}
+      ${cap(d,'parcel_last') ? `<div class="pk-regel"><small>Laatste nieuws</small>${esc(cap(d,'parcel_last'))}</div>` : ''}
+      ${cap(d,'alarm_parcel_problem') === true ? `<div class="pk-regel" style="border-color:var(--red);color:var(--red)">Er is een probleem gemeld bij een pakje. Kijk in de Homey-app voor details.</div>` : ''}` : '')
+    + `<div class="pk-toevoegen">
+        <b>Pakje toevoegen</b>
+        <textarea id="pkTekst" placeholder="Plak een volgnummer, trackinglink of de tekst van de verzendmail">${esc(tekstveld)}</textarea>
+        <div class="pk-rij">
+          ${voor.length ? `<div class="segment" role="radiogroup" aria-label="Voor wie">${['', ...voor].map(v =>
+            `<button role="radio" aria-checked="${pkVoor === v}" class="${pkVoor === v ? 'on' : ''}" data-pkvoor="${esc(v)}">${v ? esc(v) : 'Iedereen'}</button>`).join('')}</div>` : ''}
+          <button class="pk-knop" data-pk-volg="1" ${pkBezig ? 'disabled' : ''}>${pkBezig ? 'Bezig…' : 'Volgen'}</button>
+        </div>
+        <div class="pk-melding ${pkMelding?.soort || ''}">${esc(pkMelding?.tekst || '')}</div>
+      </div>
+      <button class="btn" data-pk-check="1">${ic('ververs')} Alle pakjes nu nakijken</button>`;
+}
+function openPakjes(){ pkOpen = true; pkMelding = null; $('pakjePaneel').classList.add('on'); tekenPakjePaneel(); }
+function sluitPakjes(){ pkOpen = false; $('pakjePaneel').classList.remove('on'); }
+async function pakjeVolgen(){
+  const tekst = ($('pkTekst')?.value || '').trim();
+  if(!tekst){ pkMelding = { soort:'fout', tekst:'Plak eerst een volgnummer, link of verzendmail.' }; return tekenPakjePaneel(); }
+  pkBezig = true; pkMelding = null; tekenPakjePaneel();
+  try {
+    if(!DEMO()) await kaartUitvoeren(PK_APP, 'track_from_text', { text:tekst, owner:pkVoor || '' });
+    pkMelding = { soort:'ok', tekst:'Toegevoegd. De app zoekt de vervoerder erbij; het pakje verschijnt zo in de lijst.' };
+    $('pkTekst').value = '';
+    setTimeout(verversApparaten, 4000);
+  } catch(e){ pkMelding = { soort:'fout', tekst:'Lukte niet: ' + (/403/.test(e.message) ? 'de API-sleutel mag geen flows starten' : e.message) }; }
+  pkBezig = false; tekenPakjePaneel();
+}
+async function pakjesNakijken(){
+  try { if(!DEMO()) await kaartUitvoeren(PK_APP, 'refresh_all', {}); pkMelding = { soort:'ok', tekst:'Alle pakjes worden nagekeken.' }; setTimeout(verversApparaten, 8000); }
+  catch(e){ pkMelding = { soort:'fout', tekst:'Nakijken lukte niet: ' + e.message }; }
+  tekenPakjePaneel();
+}
+
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
+  if(pkOpen && (e.target === $('pakjePaneel') || e.target.closest('[data-pk-sluit]'))) return sluitPakjes();
+  if(e.target.closest('[data-pakjes]')) return openPakjes();
+  const pkv = e.target.closest('[data-pkvoor]'); if(pkv){ pkVoor = pkv.dataset.pkvoor; return tekenPakjePaneel(); }
+  if(e.target.closest('[data-pk-volg]')) return pakjeVolgen();
+  if(e.target.closest('[data-pk-check]')) return pakjesNakijken();
   if(rgOpen && (e.target === $('regenPaneel') || e.target.closest('[data-rg-sluit]'))) return sluitRegen();
   const rgt = e.target.closest('[data-rgtab]'); if(rgt){ rgTab = rgt.dataset.rgtab; return tekenRegenPaneel(); }
   if(e.target.closest('[data-regen]')) return openRegen();
