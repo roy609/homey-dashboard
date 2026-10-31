@@ -1482,7 +1482,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '101';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'101', datum:'31-10-2026', punten:[ 'Nieuwe pagina Auto (ook via de auto in de huiskaart): accu en geschatte actieradius, slot, portieren en ramen, laden, klimaat, onderhoud en kilometerstand.', 'Banden: profiel per band meten en vastleggen voor zomer- en winterbanden, grafiek met verwachting hoelang ze nog meegaan, en advies wanneer je moet wisselen of een afspraak maken.', 'Laadpaal: alvast met voorbeeldgegevens, klaar voor de go-e Charger Gemini.' ] },
+  { v:'101', datum:'31-10-2026', punten:[ 'Huisafbeelding: na (mot)regen alleen nog een natte grond als de luchtvochtigheid 85% of meer is. Voorheen bleef het beeld nat zolang KNMI "Droog na motregen" meldde, ook als het al uren droog was.', 'Nieuwe pagina Auto (ook via de auto in de huiskaart): accu en geschatte actieradius, slot, portieren en ramen, laden, klimaat, onderhoud en kilometerstand.', 'Banden: profiel per band meten en vastleggen voor zomer- en winterbanden, grafiek met verwachting hoelang ze nog meegaan, en advies wanneer je moet wisselen of een afspraak maken.', 'Laadpaal: alvast met voorbeeldgegevens, klaar voor de go-e Charger Gemini.' ] },
   { v:'100', datum:'31-10-2026', punten:[ 'Beleggingen: de knoppen Dag/Week/Maand/Alles werken nu ook zolang je eigen historie nog wordt opgebouwd (dan zie je de bitcoinkoers over die periode). De uitleg hoe je bedragen zichtbaar maakt is weggehaald.' ] },
   { v:'99', datum:'31-10-2026', punten:[ 'Beleggingen: rechtsboven de bitcoinkoers met de verandering in 24 uur. Tik erop voor je totaal, rendement, een grafiek per dag/week/maand/alles en je beleggingen.', 'Je bezit staat in Homey (Logic-variabele), dus tablet, telefoon en laptop tonen hetzelfde. Homey Insights houdt de historie bij. Uitleg staat onder "Hoe werkt dit?" in de pop-up.' ] },
   { v:'98', datum:'30-10-2026', punten:[ 'Pakjes: onder de tekst in het label staat nu klein wanneer de volgende levering komt, bijvoorbeeld "morgen 08:30–21:30".' ] },
@@ -1567,7 +1567,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '31-10-2026 00:40';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '31-10-2026 14:51';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -3480,7 +3480,9 @@ function omstandigheden(){
   else if(/half|wisselend|opklaring/.test(tekst)) weer = 'half';
   else if(/bewolkt|grijs|betrokken/.test(tekst)) weer = 'bewolkt';
   const zwaar = weer === 'sneeuw' && /zware|hevige|flinke|veel|sneeuwdek|cm/.test(tekst + ' ' + String(cap(w,'expected') ?? '').toLowerCase());
-  const natNa = droog && /regen|bui/.test(nu);                             // "Droog na regen": straat nog nat
+  // "Droog na (mot)regen": straat alleen nog nat bij een luchtvochtigheid van 85% of meer (KNMI houdt die tekst soms uren vast)
+  const vocht = cap(w,'humidity');
+  const natNa = droog && /regen|bui/.test(nu) && typeof vocht === 'number' && vocht >= 85;
   const temp = typeof cap(w,'current_temp') === 'number' ? cap(w,'current_temp') : null;
   const vorst = temp != null && temp <= 0 && weer !== 'sneeuw';
   const NAAM = { helder:'Zonnig', half:'Half bewolkt', bewolkt:'Bewolkt', regen:'Regen', sneeuw:zwaar ? 'Veel sneeuw' : 'Lichte sneeuw', mist:'Mist' };
