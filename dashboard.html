@@ -698,6 +698,35 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .lp-rij.met-dim .lp-dim { margin-top:2px; }
 .lp-rij.met-dim .lp-dim { flex-basis:100%; padding-left:52px; }
 /* Pakjes: klein label in de bovenbalk (alleen als er iets onderweg is) + pop-up */
+/* Tweede regel van de bovenbalk: beleggingen, pakjes en meldingen over de auto */
+#page-home .statusbar { row-gap:8px; }
+#page-home .top-meldingen { grid-column:1 / -1; display:flex; flex-wrap:wrap; align-items:center; gap:10px; min-width:0; }
+.rdw-chips { display:contents; }
+/* Pakjes: met informatie één blok (label + plusje), zonder informatie alleen het plusje */
+.pakje-blok { display:inline-flex; align-items:center; gap:8px; }
+.pakje-blok.met-info { gap:0; border-radius:999px; }
+.pakje-blok.met-info .pakje-chip { border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; padding-right:10px; }
+.pakje-blok.met-info .pakje-plus { width:auto; height:auto; align-self:stretch; border-radius:0 999px 999px 0; padding:0 12px 0 10px; border-color:inherit; }
+.pakje-blok.met-info.onderweg .pakje-plus { border-color:rgba(245,165,36,.6); background:rgba(245,165,36,.12); border-left:1px solid rgba(245,165,36,.35); }
+.pakje-blok.met-info.probleem .pakje-plus { border-color:rgba(239,68,68,.55); background:var(--red-dim); border-left:1px solid rgba(239,68,68,.35); }
+.pakje-blok.met-info:not(.onderweg):not(.probleem) .pakje-plus { border-left:1px solid var(--border); }
+.pakje-blok.met-info .pakje-plus svg { display:none; }
+.pakje-blok.met-info .pakje-plus b { position:static; box-shadow:none; }
+/* Meldingen over de auto (APK, verzekering, terugroepactie) */
+.rdw-chip { display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 9px; border-radius:999px; font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;
+  border:1px solid rgba(245,165,36,.6); background:rgba(245,165,36,.12); color:var(--amber); }
+.rdw-chip svg { width:15px; height:15px; flex-shrink:0; }
+.rdw-chip.rood { border-color:rgba(239,68,68,.55); background:var(--red-dim); color:var(--red); }
+.rdw-chip small { display:block; font-size:10.5px; opacity:.8; }
+.rdw-chip .pk-chip-tekst { line-height:1.15; }
+.rdw-melding { padding:12px 14px; border-radius:14px; border:1px solid var(--border2); background:var(--bg-inset); }
+.rdw-melding.oranje { border-color:rgba(245,165,36,.5); } .rdw-melding.rood { border-color:rgba(239,68,68,.5); }
+.rdw-melding b { display:block; font-size:var(--fs-md); } .rdw-melding.oranje b { color:var(--amber); } .rdw-melding.rood b { color:var(--red); }
+.rdw-melding p { margin:4px 0 0; font-size:var(--fs-sm); color:var(--text-secondary); }
+.rdw-knoppen { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.rdw-ok { color:var(--green); font-weight:700; font-size:var(--fs-sm); }
+#rdwPaneel .modal { max-width:480px; }
+#rdwPaneel .lp-inhoud, #rdwInhoud { display:flex; flex-direction:column; gap:10px; overflow:auto; }
 .pakje-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 9px; border-radius:999px; border:1px solid var(--border2);
   background:var(--bg-inset); color:var(--text-secondary); font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
 .pakje-chip svg { width:15px; height:15px; color:var(--amber); flex-shrink:0; }
@@ -977,9 +1006,10 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     <div class="statusbar">
       <div class="kop-links"><h1 class="met-icoon"><img class="titel-icoon" id="titelIcoon" alt="" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%224%2015%2056%2037%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22a%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23232B38%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23121821%22/%3E%3C/linearGradient%3E%3ClinearGradient%20id%3D%22z%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFC24D%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F59E0B%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath%20d%3D%22M37.2%2021.4%2046%2030.2%2048.8%2027.4%2040%2018.6Z%22%20fill%3D%22url%28%23z%29%22/%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23EAF0F7%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M9%2050V30.5L17.5%2020%2024.5%2028.5%2033%2017.5%2057%2041.5%22/%3E%3Cpath%20d%3D%22M41%2025.5V50%22/%3E%3Cpath%20d%3D%22M52.5%2037V50%22/%3E%3Cpath%20d%3D%22M6%2050H58%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23F5A524%22%3E%3Crect%20x%3D%2214%22%20y%3D%2233%22%20width%3D%225%22%20height%3D%226%22%20rx%3D%221%22/%3E%3Crect%20x%3D%2228%22%20y%3D%2233%22%20width%3D%225%22%20height%3D%226%22%20rx%3D%221%22/%3E%3C/g%3E%3C/svg%3E">Hoofddashboard</h1><div class="bewoners" id="bewoners"></div></div>
       <div class="top-rechts"><div class="top-knoppen" id="huisKaarten"></div>
-      <div class="top-eind"><button class="bel-chip" id="belChip" data-beleg="1" aria-label="Beleggingen"></button><button class="pakje-chip" id="pakjeChip" hidden data-pakjes="1"></button>
-      <button class="pakje-plus" data-pakje-plus="1" aria-label="Pakje toevoegen" title="Pakje toevoegen"><span data-icon="pakket"></span><b>+</b></button>
-      <span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div></div>
+      <div class="top-eind"><span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div></div>
+      <div class="top-meldingen"><button class="bel-chip" id="belChip" data-beleg="1" aria-label="Beleggingen"></button>
+        <div class="pakje-blok" id="pakjeBlok"><button class="pakje-chip" id="pakjeChip" hidden data-pakjes="1"></button><button class="pakje-plus" data-pakje-plus="1" aria-label="Pakje toevoegen" title="Pakje toevoegen"><span data-icon="pakket"></span><b>+</b></button></div>
+        <span class="rdw-chips" id="rdwChips"></span></div>
     </div>
     <div class="board">
       <!-- Links: huiskaart (energie, klok, weer) en variabelen -->
@@ -1088,6 +1118,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
         <div class="card" id="autoLaden"></div>
         <div class="card" id="autoPaal"></div>
         <div class="card" id="autoKlimaat"></div>
+        <div class="card" id="autoRdw"></div>
       </div>
     </div>
   </section>
@@ -1155,6 +1186,16 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <button class="lp-knop" data-bel-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
     </div>
     <div class="lp-lijst" id="belInhoud"></div>
+  </div>
+</div>
+<div class="overlay" id="rdwPaneel">
+  <div class="modal lp" role="dialog" aria-label="APK en RDW">
+    <div class="lp-kop">
+      <div class="ico amber" data-icon="car"></div>
+      <div class="grow"><h2>Auto · RDW</h2><div class="card-sub" id="rdwSub"></div></div>
+      <button class="lp-knop" data-rdw-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div id="rdwInhoud"></div>
   </div>
 </div>
 <div class="overlay" id="pakjePaneel">
@@ -1448,6 +1489,8 @@ const CONFIG = {
   regen: { lat:51.89, lon:5.90, plaats:'Bemmel' },
   // Pakjes: apparaat "Pakjes" van de app Parcel Tracker (leeg = automatisch het apparaat met parcels_active)
   pakjes: { id:'f6d1803c-bb0a-40b7-aa34-e602d3d9b408', voor:['Roy','Beau'] },
+  // RDW: apparaat van de app RDW (APK, verzekering, terugroepactie) en de variabele die onthoudt wat is afgevinkt
+  rdw: { id:'d9d8bd32-ee3b-467a-a249-57b24cd972fe', var:'73a957d8-df54-4f12-9883-47394fccf988', vooraf:30, rood:7 },
   tuinZones: [
     '5204dc44-8e9c-49e7-aed8-9d5c93330126', // Achtertuin
     '9fc1dda8-dae7-4bde-a0e7-0506f85762f3', // Voortuin
@@ -1479,9 +1522,13 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '101';
+const DASHBOARD_VERSIE = '102';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'102', datum:'31-10-2026', punten:[ 'Auto: nieuw blok RDW met kenteken, APK-vervaldatum, verzekering en terugroepactie (app RDW in Homey).',
+    'Hoofddashboard: melding "APK over X dagen" vanaf een maand voor de vervaldatum (rood in de laatste week of als hij verlopen is). Met "Afspraak gemaakt" verdwijnt hij tot de volgende APK weer binnen een maand valt; dat wordt in Homey bewaard, dus geldt op tablet, telefoon en laptop.',
+    'Ook een rode melding als RDW meldt dat de auto niet verzekerd is of er een terugroepactie openstaat, af te vinken met "Afgehandeld".',
+    'Bovenbalk: beleggingen, pakjes en meldingen staan nu op een eigen regel, zodat niets meer over de knoppen valt. De verbindingsstatus blijft rechtsboven. Pakjesinformatie en het plusje vormen samen één blok.' ] },
   { v:'101', datum:'31-10-2026', punten:[ 'Huisafbeelding: na (mot)regen alleen nog een natte grond als de luchtvochtigheid 85% of meer is. Voorheen bleef het beeld nat zolang KNMI "Droog na motregen" meldde, ook als het al uren droog was.', 'Nieuwe pagina Auto (ook via de auto in de huiskaart): accu en geschatte actieradius, slot, portieren en ramen, laden, klimaat, onderhoud en kilometerstand.', 'Banden: profiel per band meten en vastleggen voor zomer- en winterbanden, grafiek met verwachting hoelang ze nog meegaan, en advies wanneer je moet wisselen of een afspraak maken.', 'Laadpaal: alvast met voorbeeldgegevens, klaar voor de go-e Charger Gemini.' ] },
   { v:'100', datum:'31-10-2026', punten:[ 'Beleggingen: de knoppen Dag/Week/Maand/Alles werken nu ook zolang je eigen historie nog wordt opgebouwd (dan zie je de bitcoinkoers over die periode). De uitleg hoe je bedragen zichtbaar maakt is weggehaald.' ] },
   { v:'99', datum:'31-10-2026', punten:[ 'Beleggingen: rechtsboven de bitcoinkoers met de verandering in 24 uur. Tik erop voor je totaal, rendement, een grafiek per dag/week/maand/alles en je beleggingen.', 'Je bezit staat in Homey (Logic-variabele), dus tablet, telefoon en laptop tonen hetzelfde. Homey Insights houdt de historie bij. Uitleg staat onder "Hoe werkt dit?" in de pop-up.' ] },
@@ -1782,6 +1829,8 @@ DEMO_DEVICES['89bd8240-0bcd-41ce-a021-05a589436030'].capabilitiesObj.measure_hum
   thermostat_cmode:{ value:'off', values:['off','cool','heat','auto','dry','fan'].map(v => ({ id:v, title:v })) },
   ac_mode:{ value:'cool', values:['cool','heat','dry','fan','auto'].map(v => ({ id:v, title:v })) } }));
 DEMO_DEVICES['p2'] = { id:'p2', name:'Wasmachine', class:'socket', zone:Z.bg, available:true, capabilitiesObj:{ onoff:{value:true}, measure_power:{value:320} } };
+DEMO_DEVICES['rdw-demo'] = { id:'rdw-demo', name:'RDW (demo)', class:'other', zone:Z.thuis, available:true, capabilitiesObj:{ license_plate:{value:'XX-123-Y'}, vehicle_type:{value:'Personenauto'}, brand:{value:'VOLKSWAGEN'}, trade_name:{value:'ID.4'},
+  apk_expiry_date:{ value:(d => (d.setDate(d.getDate() + 20), d.toISOString().slice(0, 10)))(new Date()) }, is_insured:{value:'Ja'}, open_recall_indicator:{value:'Nee'} } };
 DEMO_DEVICES['p3'] = { id:'p3', name:'Koelkast', class:'socket', zone:Z.keuken, available:true, capabilitiesObj:{ onoff:{value:true}, measure_power:{value:85} } };
 
 /* Demo-reeksen voor vandaag (5 minuten per punt), lijken op een herfstdag */
@@ -4057,7 +4106,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenPakjes(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -4298,6 +4347,8 @@ function tekenPakjes(){
   const actief = n('parcels_active'), vandaag = n('parcels_today'), uit = n('parcels_out'), afhaal = n('parcels_pickup');
   const probleem = cap(d,'alarm_parcel_problem') === true, bezorger = cap(d,'alarm_parcel_out') === true || uit > 0;
   el.hidden = !d || (!actief && !afhaal && !probleem);
+  const blok = $('pakjeBlok');
+  if(blok) blok.className = 'pakje-blok' + (el.hidden ? '' : ' met-info' + (probleem ? ' probleem' : bezorger ? ' onderweg' : ''));
   if(!el.hidden){
     el.className = 'pakje-chip' + (probleem ? ' probleem' : bezorger ? ' onderweg' : '');
     const tekst = probleem ? 'Probleem met pakje' : bezorger ? 'Bezorger onderweg'
@@ -4733,7 +4784,7 @@ function tekenAuto(){
       ${feit('Laaddoel', `${c('target_soc') ?? '–'}%`)}${feit('Max. stroom', `${c('max_charging_current') ?? '–'} A`)}${feit('Tot laaddoel', `${c('measure_battery.until_target_soc') ?? '–'}%`)}</div>`;
   $('autoKlimaat').innerHTML = `<div class="auto-kop"><span class="ico ${c('climatisation_onoff') ? 'amber' : ''}">${ic('thermo')}</span><b>Klimaat</b><span class="chip">${c('climatisation_onoff') ? 'Aan' : 'Uit'}</span></div>
     <div class="auto-feiten">${feit('Doeltemperatuur', `${c('target_temperature') ?? '–'} °C`)}${feit('Ruitverwarming', c('window_heating_enabled') ? 'Aan' : 'Uit')}${feit('Nog', c('measure_remaining_climatisation_time') ? c('measure_remaining_climatisation_time') + ' min' : '–')}</div>`;
-  tekenBanden(); tekenPaal();
+  tekenBanden(); tekenPaal(); tekenAutoRdw();
 }
 /* Laadpaal: demo tot er een laadpaal (bv. go-e Charger Gemini) in Homey staat */
 function tekenPaal(){
@@ -4749,6 +4800,117 @@ function tekenPaal(){
     ${demo ? '<p class="bel-klein">Voorbeeldgegevens. Zodra de laadpaal in Homey staat, vul ik zijn apparaat in en verschijnen hier de echte waarden (laadvermogen, fases, sessie, laden op zonne-overschot).</p>' : ''}`;
 }
 function feit(t, w, k = ''){ return `<div class="${k}"><small>${t}</small><b>${w}</b></div>`; }
+/* ═════════════════════════════════════════════
+   RDW — APK, verzekering en terugroepactie (app RDW in Homey)
+   Melding in de bovenbalk vanaf een maand voor de APK-datum. "Afspraak gemaakt" verbergt de melding
+   zolang RDW dezelfde vervaldatum meldt; na de APK komt er een nieuwe datum en begint het opnieuw.
+   Gaat de afgevinkte datum voorbij zonder nieuwe datum, dan komt de melding terug (rood).
+═════════════════════════════════════════════ */
+let rdwOpen = false, rdwFout = null;
+const RDW_KEY = 'dashboard_rdw';
+function rdwDev(){ const R = CONFIG.rdw || {}; return (R.id && DEVS[R.id]) || Object.values(DEVS).find(d => heeft(d,'apk_expiry_date')) || null; }
+const rdwJa = v => v === true || /^(ja|yes|true)$/i.test(String(v ?? '').trim());
+const rdwNee = v => v === false || /^(nee|no|false)$/i.test(String(v ?? '').trim());
+function rdwStaat(){
+  const v = VARS[CONFIG.rdw?.var];
+  if(v && typeof v.value === 'string'){ try { return JSON.parse(v.value || '{}') || {}; } catch(e){} }
+  try { return JSON.parse(localStorage.getItem(RDW_KEY) || '{}') || {}; } catch(e){ return {}; }
+}
+async function rdwBewaar(st){
+  const tekst = JSON.stringify(st), id = CONFIG.rdw?.var;
+  if(VARS[id]) VARS[id].value = tekst;
+  try { localStorage.setItem(RDW_KEY, tekst); } catch(e){}
+  rdwFout = null; tekenRdw();
+  if(DEMO() || !id) return;
+  try { await zetVar(id, tekst); } catch(e){ rdwFout = 'Niet opgeslagen in Homey: ' + e.message; tekenRdw(); }
+}
+function rdwDatum(s){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+function rdwDagen(d){ const v = new Date(); v.setHours(0,0,0,0); return Math.round((d - v) / 864e5); }
+const rdwDatumTekst = (d, jaar) => d ? d.toLocaleDateString('nl-NL', { day:'numeric', month:'long', ...(jaar ? { year:'numeric' } : {}) }) : '–';
+function rdwApkTekst(dagen){ return dagen < 0 ? 'APK verlopen' : dagen === 0 ? 'APK vervalt vandaag' : dagen === 1 ? 'APK vervalt morgen' : `APK over ${dagen} dagen`; }
+/* Welke meldingen zijn er nu? */
+function rdwMeldingen(){
+  const d = rdwDev(); if(!d || d.available === false) return [];
+  const R = CONFIG.rdw, st = rdwStaat(), uit = [];
+  const datumTxt = cap(d,'apk_expiry_date'), datum = rdwDatum(datumTxt);
+  if(datum){
+    const dagen = rdwDagen(datum), afgevinkt = st.apk === datumTxt;
+    if(dagen < 0) uit.push({ soort:'apk', niveau:'rood', tekst: afgevinkt ? 'APK verlopen?' : 'APK verlopen', sub:`sinds ${rdwDatumTekst(datum)}`, dagen, datum, afgevinkt });
+    else if(dagen <= R.vooraf && !afgevinkt) uit.push({ soort:'apk', niveau: dagen <= R.rood ? 'rood' : 'oranje', tekst:rdwApkTekst(dagen), sub:`vervalt ${rdwDatumTekst(datum)}`, dagen, datum, afgevinkt });
+  }
+  if(rdwNee(cap(d,'is_insured')) && !st.verz) uit.push({ soort:'verz', niveau:'rood', tekst:'Auto niet verzekerd', sub:'volgens RDW' });
+  if(rdwJa(cap(d,'open_recall_indicator')) && !st.recall) uit.push({ soort:'recall', niveau:'rood', tekst:'Terugroepactie', sub:'openstaand volgens RDW' });
+  return uit;
+}
+/* "Afgehandeld" voor verzekering/terugroepactie vervalt zodra de status weer normaal is */
+function rdwOpruimen(){
+  const d = rdwDev(); if(!d) return;
+  const st = rdwStaat(); let veranderd = false;
+  if(st.verz && rdwJa(cap(d,'is_insured'))){ delete st.verz; veranderd = true; }
+  if(st.recall && rdwNee(cap(d,'open_recall_indicator'))){ delete st.recall; veranderd = true; }
+  if(veranderd) rdwBewaar(st);
+}
+function tekenRdw(){
+  const el = $('rdwChips');
+  if(el){
+    el.innerHTML = rdwMeldingen().map(m => `<button class="rdw-chip ${m.niveau === 'rood' ? 'rood' : ''}" data-rdw="${m.soort}" aria-label="${esc(m.tekst)}">${ic('car')}<span class="pk-chip-tekst"><span>${esc(m.tekst)}</span><small>${esc(m.sub)}</small></span></button>`).join('');
+  }
+  if(rdwOpen) tekenRdwPaneel();
+  if($('page-auto')?.classList.contains('on')) tekenAutoRdw();
+}
+function tekenRdwPaneel(){
+  const d = rdwDev(), st = rdwStaat(), ms = rdwMeldingen();
+  $('rdwSub').textContent = d ? [cap(d,'brand'), cap(d,'trade_name')].filter(Boolean).join(' ') : 'RDW-apparaat niet gevonden in Homey';
+  if(!d){ $('rdwInhoud').innerHTML = '<span class="leeg">Voeg in Homey een apparaat van de app RDW toe.</span>'; return; }
+  const datumTxt = cap(d,'apk_expiry_date'), datum = rdwDatum(datumTxt), dagen = datum ? rdwDagen(datum) : null;
+  const blokken = ms.map(m => {
+    if(m.soort === 'apk') return `<div class="rdw-melding ${m.niveau}"><b>${esc(m.tekst)}</b>
+      <p>${m.dagen < 0 ? `De APK is verlopen op ${rdwDatumTekst(m.datum, true)}. ${m.afgevinkt ? 'Je had een afspraak afgevinkt, maar RDW meldt nog geen nieuwe vervaldatum.' : 'Je mag nu niet de weg op tot de auto is goedgekeurd.'}`
+        : `De APK vervalt op ${rdwDatumTekst(m.datum, true)}. Maak een afspraak en vink hem hier af; de melding komt dan pas terug als de volgende APK weer binnen een maand valt.`}</p>
+      <div class="rdw-knoppen"><button class="btn primary" data-rdw-ok="apk">${ic('check')} Afspraak gemaakt</button></div></div>`;
+    return `<div class="rdw-melding rood"><b>${esc(m.tekst)}</b><p>${m.soort === 'verz' ? 'RDW meldt dat de auto niet verzekerd is. Rijden zonder verzekering mag niet; controleer je polis.' : 'RDW meldt een openstaande terugroepactie. De dealer neemt meestal zelf contact op; je kunt ook zelf een afspraak maken.'}
+      Vink af als het geregeld is; de melding komt terug als de status later opnieuw verandert.</p>
+      <div class="rdw-knoppen"><button class="btn primary" data-rdw-ok="${m.soort}">${ic('check')} Afgehandeld</button></div></div>`;
+  }).join('');
+  const rust = !ms.length ? `<div class="rdw-melding"><b class="rdw-ok">Alles in orde</b><p>${st.apk === datumTxt && dagen != null && dagen <= CONFIG.rdw.vooraf ? 'APK-afspraak staat genoteerd.' : 'Geen meldingen van RDW.'}</p></div>` : '';
+  $('rdwInhoud').innerHTML = blokken + rust + `<div class="auto-feiten">${rdwFeiten(d)}</div>`
+    + (st.apk === datumTxt ? `<div class="rdw-knoppen"><button class="btn" data-rdw-terug="apk">Afspraak niet meer genoteerd</button></div>` : '')
+    + `<div class="pk-melding fout">${esc(rdwFout || '')}</div>`;
+}
+function rdwFeiten(d){
+  const datum = rdwDatum(cap(d,'apk_expiry_date')), dagen = datum ? rdwDagen(datum) : null;
+  const apkKl = dagen == null ? '' : dagen < 0 ? 'rood' : dagen <= CONFIG.rdw.vooraf ? 'amber' : 'groen';
+  const verz = cap(d,'is_insured'), rec = cap(d,'open_recall_indicator');
+  return feit('Kenteken', esc(cap(d,'license_plate') || '–'))
+    + feit('APK tot', datum ? datum.toLocaleDateString('nl-NL', { day:'numeric', month:'short', year:'numeric' }) : '–', apkKl)
+    + feit('Nog', dagen == null ? '–' : dagen < 0 ? 'verlopen' : `${dagen} dagen`, apkKl)
+    + feit('Verzekerd', esc(verz ?? '–'), rdwNee(verz) ? 'rood' : rdwJa(verz) ? 'groen' : '')
+    + feit('Terugroepactie', esc(rec ?? '–'), rdwJa(rec) ? 'rood' : rdwNee(rec) ? 'groen' : '')
+    + feit('Voertuig', esc(cap(d,'vehicle_type') || '–'));
+}
+function tekenAutoRdw(){
+  const el = $('autoRdw'); if(!el) return;
+  const d = rdwDev();
+  if(!d){ el.innerHTML = `<div class="auto-kop"><span class="ico">${ic('car')}</span><b>RDW</b></div><span class="leeg">RDW-apparaat niet gevonden in Homey</span>`; return; }
+  const ms = rdwMeldingen(), st = rdwStaat(), datumTxt = cap(d,'apk_expiry_date');
+  const chip = ms.length ? `<span class="chip" style="background:${ms.some(m => m.niveau === 'rood') ? 'var(--red-dim);color:var(--red)' : 'rgba(245,165,36,.15);color:var(--amber)'}">${esc(ms[0].tekst)}</span>`
+    : `<span class="chip" style="background:var(--green-dim, rgba(74,222,128,.12));color:var(--green)">In orde</span>`;
+  el.innerHTML = `<div class="auto-kop"><span class="ico ${ms.length ? 'amber' : 'green'}">${ic('car')}</span><b>RDW</b>${chip}</div>
+    <div class="auto-feiten">${rdwFeiten(d)}</div>
+    <div class="rdw-knoppen">${ms.length ? `<button class="btn primary" data-rdw="${ms[0].soort}">Bekijk melding</button>` : ''}
+      ${st.apk === datumTxt ? '<span class="rdw-ok">✓ APK-afspraak genoteerd</span>' : ''}</div>`;
+}
+function openRdw(){ rdwOpen = true; $('rdwPaneel').classList.add('on'); tekenRdwPaneel(); }
+function sluitRdw(){ rdwOpen = false; $('rdwPaneel').classList.remove('on'); }
+function rdwAfvinken(soort){
+  const d = rdwDev(), st = rdwStaat();
+  if(soort === 'apk') st.apk = cap(d,'apk_expiry_date') || '';
+  else st[soort] = true;
+  rdwBewaar(st);
+  if(!rdwMeldingen().length) setTimeout(sluitRdw, 600);
+}
+function rdwTerug(){ const st = rdwStaat(); delete st.apk; rdwBewaar(st); }
+
 
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
@@ -4761,6 +4923,10 @@ document.addEventListener('click', e => {
   if(e.target.closest('[data-bel-annuleer]')){ belBewerk = null; return tekenBelPaneel(); }
   const bo = e.target.closest('[data-bel-opslaan]'); if(bo) return belOpslaan(bo.dataset.belOpslaan);
   const belw = e.target.closest('[data-bel-weg]'); if(belw){ const d = belData(); d.posten.splice(+belw.dataset.belWeg, 1); belBewaar(d); belBewerk = null; return tekenBeleg(); }
+  if(rdwOpen && (e.target === $('rdwPaneel') || e.target.closest('[data-rdw-sluit]'))) return sluitRdw();
+  if(e.target.closest('[data-rdw-ok]')) return rdwAfvinken(e.target.closest('[data-rdw-ok]').dataset.rdwOk);
+  if(e.target.closest('[data-rdw-terug]')) return rdwTerug();
+  if(e.target.closest('[data-rdw]')) return openRdw();
   if(pkOpen && (e.target === $('pakjePaneel') || e.target.closest('[data-pk-sluit]'))) return sluitPakjes();
   if(e.target.closest('[data-pakjes]')) return openPakjes();
   if(e.target.closest('[data-pakje-plus]')){ openPakjes(); return setTimeout(() => $('pkTekst')?.focus(), 250); }
@@ -4834,6 +5000,7 @@ document.addEventListener('click', e => {
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
 document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && rdwOpen) return sluitRdw();
   if(e.key === 'Escape' && bgOpen) return sluitBeelden();
   if(e.key === 'Escape' && nwOpen) return sluitNieuw();
   if(e.key === 'Escape' && camGrootId) return sluitCam();
@@ -5266,7 +5433,7 @@ async function verversApparaten(){
 }
 async function verversVariabelen(){
   if(DEMO()){ VARS = DEMO_VARS; tekenVariabelen(); if(energieGeladen) tekenEnergie(); return; }
-  try { VARS = await homey('/api/manager/logic/variable') || {}; tekenVariabelen(); if(energieGeladen) tekenEnergie(); belMigreer(); tekenBeleg(); }
+  try { VARS = await homey('/api/manager/logic/variable') || {}; tekenVariabelen(); if(energieGeladen) tekenEnergie(); belMigreer(); tekenBeleg(); tekenRdw(); }
   catch(e){ /* variabelen zijn bijzaak: oude waarden blijven staan */ }
 }
 
