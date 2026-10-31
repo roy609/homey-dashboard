@@ -760,12 +760,15 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 /* Auto */
 .auto-grid { display:grid; grid-template-columns:1.25fr 1fr; gap:14px; align-items:start; }
 .auto-kolom { display:flex; flex-direction:column; gap:14px; }
-.auto-banden { grid-column:1 / -1; }
-.auto-banden .band-onder { display:grid; grid-template-columns:1fr 1.2fr; gap:14px; align-items:start; }
+.auto-banden .band-onder { display:flex; flex-direction:column; gap:12px; }
 @media (max-width:1000px){ .auto-banden .band-onder { grid-template-columns:1fr; } }
 @media (max-width:1000px){ .auto-grid { grid-template-columns:1fr; } }
 .auto-hoofd { gap:12px; }
-.auto-top { display:grid; grid-template-columns:200px 1fr; gap:16px; align-items:center; }
+.auto-top { display:grid; grid-template-columns:1.15fr 1fr; gap:16px; align-items:center; }
+.auto-foto img { width:100%; height:auto; display:block; filter:drop-shadow(0 18px 18px rgba(0,0,0,.45)); }
+.auto-foto .auto-svg { display:none; } .auto-foto.geen .auto-svg { display:block; max-width:170px; margin:0 auto; }
+.auto-status { display:flex; flex-direction:column; gap:4px; margin-top:12px; font-size:var(--fs-sm); font-weight:600; }
+.auto-status .ok { color:var(--green); } .auto-status .nee { color:var(--red); }
 .auto-svg { width:100%; height:auto; }
 .auto-svg .romp { fill:#E9EDF2; stroke:#9AA4B2; stroke-width:2; }
 .auto-svg .glas { fill:#1F2937; } .auto-svg .dak { fill:#111827; }
@@ -1077,13 +1080,15 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <section class="page" id="page-auto">
     <div class="statusbar"><h1 id="autoTitel">Auto</h1><span class="pill" id="autoStand"><i></i><span>–</span></span></div>
     <div class="auto-grid">
-      <div class="card auto-hoofd" id="autoHoofd"></div>
+      <div class="auto-kolom">
+        <div class="card auto-hoofd" id="autoHoofd"></div>
+        <div class="card auto-banden" id="autoBanden"></div>
+      </div>
       <div class="auto-kolom">
         <div class="card" id="autoLaden"></div>
         <div class="card" id="autoPaal"></div>
         <div class="card" id="autoKlimaat"></div>
       </div>
-      <div class="card auto-banden" id="autoBanden"></div>
     </div>
   </section>
 
@@ -4532,7 +4537,7 @@ function sluitBeleg(){ belOpen = false; belBewerk = null; belZichtTot = 0; $('be
 /* ═════════════════════════════════════════════
    AUTO — VW ID.4 (Homey-app) + banden (eigen metingen) + laadpaal (demo tot er een laadpaal is)
 ═════════════════════════════════════════════ */
-const AUTO_CFG = { accuKwh:77, kmPerKwh:5.6, kmPerJaar:10000,       // ID.4 Pro: 77 kWh netto; ~5,6 km/kWh gemiddeld → schatting actieradius
+const AUTO_CFG = { foto:'img/auto.webp', accuKwh:77, kmPerKwh:5.6, kmPerJaar:10000,       // ID.4 Pro: 77 kWh netto; ~5,6 km/kWh gemiddeld → schatting actieradius
   banden:{ var:'', nieuwMm:{ zomer:8, winter:8.5 }, grens:{ zomer:3, winter:4 }, wettelijk:1.6 },
   laadpaal:{ id:'', naam:'go-e Charger Gemini' } };                // id leeg = demo
 const BAND_KEY = 'dashboard_banden';
@@ -4696,11 +4701,18 @@ function tekenAuto(){
   $('autoStand').className = 'pill ' + (c('vehicle_online') === false ? 'fout' : 'ok');
   $('autoStand').lastElementChild.textContent = c('vehicle_online') === false ? 'Offline' : `Bijgewerkt ${autoGeleden(c('timestamp'))}`;
   const feit = (t, w, k = '') => `<div class="${k}"><small>${t}</small><b>${w}</b></div>`;
-  $('autoHoofd').innerHTML = `<div class="auto-top">${autoSvg(a)}
+  const deelNaam = { 'alarm_door.frontLeft':'Portier linksvoor', 'alarm_door.frontRight':'Portier rechtsvoor', 'alarm_door.rearLeft':'Portier linksachter', 'alarm_door.rearRight':'Portier rechtsachter',
+    'alarm_door.trunk':'Kofferbak', 'alarm_door.bonnet':'Motorkap', 'alarm_window.frontLeft':'Raam linksvoor', 'alarm_window.frontRight':'Raam rechtsvoor', 'alarm_window.rearLeft':'Raam linksachter', 'alarm_window.rearRight':'Raam rechtsachter' };
+  const openLijst = Object.keys(deelNaam).filter(k => c(k) === true).map(k => deelNaam[k]);
+  $('autoHoofd').innerHTML = `<div class="auto-top">
+      <div class="auto-foto"><img src="${AUTO_CFG.foto}" alt="${esc(a.name)}" onerror="this.parentNode.classList.add('geen');this.remove()">${autoSvg(a)}</div>
       <div class="auto-acc"><small class="card-title">Accu</small><b>${acc ?? '–'}<span class="u">%</span></b>
         <div class="card-sub">± ${bereik ?? '–'} km actieradius (schatting) · laaddoel ${c('target_soc') ?? '–'}%</div>
         <div class="bar"><i style="width:${Math.max(0, Math.min(100, acc || 0))}%"></i></div>
-        <div class="card-sub" style="margin-top:10px">${c('locked') ? '🔒 Op slot' : '🔓 Niet op slot'} · ${open ? `<span style="color:var(--red)">${open} open</span>` : 'alles dicht'}${ramen ? ` · <span style="color:var(--red)">${ramen} raam open</span>` : ''}</div>
+        <div class="auto-status">
+          <span class="${c('locked') ? 'ok' : 'nee'}">${c('locked') ? '🔒 Op slot' : '🔓 Niet op slot'}</span>
+          ${openLijst.length ? openLijst.map(n => `<span class="nee">${esc(n)} open</span>`).join('') : '<span class="ok">Portieren, ramen en kleppen dicht</span>'}
+        </div>
       </div></div>
     <div class="auto-feiten">
       ${feit('Kilometerstand', typeof c('meter_odometer') === 'number' ? c('meter_odometer').toLocaleString('nl-NL') + ' km' : '–')}
