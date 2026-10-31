@@ -755,6 +755,55 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .pk-knop[disabled] { opacity:.5; }
 .pk-melding { font-size:var(--fs-sm); color:var(--text-muted); min-height:1.2em; }
 .pk-melding.ok { color:var(--green); } .pk-melding.fout { color:var(--red); }
+.hk-auto { position:absolute; left:55%; top:52%; width:16%; height:22%; z-index:2; background:transparent; border:0; border-radius:14px; cursor:pointer; }
+.hk-auto:active { background:rgba(255,255,255,.08); }
+/* Auto */
+.auto-grid { display:grid; grid-template-columns:1.25fr 1fr; gap:14px; align-items:start; }
+.auto-kolom { display:flex; flex-direction:column; gap:14px; }
+.auto-banden { grid-column:1 / -1; }
+.auto-banden .band-onder { display:grid; grid-template-columns:1fr 1.2fr; gap:14px; align-items:start; }
+@media (max-width:1000px){ .auto-banden .band-onder { grid-template-columns:1fr; } }
+@media (max-width:1000px){ .auto-grid { grid-template-columns:1fr; } }
+.auto-hoofd { gap:12px; }
+.auto-top { display:grid; grid-template-columns:200px 1fr; gap:16px; align-items:center; }
+.auto-svg { width:100%; height:auto; }
+.auto-svg .romp { fill:#E9EDF2; stroke:#9AA4B2; stroke-width:2; }
+.auto-svg .glas { fill:#1F2937; } .auto-svg .dak { fill:#111827; }
+.auto-svg .deel { fill:transparent; stroke:transparent; stroke-width:3; }
+.auto-svg .deel.open { fill:rgba(239,68,68,.35); stroke:var(--red); }
+.auto-svg .wiel { fill:#111827; }
+.auto-acc b { font-size:2.4rem; letter-spacing:-.03em; }
+.auto-acc .bar { height:10px; margin-top:6px; }
+.auto-feiten { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+.auto-feiten div { padding:9px 11px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); min-width:0; }
+.auto-feiten small { display:block; font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--text-muted); }
+.auto-feiten b { font-size:var(--fs-md); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+.auto-feiten .rood b { color:var(--red); } .auto-feiten .groen b { color:var(--green); } .auto-feiten .amber b { color:var(--amber); }
+.auto-kop { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+.auto-kop b { font-size:var(--fs-md); }
+.auto-kop .chip { margin-left:auto; }
+.demo-label { font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; padding:3px 8px; border-radius:999px; background:rgba(167,139,250,.15); color:var(--purple); }
+.band-sets { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.band-set { padding:10px 12px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
+.band-set.actief { border-color:rgba(245,165,36,.55); }
+.band-actief { margin-left:auto; font-size:10.5px; font-weight:700; color:var(--amber); white-space:nowrap; }
+.band-set h4 { display:flex; align-items:center; gap:6px; font-size:var(--fs-sm); margin:0 0 4px; }
+.band-set .mm { font-size:1.6rem; font-weight:800; }
+.band-set small { display:block; color:var(--text-muted); font-size:12px; }
+.band-set .waarsch { color:var(--amber); font-weight:700; } .band-set .slecht { color:var(--red); font-weight:700; }
+.band-wiel { display:grid; grid-template-columns:1fr 1fr; gap:3px 10px; margin:6px 0; font-size:12.5px; color:var(--text-secondary); }
+.band-grafiek svg { width:100%; height:150px; display:block; }
+.band-grafiek text { font-size:10px; fill:var(--text-muted); stroke:none; font-weight:500; }
+.band-advies { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; border:1px solid var(--border2); }
+.band-advies.nu { border-color:rgba(245,165,36,.6); background:rgba(245,165,36,.08); }
+.band-advies svg { width:20px; height:20px; flex-shrink:0; color:var(--amber); margin-top:2px; }
+.band-form { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; padding:12px; border-radius:12px; border:1px dashed var(--border2); }
+.band-form label { font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px; }
+.band-form input, .band-form select { min-height:40px; padding:0 10px; border-radius:10px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-primary); font:inherit; }
+.band-form .breed { grid-column:span 2; } .band-form .knoppen { grid-column:1/-1; display:flex; justify-content:flex-end; gap:8px; }
+.paal-ring { width:84px; height:84px; flex-shrink:0; }
+.paal-ring text { stroke:none; }
+.auto-acc .card-title { display:block; }
 .tarief-let { display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:12px; border-radius:12px; background:var(--amber-dim, rgba(245,165,36,.12)); border:1px solid rgba(245,165,36,.45); color:var(--amber); font-size:var(--fs-sm); font-weight:600; }
 .tarief-let svg { width:18px; height:18px; flex-shrink:0; }
 .zone-moods { margin-top:6px; }
@@ -906,6 +955,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <div class="nav-item active" data-page="home"><span class="ic" data-icon="home"></span><span class="nav-label">Hoofddashboard</span></div>
   <div class="nav-item" data-page="energie"><span class="ic" data-icon="bolt"></span><span class="nav-label">Energie</span></div>
   <div class="nav-item" data-page="tuin"><span class="ic" data-icon="tree"></span><span class="nav-label">Tuin</span></div>
+  <div class="nav-item" data-page="auto"><span class="ic" data-icon="car"></span><span class="nav-label">Auto</span></div>
   <div class="nav-item" data-page="camera"><span class="ic" data-icon="camera"></span><span class="nav-label">Camera's</span></div>
   <div class="nav-item" data-page="systeem"><span class="ic" data-icon="hart"></span><span class="nav-label">Systeem</span></div>
   <div class="nav-spacer"></div>
@@ -934,6 +984,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
         <!-- Huiskaart: de energietekening van het tabblad Energie, met klok en weer -->
         <div class="card huiskaart klikbaar" data-page="energie" role="button" aria-label="Naar de energiepagina">
           <div class="hk-tekening" id="huisTekening"></div>
+          <button class="hk-auto" data-page="auto" aria-label="Naar de auto"></button>
           <div class="hk-klok"><b id="klok">–</b><span id="datum">–</span></div>
           <div class="hk-weer" data-regen="1" role="button" aria-label="Regen en buienradar"><b id="weerTemp">–</b><span id="weerSub">–</span><span class="hk-regen" id="regenRegel"></span></div>
         </div>
@@ -1019,6 +1070,20 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
         <div class="sec-label">Verlichting en stopcontacten</div>
         <div class="g3" id="tuinTegels" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));margin-top:8px"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ AUTO ═══════════ -->
+  <section class="page" id="page-auto">
+    <div class="statusbar"><h1 id="autoTitel">Auto</h1><span class="pill" id="autoStand"><i></i><span>–</span></span></div>
+    <div class="auto-grid">
+      <div class="card auto-hoofd" id="autoHoofd"></div>
+      <div class="auto-kolom">
+        <div class="card" id="autoLaden"></div>
+        <div class="card" id="autoPaal"></div>
+        <div class="card" id="autoKlimaat"></div>
+      </div>
+      <div class="card auto-banden" id="autoBanden"></div>
     </div>
   </section>
 
@@ -1409,9 +1474,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '100';
+const DASHBOARD_VERSIE = '101';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'101', datum:'31-10-2026', punten:[ 'Nieuwe pagina Auto (ook via de auto in de huiskaart): accu en geschatte actieradius, slot, portieren en ramen, laden, klimaat, onderhoud en kilometerstand.', 'Banden: profiel per band meten en vastleggen voor zomer- en winterbanden, grafiek met verwachting hoelang ze nog meegaan, en advies wanneer je moet wisselen of een afspraak maken.', 'Laadpaal: alvast met voorbeeldgegevens, klaar voor de go-e Charger Gemini.' ] },
   { v:'100', datum:'31-10-2026', punten:[ 'Beleggingen: de knoppen Dag/Week/Maand/Alles werken nu ook zolang je eigen historie nog wordt opgebouwd (dan zie je de bitcoinkoers over die periode). De uitleg hoe je bedragen zichtbaar maakt is weggehaald.' ] },
   { v:'99', datum:'31-10-2026', punten:[ 'Beleggingen: rechtsboven de bitcoinkoers met de verandering in 24 uur. Tik erop voor je totaal, rendement, een grafiek per dag/week/maand/alles en je beleggingen.', 'Je bezit staat in Homey (Logic-variabele), dus tablet, telefoon en laptop tonen hetzelfde. Homey Insights houdt de historie bij. Uitleg staat onder "Hoe werkt dit?" in de pop-up.' ] },
   { v:'98', datum:'30-10-2026', punten:[ 'Pakjes: onder de tekst in het label staat nu klein wanneer de volgende levering komt, bijvoorbeeld "morgen 08:30–21:30".' ] },
@@ -3984,7 +4050,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenPakjes(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenPakjes(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -4463,8 +4529,216 @@ function belTik(){
 function openBeleg(){ belOpen = true; $('belPaneel').classList.add('on'); tekenBelPaneel(); if(!BTC || Date.now() - BTC.t > 60000) laadBtc(); }
 function sluitBeleg(){ belOpen = false; belBewerk = null; belZichtTot = 0; $('belPaneel').classList.remove('on'); tekenBeleg(); }
 
+/* ═════════════════════════════════════════════
+   AUTO — VW ID.4 (Homey-app) + banden (eigen metingen) + laadpaal (demo tot er een laadpaal is)
+═════════════════════════════════════════════ */
+const AUTO_CFG = { accuKwh:77, kmPerKwh:5.6, kmPerJaar:10000,       // ID.4 Pro: 77 kWh netto; ~5,6 km/kWh gemiddeld → schatting actieradius
+  banden:{ var:'', nieuwMm:{ zomer:8, winter:8.5 }, grens:{ zomer:3, winter:4 }, wettelijk:1.6 },
+  laadpaal:{ id:'', naam:'go-e Charger Gemini' } };                // id leeg = demo
+const BAND_KEY = 'dashboard_banden';
+let bandBewerk = null, autoWeer = null;
+const autoDev = () => dev(CONFIG.apparaten.auto);
+function bandData(){
+  const id = AUTO_CFG.banden.var, v = id && VARS[id];
+  let d = null;
+  if(v && typeof v.value === 'string'){ try { d = JSON.parse(v.value || '{}'); } catch(e){} }
+  if(!d){ try { d = JSON.parse(localStorage.getItem(BAND_KEY) || 'null'); } catch(e){} }
+  if(!d || !d.metingen) d = bandDemo();
+  return d;
+}
+function bandDemo(){                                                   // voorbeeldgegevens tot er echte metingen zijn
+  return { demo:true, actief:'winter', sets:{ zomer:{ naam:'Zomerbanden' }, winter:{ naam:'Winterbanden' } },
+    metingen:[ { set:'zomer', datum:'2025-04-05', km:86200, mm:[7.8,7.9,7.6,7.7] }, { set:'winter', datum:'2025-10-25', km:91900, mm:[8.2,8.3,8.0,8.1] },
+               { set:'zomer', datum:'2026-04-04', km:94300, mm:[6.6,6.7,6.2,6.3] }, { set:'winter', datum:'2026-10-24', km:101800, mm:[7.1,7.2,6.8,6.9] } ],
+    wissels:[ { datum:'2025-04-05', km:86200, naar:'zomer' }, { datum:'2025-10-25', km:91900, naar:'winter' }, { datum:'2026-04-04', km:94300, naar:'zomer' }, { datum:'2026-10-24', km:101800, naar:'winter' } ] };
+}
+async function bandBewaar(d){
+  delete d.demo; const tekst = JSON.stringify(d);
+  try { localStorage.setItem(BAND_KEY, tekst); } catch(e){}
+  const id = AUTO_CFG.banden.var;
+  if(id && VARS[id]){ VARS[id].value = tekst; if(!DEMO()) try { await zetVar(id, tekst); } catch(e){ status('fout', 'Banden niet opgeslagen in Homey'); } }
+  tekenAuto();
+}
+/* Slijtage per set: lijn door (km, laagste profiel) van alle metingen van die set → mm per 1000 km */
+function bandAnalyse(d, set){
+  const m = d.metingen.filter(x => x.set === set).sort((a, b) => a.km - b.km);
+  const laagste = x => Math.min(...x.mm.filter(v => typeof v === 'number'));
+  const laatst = m[m.length - 1];
+  const nieuw = AUTO_CFG.banden.nieuwMm[set], grens = AUTO_CFG.banden.grens[set];
+  let perKkm = set === 'zomer' ? 0.12 : 0.15;                          // standaard als er nog maar één meting is
+  if(m.length >= 2){
+    const xs = m.map(x => x.km), ys = m.map(laagste), n = xs.length, mx = xs.reduce((a, b) => a + b) / n, my = ys.reduce((a, b) => a + b) / n;
+    const helling = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / (xs.reduce((s, x) => s + (x - mx) ** 2, 0) || 1);
+    if(helling < 0) perKkm = -helling * 1000;
+  }
+  const nu = laatst ? laagste(laatst) : null;
+  // kilometers per jaar op deze set: helft van het jaartotaal (twee sets), of afgeleid uit de wissels
+  const kmJaarSet = AUTO_CFG.kmPerJaar / 2;
+  const kmTotGrens = nu != null ? Math.max(0, (nu - grens) / perKkm * 1000) : null;
+  const jaren = kmTotGrens != null ? kmTotGrens / kmJaarSet : null;
+  return { m, laatst, nu, nieuw, grens, perKkm, kmTotGrens, jaren, laagste };
+}
+/* Wisseladvies: weerverwachting (Open-Meteo, 10 dagen) + maand. Winterbanden onder ~7 °C. */
+async function laadAutoWeer(){
+  const R = CONFIG.regen || { lat:51.89, lon:5.9 };
+  try { const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${R.lat}&longitude=${R.lon}&daily=temperature_2m_max,temperature_2m_min&forecast_days=10&timezone=Europe%2FAmsterdam`, { cache:'no-store' });
+    const j = await r.json(); autoWeer = { max:j.daily.temperature_2m_max, min:j.daily.temperature_2m_min, t:Date.now() }; }
+  catch(e){ autoWeer = { fout:true, t:Date.now() }; }
+  if($('page-auto')?.classList.contains('on')) tekenBanden();
+}
+function wisselAdvies(actief){
+  const maand = new Date().getMonth() + 1;
+  const gem = autoWeer && !autoWeer.fout ? autoWeer.max.slice(0, 7).reduce((a, b) => a + b, 0) / 7 : null;
+  const koud = autoWeer && !autoWeer.fout ? autoWeer.max.slice(0, 7).filter(t => t < 7).length : 0;
+  if(actief === 'zomer'){
+    if(koud >= 4 || (gem != null && gem < 7)) return { nu:true, kop:'Tijd voor winterbanden', tekst:`De komende week is het overdag ${gem != null ? 'gemiddeld ' + nl(gem, 0) + ' °C' : 'koud'}. Onder 7 °C remmen winterbanden duidelijk beter.` };
+    if(maand >= 9 && maand <= 11) return { nu:false, kop:'Maak een afspraak voor de wissel', tekst:`Vuistregel: van oktober tot Pasen winterbanden. Garages zitten eind oktober vol; plan nu een moment${gem != null ? ' (komende week gemiddeld ' + nl(gem, 0) + ' °C overdag)' : ''}.` };
+    return { nu:false, kop:'Zomerbanden passen nu', tekst:'Wisselen naar winterbanden is weer aan de orde vanaf oktober, of eerder als het overdag onder 7 °C blijft.' };
+  }
+  const warm = autoWeer && !autoWeer.fout ? autoWeer.min.slice(0, 7).filter(t => t > 5).length : 0;
+  if(maand >= 3 && maand <= 5 && (warm >= 5 || (gem != null && gem > 12))) return { nu:true, kop:'Tijd voor zomerbanden', tekst:`Het blijft overdag rond ${nl(gem, 0)} °C en 's nachts boven 5 °C. Winterbanden slijten nu snel.` };
+  if(maand === 3 || maand === 2) return { nu:false, kop:'Maak een afspraak voor de wissel', tekst:'Vuistregel: rond Pasen terug naar zomerbanden. Plan een moment als de nachtvorst voorbij is.' };
+  return { nu:false, kop:'Winterbanden passen nu', tekst:'Terug naar zomerbanden rond Pasen, als het overdag structureel boven 10 °C is.' };
+}
+function bandGrafiek(d){
+  const sets = ['zomer', 'winter'], kl = { zomer:'#F5A524', winter:'#60A5FA' };
+  const A = Object.fromEntries(sets.map(s => [s, bandAnalyse(d, s)]));
+  const alle = d.metingen; if(!alle.length) return '';
+  const kmMin = Math.min(...alle.map(x => x.km)), kmMax = Math.max(...alle.map(x => x.km)) + 15000;
+  const W = 560, H = 150, L = 28, B = 18, T = 8, x = km => L + (km - kmMin) / (kmMax - kmMin) * (W - L - 6), y = mm => T + (9 - mm) / 9 * (H - T - B);
+  let g = '';
+  [8, 6, 4, 2].forEach(mm => g += `<line x1="${L}" x2="${W}" y1="${y(mm)}" y2="${y(mm)}" stroke="var(--border)"/><text x="${L - 4}" y="${y(mm) + 3}" text-anchor="end">${mm}</text>`);
+  g += `<line x1="${L}" x2="${W}" y1="${y(AUTO_CFG.banden.wettelijk)}" y2="${y(AUTO_CFG.banden.wettelijk)}" stroke="var(--red)" stroke-dasharray="4 4"/><text x="${W - 2}" y="${y(AUTO_CFG.banden.wettelijk) - 3}" text-anchor="end" style="fill:var(--red)">wettelijk 1,6 mm</text>`;
+  sets.forEach(s => { const a = A[s]; if(!a.m.length) return;
+    const pts = a.m.map(m => [x(m.km), y(a.laagste(m))]);
+    g += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${kl[s]}" stroke-width="2.5"/>` + pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${kl[s]}"/>`).join('');
+    if(a.nu != null){ const kmG = a.laatst.km + a.kmTotGrens; g += `<line x1="${pts[pts.length - 1][0]}" y1="${pts[pts.length - 1][1]}" x2="${x(Math.min(kmG, kmMax))}" y2="${y(a.nu - (Math.min(kmG, kmMax) - a.laatst.km) / 1000 * a.perKkm)}" stroke="${kl[s]}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+      g += `<line x1="${L}" x2="${W}" y1="${y(a.grens)}" y2="${y(a.grens)}" stroke="${kl[s]}" stroke-opacity=".35" stroke-dasharray="2 4"/>`; } });
+  g += `<text x="${L}" y="${H - 4}">${Math.round(kmMin / 1000)}k km</text><text x="${W}" y="${H - 4}" text-anchor="end">${Math.round(kmMax / 1000)}k km</text>`;
+  return `<div class="band-grafiek"><svg viewBox="0 0 ${W} ${H}">${g}</svg><div class="bel-klein">Laagste profiel per meting (mm) tegen de kilometerstand · stippellijn = verwachting</div></div>`;
+}
+function tekenBanden(){
+  const el = $('autoBanden'); if(!el) return;
+  if(!autoWeer || Date.now() - autoWeer.t > 3 * 3600e3) laadAutoWeer();
+  const d = bandData(), a = autoDev(), km = cap(a,'meter_odometer');
+  const set = s => { const A = bandAnalyse(d, s), act = d.actief === s;
+    const status = A.nu == null ? '' : A.nu <= AUTO_CFG.banden.wettelijk + .4 ? 'slecht' : A.nu <= A.grens + .5 ? 'waarsch' : '';
+    const jr = A.jaren; const wanneer = jr == null ? '–' : jr < .5 ? 'dit seizoen' : `over ~${nl(jr, jr < 2 ? 1 : 0)} jaar`;
+    return `<div class="band-set ${act ? 'actief' : ''}"><h4>${s === 'zomer' ? '☀️' : '❄️'} ${esc(d.sets?.[s]?.naam || (s === 'zomer' ? 'Zomerbanden' : 'Winterbanden'))}${act ? ' <span class="band-actief">onder de auto</span>' : ''}</h4>
+      ${A.laatst ? `<div class="mm">${nl(A.nu, 1)} mm</div>
+        <div class="band-wiel"><span>LV ${nl(A.laatst.mm[0], 1)}</span><span>RV ${nl(A.laatst.mm[1], 1)}</span><span>LA ${nl(A.laatst.mm[2], 1)}</span><span>RA ${nl(A.laatst.mm[3], 1)}</span></div>
+        <small>Gemeten ${new Date(A.laatst.datum).toLocaleDateString('nl-NL', { day:'numeric', month:'short', year:'numeric' })} bij ${A.laatst.km.toLocaleString('nl-NL')} km</small>
+        <small>Slijt ~${nl(A.perKkm * 10, 1)} mm per 10.000 km · vervangen bij ${nl(A.grens, 0)} mm</small>
+        <small class="${status}">Nog ~${Math.round(A.kmTotGrens / 1000) * 1000 ? (Math.round(A.kmTotGrens / 1000) * 1000).toLocaleString('nl-NL') : '0'} km · ${wanneer}</small>` : '<small>Nog geen meting</small>'}</div>`; };
+  const adv = wisselAdvies(d.actief);
+  let html = `<div class="auto-kop"><span class="ico">${ic('auto')}</span><b>Banden</b>${d.demo ? '<span class="demo-label">voorbeeld</span>' : ''}</div>
+    <div class="band-advies ${adv.nu ? 'nu' : ''}">${ic('klok')}<div><b>${esc(adv.kop)}</b><div class="bel-klein" style="margin-top:2px">${esc(adv.tekst)}</div></div></div>
+    <div class="band-onder"><div class="band-sets">${set('zomer')}${set('winter')}</div>${bandGrafiek(d)}</div>`;
+  if(bandBewerk === 'meting'){
+    const L = bandAnalyse(d, d.actief).laatst;
+    html += `<div class="band-form"><label class="breed">Set<select id="bdSet"><option value="zomer" ${d.actief === 'zomer' ? 'selected' : ''}>Zomerbanden</option><option value="winter" ${d.actief === 'winter' ? 'selected' : ''}>Winterbanden</option></select></label>
+      <label class="breed">Kilometerstand<input id="bdKm" inputmode="numeric" value="${km || L?.km || ''}"></label>
+      ${['Linksvoor', 'Rechtsvoor', 'Linksachter', 'Rechtsachter'].map((n, i) => `<label>${n} (mm)<input id="bdMm${i}" inputmode="decimal" placeholder="bijv. 6,5"></label>`).join('')}
+      <div class="knoppen"><button class="btn" data-band="annuleer">Annuleren</button><button class="pk-knop" data-band="opslaan">Opslaan</button></div></div>`;
+  } else if(bandBewerk === 'wissel'){
+    const naar = d.actief === 'zomer' ? 'winter' : 'zomer';
+    html += `<div class="band-form"><label class="breed">Nu onder de auto<select id="bdNaar"><option value="${naar}">${naar === 'zomer' ? 'Zomerbanden' : 'Winterbanden'}</option><option value="${d.actief}">${d.actief === 'zomer' ? 'Zomerbanden' : 'Winterbanden'}</option></select></label>
+      <label class="breed">Kilometerstand<input id="bdKm" inputmode="numeric" value="${km || ''}"></label>
+      <div class="knoppen"><button class="btn" data-band="annuleer">Annuleren</button><button class="pk-knop" data-band="wisselok">Opslaan en profiel meten</button></div></div>`;
+  } else html += `<div class="pk-rij"><button class="btn" data-band="meting">📏 Profiel meten</button><button class="btn" data-band="wissel">🔁 Banden gewisseld</button></div>`;
+  el.innerHTML = html;
+}
+function bandActie(w){
+  const d = bandData();
+  if(w === 'meting' || w === 'wissel'){ bandBewerk = w; return tekenBanden(); }
+  if(w === 'annuleer'){ bandBewerk = null; return tekenBanden(); }
+  if(d.demo){ d.metingen = []; d.wissels = []; delete d.demo; }                 // eerste echte invoer: voorbeeld weg
+  const kmv = parseInt(String($('bdKm')?.value || '').replace(/\D/g, ''), 10) || cap(autoDev(),'meter_odometer') || 0;
+  if(w === 'wisselok'){ const naar = $('bdNaar').value; d.actief = naar; d.wissels.push({ datum:new Date().toISOString().slice(0, 10), km:kmv, naar }); bandBewerk = 'meting'; bandBewaar(d); return; }
+  if(w === 'opslaan'){
+    const mm = [0, 1, 2, 3].map(i => parseFloat(String($('bdMm' + i).value).replace(',', '.')));
+    if(mm.some(isNaN)) return status('fout', 'Vul bij alle vier de banden het profiel in');
+    d.metingen.push({ set:$('bdSet').value, datum:new Date().toISOString().slice(0, 10), km:kmv, mm }); bandBewerk = null; bandBewaar(d);
+  }
+}
+/* Bovenaanzicht van de auto (eigen tekening, geen merk): open portieren/ramen/kleppen kleuren rood */
+function autoSvg(a){
+  const o = k => cap(a, k) === true ? 'open' : '';
+  return `<svg class="auto-svg" viewBox="0 0 200 380" aria-label="Auto van boven">
+    <rect x="22" y="68" width="14" height="46" rx="6" class="wiel"/><rect x="164" y="68" width="14" height="46" rx="6" class="wiel"/>
+    <rect x="22" y="262" width="14" height="46" rx="6" class="wiel"/><rect x="164" y="262" width="14" height="46" rx="6" class="wiel"/>
+    <path class="romp" d="M100 14 C142 14 168 26 172 60 L176 300 C176 344 150 366 100 366 C50 366 24 344 24 300 L28 60 C32 26 58 14 100 14Z"/>
+    <path class="glas" d="M48 112 C70 96 130 96 152 112 L146 150 C120 142 80 142 54 150Z"/>
+    <path class="dak" d="M54 154 C80 146 120 146 146 154 L148 262 C120 270 80 270 52 262Z"/>
+    <path class="glas" d="M52 268 C80 276 120 276 148 268 L144 300 C120 308 80 308 56 300Z"/>
+    <path class="deel ${o('alarm_door.bonnet')}" d="M58 22 C80 18 120 18 142 22 L150 100 C124 90 76 90 50 100Z"/>
+    <path class="deel ${o('alarm_door.trunk')}" d="M56 312 C80 318 120 318 144 312 L140 356 C120 362 80 362 60 356Z"/>
+    <rect class="deel ${o('alarm_door.frontLeft')}" x="26" y="120" width="22" height="70" rx="6"/><rect class="deel ${o('alarm_door.frontRight')}" x="152" y="120" width="22" height="70" rx="6"/>
+    <rect class="deel ${o('alarm_door.rearLeft')}" x="26" y="194" width="22" height="66" rx="6"/><rect class="deel ${o('alarm_door.rearRight')}" x="152" y="194" width="22" height="66" rx="6"/>
+    <rect class="deel ${o('alarm_window.frontLeft')}" x="44" y="126" width="6" height="56" rx="3"/><rect class="deel ${o('alarm_window.frontRight')}" x="150" y="126" width="6" height="56" rx="3"/>
+    <rect class="deel ${o('alarm_window.rearLeft')}" x="44" y="200" width="6" height="52" rx="3"/><rect class="deel ${o('alarm_window.rearRight')}" x="150" y="200" width="6" height="52" rx="3"/>
+    ${cap(a,'locked') === true ? `<g transform="translate(100 205)"><circle r="18" fill="rgba(14,185,141,.9)"/><path d="M-6 -2v-4a6 6 0 0 1 12 0v4M-8 -2h16v12h-16z" fill="none" stroke="#fff" stroke-width="2.2"/></g>`
+      : `<g transform="translate(100 205)"><circle r="18" fill="rgba(239,68,68,.9)"/><path d="M-6 -2v-4a6 6 0 0 1 11-3M-8 -2h16v12h-16z" fill="none" stroke="#fff" stroke-width="2.2"/></g>`}
+  </svg>`;
+}
+const autoGeleden = ms => { if(!ms) return '–'; const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'zojuist' : m < 60 ? `${m} min geleden` : m < 1440 ? `${Math.round(m / 60)} uur geleden` : `${Math.round(m / 1440)} dagen geleden`; };
+function tekenAuto(){
+  if(!$('page-auto')?.classList.contains('on')) return;
+  const a = autoDev();
+  if(!a){ $('autoHoofd').innerHTML = '<span class="leeg">Auto niet gevonden in Homey</span>'; return; }
+  const c = k => cap(a, k), acc = c('measure_battery') ?? c('measure_battery_percentage');
+  const bereik = typeof acc === 'number' ? Math.round(acc / 100 * AUTO_CFG.accuKwh * AUTO_CFG.kmPerKwh) : null;
+  const open = ['alarm_door.frontLeft','alarm_door.frontRight','alarm_door.rearLeft','alarm_door.rearRight','alarm_door.trunk','alarm_door.bonnet'].filter(k => c(k) === true).length;
+  const ramen = ['alarm_window.frontLeft','alarm_window.frontRight','alarm_window.rearLeft','alarm_window.rearRight'].filter(k => c(k) === true).length;
+  const thuis = typeof c('measure_distance_home') === 'number' && c('measure_distance_home') < 150;
+  const ond = c('maintenance_due_days'), ondDatum = typeof ond === 'number' ? new Date(Date.now() + ond * 864e5) : null;
+  $('autoTitel').textContent = a.name;
+  $('autoStand').className = 'pill ' + (c('vehicle_online') === false ? 'fout' : 'ok');
+  $('autoStand').lastElementChild.textContent = c('vehicle_online') === false ? 'Offline' : `Bijgewerkt ${autoGeleden(c('timestamp'))}`;
+  const feit = (t, w, k = '') => `<div class="${k}"><small>${t}</small><b>${w}</b></div>`;
+  $('autoHoofd').innerHTML = `<div class="auto-top">${autoSvg(a)}
+      <div class="auto-acc"><small class="card-title">Accu</small><b>${acc ?? '–'}<span class="u">%</span></b>
+        <div class="card-sub">± ${bereik ?? '–'} km actieradius (schatting) · laaddoel ${c('target_soc') ?? '–'}%</div>
+        <div class="bar"><i style="width:${Math.max(0, Math.min(100, acc || 0))}%"></i></div>
+        <div class="card-sub" style="margin-top:10px">${c('locked') ? '🔒 Op slot' : '🔓 Niet op slot'} · ${open ? `<span style="color:var(--red)">${open} open</span>` : 'alles dicht'}${ramen ? ` · <span style="color:var(--red)">${ramen} raam open</span>` : ''}</div>
+      </div></div>
+    <div class="auto-feiten">
+      ${feit('Kilometerstand', typeof c('meter_odometer') === 'number' ? c('meter_odometer').toLocaleString('nl-NL') + ' km' : '–')}
+      ${feit('Locatie', thuis ? 'Thuis' : c('is_parked') ? 'Geparkeerd elders' : 'Onderweg', thuis ? 'groen' : '')}
+      ${feit('Accutemperatuur', `${c('measure_battery_temperature.min') ?? '–'}–${c('measure_battery_temperature.max') ?? '–'} °C`)}
+      ${feit('Onderhoud', ondDatum ? `over ${ond} dagen` : '–', typeof ond === 'number' && ond < 30 ? 'amber' : '')}
+      ${feit('Status', c('vehicle_active') ? 'In gebruik' : 'In rust')}
+      ${feit('Alarm', c('alarm_general') ? 'Alarm!' : 'Geen', c('alarm_general') ? 'rood' : '')}
+    </div>
+    ${ondDatum ? `<div class="bel-klein">Volgende onderhoudsbeurt rond ${ondDatum.toLocaleDateString('nl-NL', { day:'numeric', month:'long', year:'numeric' })}. Laatste contact met de auto: ${autoGeleden(c('timestamp'))}.</div>` : ''}`;
+  // laden
+  const st = { plugged_out:'Stekker los', plugged_in:'Stekker in', charging:'Laadt', ready_for_charging:'Klaar om te laden', not_ready_for_charging:'Niet klaar', conserving:'Laden gepauzeerd', charge_purpose_reached_and_conservation:'Laaddoel bereikt' }[c('ev_charging_state')] || (c('is_charging') ? 'Laadt' : c('is_plug_connected') ? 'Stekker in' : 'Stekker los');
+  const rest = c('measure_remaining_charging_time');
+  $('autoLaden').innerHTML = `<div class="auto-kop"><span class="ico ${c('is_charging') ? 'green' : ''}">${ic('plug')}</span><b>Laden</b><span class="chip">${st}</span></div>
+    <div class="auto-feiten">${feit('Vermogen', `${nl(c('measure_charging_power') || 0, 1)} kW`, c('is_charging') ? 'groen' : '')}${feit('Nog te gaan', rest ? `${Math.floor(rest / 60)}u ${rest % 60}m` : '–')}${feit('Tot vol', `${c('measure_battery.until_full') ?? '–'}%`)}
+      ${feit('Laaddoel', `${c('target_soc') ?? '–'}%`)}${feit('Max. stroom', `${c('max_charging_current') ?? '–'} A`)}${feit('Tot laaddoel', `${c('measure_battery.until_target_soc') ?? '–'}%`)}</div>`;
+  $('autoKlimaat').innerHTML = `<div class="auto-kop"><span class="ico ${c('climatisation_onoff') ? 'amber' : ''}">${ic('thermo')}</span><b>Klimaat</b><span class="chip">${c('climatisation_onoff') ? 'Aan' : 'Uit'}</span></div>
+    <div class="auto-feiten">${feit('Doeltemperatuur', `${c('target_temperature') ?? '–'} °C`)}${feit('Ruitverwarming', c('window_heating_enabled') ? 'Aan' : 'Uit')}${feit('Nog', c('measure_remaining_climatisation_time') ? c('measure_remaining_climatisation_time') + ' min' : '–')}</div>`;
+  tekenBanden(); tekenPaal();
+}
+/* Laadpaal: demo tot er een laadpaal (bv. go-e Charger Gemini) in Homey staat */
+function tekenPaal(){
+  const P = AUTO_CFG.laadpaal, d = P.id && DEVS[P.id], demo = !d;
+  const c = k => demo ? ({ measure_power:3.7, meter_power_sessie:8.4, stand:'Laadt op zonne-overschot', fases:1, stroom:16, modus:'Zon', kosten:8.4 * CONFIG.energie.tarieven.stroom })[k] : cap(d, k);
+  const r = 34, omt = 2 * Math.PI * r, aand = demo ? .45 : Math.min(1, (cap(d,'measure_power') || 0) / 11);
+  $('autoPaal').innerHTML = `<div class="auto-kop"><span class="ico ${demo ? '' : 'green'}">${ic('bolt')}</span><b>Laadpaal · ${esc(P.naam)}</b>${demo ? '<span class="demo-label">demo</span>' : ''}</div>
+    <div style="display:flex;gap:14px;align-items:center">
+      <svg class="paal-ring" viewBox="0 0 84 84"><circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--border2)" stroke-width="8"/><circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--green)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${omt * aand} ${omt}" transform="rotate(-90 42 42)"/>
+        <text x="42" y="40" text-anchor="middle" style="font-size:15px;font-weight:800;fill:var(--text-primary)">${nl(c('measure_power'), 1)}</text><text x="42" y="55" text-anchor="middle" style="font-size:10px;fill:var(--text-muted)">kW</text></svg>
+      <div class="grow"><b>${esc(c('stand'))}</b><div class="card-sub">${c('fases')} fase · ${c('stroom')} A · modus ${esc(c('modus'))}</div></div></div>
+    <div class="auto-feiten">${feit('Deze sessie', `${nl(c('meter_power_sessie'), 1)} kWh`)}${feit('Kosten sessie', euro(c('kosten')))}${feit('Van de zon', demo ? '72%' : '–', 'amber')}</div>
+    ${demo ? '<p class="bel-klein">Voorbeeldgegevens. Zodra de laadpaal in Homey staat, vul ik zijn apparaat in en verschijnen hier de echte waarden (laadvermogen, fases, sessie, laden op zonne-overschot).</p>' : ''}`;
+}
+function feit(t, w, k = ''){ return `<div class="${k}"><small>${t}</small><b>${w}</b></div>`; }
+
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
+  const bd = e.target.closest('[data-band]'); if(bd) return bandActie(bd.dataset.band);
   if(belOpen && (e.target === $('belPaneel') || e.target.closest('[data-bel-sluit]'))) return sluitBeleg();
   if(e.target.closest('[data-beleg]')) return openBeleg();
   if(e.target.closest('[data-bel-tik]')) return belTik();
@@ -4540,7 +4814,7 @@ document.addEventListener('click', e => {
   if(t.dataset.mood)  return mood(t.dataset.mood, t);
   if(t.dataset.acmode) return zetModus(t.dataset.ac, t.dataset.acmode);
   if(t.dataset.temp)  return temperatuur(t.dataset.temp, parseFloat(t.dataset.stap));
-  if(t.dataset.page)  return goPage(t.dataset.page, t);
+  if(t.dataset.page)  return goPage(t.dataset.page, document.querySelector(`.nav-item[data-page="${t.dataset.page}"]`) || t);
   ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'ververs':verversNu, 'klimaat':openKlimaat, 'beweging':openBeweging, 'claude':openClaude, 'nieuw':openNieuw, 'media':openMedia,
      'sluit':closeCfg, 'opslaan':saveCfg, 'lampen':openLampen, 'zone-aanuit':zoneAanUit,
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
@@ -4995,6 +5269,7 @@ function goPage(id, el){
   document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.toggle('active', n === el));
   if(id === 'energie') laadEnergie();
   if(id === 'systeem') laadSysteem();
+  if(id === 'auto') tekenAuto();
   if(id === 'camera') startCamera(); else if(!camGrootId) stopCamera();
 }
 function toggleTheme(){
