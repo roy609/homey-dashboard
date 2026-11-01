@@ -1566,7 +1566,8 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '105';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'105', datum:'01-11-2026', punten:[ 'Banden: per set staat nu "Zomerbanden" of "Winterbanden" met daaronder het merk en type.' ] },
+  { v:'105', datum:'01-11-2026', punten:[ 'Banden: per set staat nu "Zomerbanden" of "Winterbanden" met daaronder het merk en type.',
+    'Huisafbeelding: vallende regen alleen nog als Buienradar op dit moment ook regen ziet in Bemmel. Meldt het KNMI-weerstation regen maar Buienradar niet, dan zie je de natte straat zonder vallende druppels.' ] },
   { v:'104', datum:'01-11-2026', punten:[ 'Kerstmodus (als de variabele Kerst Flows aan staat): warmwitte lichtjes boven in het hoofddashboard, een sneeuwkapje op het logo en een kerstkaartje dat aftelt tot Kerst, met knoppen voor de kerstboom, de kerstverlichting voor en achter en de kerstradio.',
     'Banden: in de grafiek staan nu jaartallen met de geschatte kilometerstand, en een markering wanneer een set vervangen moet worden. De verwachting slijt alleen in het eigen seizoen van een set (winterbanden ca. 15 oktober t/m 15 april) en loopt vlak zolang hij in de schuur ligt.',
     'Banden: metingen worden nu in Homey bewaard (variabele Auto banden), dus ze zijn op tablet, telefoon en laptop hetzelfde. Begonnen met de zomerbanden (Goodyear EfficientGrip Performance, 7 mm in juli 2026) en de winterbanden (Continental WinterContact TS 870 P, nog te meten).' ] },
@@ -1663,7 +1664,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '01-11-2026 14:45';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '01-11-2026 14:52';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -3705,7 +3706,12 @@ function omstandigheden(){
   const zwaar = weer === 'sneeuw' && /zware|hevige|flinke|veel|sneeuwdek|cm/.test(tekst + ' ' + String(cap(w,'expected') ?? '').toLowerCase());
   // "Droog na (mot)regen": straat alleen nog nat bij een luchtvochtigheid van 85% of meer (KNMI houdt die tekst soms uren vast)
   const vocht = cap(w,'humidity');
-  const natNa = droog && /regen|bui/.test(nu) && typeof vocht === 'number' && vocht >= 85;
+  let natNa = droog && /regen|bui/.test(nu) && typeof vocht === 'number' && vocht >= 85;
+  // KNMI (weerstation) zegt regen, maar Buienradar ziet hier op dit moment geen regen: natte straat, geen vallende druppels
+  if(weer === 'regen' && buienradarNu() === false){
+    weer = /bewolkt|grijs|betrokken/.test(vandaag) ? 'bewolkt' : /half|wisselend|opklaring/.test(vandaag) ? 'half' : 'bewolkt';
+    natNa = true;
+  }
   const temp = typeof cap(w,'current_temp') === 'number' ? cap(w,'current_temp') : null;
   const vorst = (ijzel || (temp != null && temp <= 0)) && weer !== 'sneeuw';    // ijzel: vorstbeeld
   const NAAM = { helder:'Zonnig', half:'Half bewolkt', bewolkt:'Bewolkt', regen:'Regen', sneeuw:zwaar ? 'Veel sneeuw' : 'Lichte sneeuw', mist:'Mist' };
@@ -4417,6 +4423,13 @@ async function bewaarVar(){
    raintext geeft per regel "waarde|tijd"; mm/u = 10^((waarde − 109) / 32), 0 = droog.
 ═════════════════════════════════════════════ */
 let REGEN = null, rgOpen = false, rgTab = 'grafiek', regenFout = null;
+/* Regent het nu volgens Buienradar (op deze plek)? true/false, of null als er geen verse gegevens zijn */
+function buienradarNu(){
+  if(!REGEN?.length || regenFout) return null;
+  const nu = Date.now(), p = REGEN.filter(x => Math.abs(x.t - nu) <= 7.5 * 60000);
+  if(!p.length) return null;
+  return p.some(x => x.mm > 0.05);
+}
 const REGEN_DREMPEL = 0.1;                       // mm/u: daaronder telt het als droog
 async function laadRegen(){
   const R = CONFIG.regen; if(!R) return;
@@ -4437,6 +4450,7 @@ async function laadRegen(){
     regenFout = null;
   } catch(e){ regenFout = e.name === 'AbortError' ? 'Buienradar antwoordt niet' : e.message; }
   tekenRegen();
+  if(typeof hertekenBeelden === 'function') hertekenBeelden();   // huisafbeelding: vallende regen alleen als Buienradar nu ook regen ziet
 }
 function regenSamenvatting(){
   if(!REGEN || !REGEN.length) return null;
