@@ -1563,9 +1563,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '105';
+const DASHBOARD_VERSIE = '106';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'106', datum:'01-11-2026', punten:[ 'Banden: het formulier voor profiel meten en wisselen wordt niet meer leeggemaakt door het automatisch verversen van het dashboard.' ] },
   { v:'105', datum:'01-11-2026', punten:[ 'Banden: per set staat nu "Zomerbanden" of "Winterbanden" met daaronder het merk en type.',
     'Huisafbeelding: vallende regen alleen nog als Buienradar op dit moment ook regen ziet in Bemmel. Meldt het KNMI-weerstation regen maar Buienradar niet, dan zie je de natte straat zonder vallende druppels.' ] },
   { v:'104', datum:'01-11-2026', punten:[ 'Kerstmodus (als de variabele Kerst Flows aan staat): warmwitte lichtjes boven in het hoofddashboard, een sneeuwkapje op het logo en een kerstkaartje dat aftelt tot Kerst, met knoppen voor de kerstboom, de kerstverlichting voor en achter en de kerstradio.',
@@ -4783,7 +4784,7 @@ const AUTO_CFG = { foto:'img/auto.webp', accuKwh:77, kmPerKwh:5.6, kmPerJaar:100
     nieuwMm:{ zomer:8, winter:8.5 }, grens:{ zomer:3, winter:4 }, wettelijk:1.6 },
   laadpaal:{ id:'', naam:'go-e Charger Gemini' } };                // id leeg = demo
 const BAND_KEY = 'dashboard_banden';
-let bandBewerk = null, autoWeer = null;
+let bandGetekend = null, bandBewerk = null, autoWeer = null;
 const autoDev = () => dev(CONFIG.apparaten.auto);
 function bandData(){
   const id = AUTO_CFG.banden.var, v = id && VARS[id];
@@ -4904,6 +4905,9 @@ function bandGrafiek(d){
 }
 function tekenBanden(){
   const el = $('autoBanden'); if(!el) return;
+  // Formulier open (profiel meten / wissel)? Dan niet opnieuw tekenen bij het automatisch verversen, anders gaat het ingevulde verloren
+  if(bandBewerk && bandBewerk === bandGetekend && el.querySelector('.band-form')) return;
+  bandGetekend = bandBewerk;
   if(!autoWeer || Date.now() - autoWeer.t > 3 * 3600e3) laadAutoWeer();
   const d = bandData(), a = autoDev(), km = cap(a,'meter_odometer');
   const set = s => { const A = bandAnalyse(d, s), act = d.actief === s;
