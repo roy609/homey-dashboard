@@ -1566,7 +1566,7 @@ const DASHBOARD_VERSIE = '104';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
   { v:'104', datum:'01-11-2026', punten:[ 'Kerstmodus (als de variabele Kerst Flows aan staat): warmwitte lichtjes boven in het hoofddashboard, een sneeuwkapje op het logo en een kerstkaartje dat aftelt tot Kerst, met knoppen voor de kerstboom, de kerstverlichting voor en achter en de kerstradio.',
-    'Banden: in de grafiek staan nu jaartallen met de geschatte kilometerstand, en een markering wanneer een set vervangen moet worden. De verwachting houdt er rekening mee dat elke set maar ongeveer de helft van het jaar onder de auto zit.',
+    'Banden: in de grafiek staan nu jaartallen met de geschatte kilometerstand, en een markering wanneer een set vervangen moet worden. De verwachting slijt alleen in het eigen seizoen van een set (winterbanden ca. 15 oktober t/m 15 april) en loopt vlak zolang hij in de schuur ligt.',
     'Banden: metingen worden nu in Homey bewaard (variabele Auto banden), dus ze zijn op tablet, telefoon en laptop hetzelfde. Begonnen met de zomerbanden (Goodyear EfficientGrip Performance, 7 mm in juli 2026) en de winterbanden (Continental WinterContact TS 870 P, nog te meten).' ] },
   { v:'103', datum:'01-11-2026', punten:[ 'Huisbeelden: het dashboard kiest het beeld nu aan de hand van de bestandsnaam. Een nieuw beeld toevoegen of vervangen is alleen uploaden naar de map img; ontbreekt er een, dan valt het netjes terug op het dichtstbijzijnde beeld.',
     'Nieuwe beelden in gebruik: herfst bewolkt en regen, winter zonnig, kerstavond droog, met sneeuw en met vorst, en kerst overdag (bij Kerst Flows aan). Bij mist komt de mistlaag nu over het bewolkte herfstbeeld in plaats van het zonnige.',
@@ -4763,7 +4763,8 @@ function sluitBeleg(){ belOpen = false; belBewerk = null; belZichtTot = 0; $('be
    AUTO — VW ID.4 (Homey-app) + banden (eigen metingen) + laadpaal (demo tot er een laadpaal is)
 ═════════════════════════════════════════════ */
 const AUTO_CFG = { foto:'img/auto.webp', accuKwh:77, kmPerKwh:5.6, kmPerJaar:10000,       // ID.4 Pro: 77 kWh netto; ~5,6 km/kWh gemiddeld → schatting actieradius
-  banden:{ var:'e8f91503-fcb4-4cb9-a464-573b4d98b8fc', nieuwMm:{ zomer:8, winter:8.5 }, grens:{ zomer:3, winter:4 }, wettelijk:1.6 },
+  banden:{ var:'e8f91503-fcb4-4cb9-a464-573b4d98b8fc', winter:{ van:[10, 15], tot:[4, 15] },   // winterbanden ca. 15 oktober t/m 15 april
+    nieuwMm:{ zomer:8, winter:8.5 }, grens:{ zomer:3, winter:4 }, wettelijk:1.6 },
   laadpaal:{ id:'', naam:'go-e Charger Gemini' } };                // id leeg = demo
 const BAND_KEY = 'dashboard_banden';
 let bandBewerk = null, autoWeer = null;
@@ -4789,6 +4790,11 @@ async function bandBewaar(d){
   if(id && VARS[id]){ VARS[id].value = tekst; if(!DEMO()) try { await zetVar(id, tekst); } catch(e){ status('fout', 'Banden niet opgeslagen in Homey'); } }
   tekenAuto();
 }
+/* Welke set hoort er op deze datum onder (volgens de vuistregel in AUTO_CFG.banden.winter) */
+function bandSeizoen(d){
+  const [vm, vd] = AUTO_CFG.banden.winter.van, [tm, td] = AUTO_CFG.banden.winter.tot, md = (d.getMonth() + 1) * 100 + d.getDate();
+  return (md >= vm * 100 + vd || md < tm * 100 + td) ? 'winter' : 'zomer';
+}
 /* Slijtage per set: lijn door (km, laagste profiel) van alle metingen van die set → mm per 1000 km */
 function bandAnalyse(d, set){
   const m = d.metingen.filter(x => x.set === set).sort((a, b) => a.km - b.km);
@@ -4808,8 +4814,22 @@ function bandAnalyse(d, set){
   const nu = laatst ? laagste(laatst) : null;
   const kmTotGrens = nu != null ? Math.max(0, (nu - grens) / perKkm * 1000) : null;           // km op de band
   const tellerTotGrens = kmTotGrens != null ? kmTotGrens / aandeel : null;                    // km op de teller
-  const jaren = tellerTotGrens != null ? tellerTotGrens / AUTO_CFG.kmPerJaar : null;
-  return { m, laatst, nu, nieuw, grens, perKkm, perTellerKkm, kmTotGrens, tellerTotGrens, jaren, laagste };
+  // Verwachting week voor week: de set slijt alleen in zijn eigen seizoen; daarbuiten ligt hij in de schuur.
+  const proj = [];
+  let grensT = null, grensKm = null;
+  if(nu != null){
+    const wk = 7 * 864e5, kmWk = AUTO_CFG.kmPerJaar / 52.18;
+    let t = new Date(laatst.datum).getTime(), km = laatst.km, mm = nu;
+    proj.push({ t, km, mm });
+    for(let i = 0; i < 52 * 15 && mm > grens; i++){
+      t += wk; km += kmWk;
+      if(bandSeizoen(new Date(t)) === set) mm -= perKkm * kmWk / 1000;
+      if(mm <= grens){ grensT = t; grensKm = km; mm = grens; }
+      proj.push({ t, km, mm });
+    }
+  }
+  const jaren = grensT != null ? Math.max(0, (grensT - Date.now()) / (365.25 * 864e5)) : (tellerTotGrens != null ? tellerTotGrens / AUTO_CFG.kmPerJaar : null);
+  return { m, laatst, nu, nieuw, grens, perKkm, perTellerKkm, kmTotGrens, tellerTotGrens, jaren, laagste, proj, grensT, grensKm };
 }
 /* Wisseladvies: weerverwachting (Open-Meteo, 10 dagen) + maand. Winterbanden onder ~7 °C. */
 async function laadAutoWeer(){
@@ -4840,12 +4860,17 @@ function bandGrafiek(d){
   // Tijd op de as: vanaf de laatste meting rekenen we met de geschatte kilometers per jaar (op de teller)
   const ref = [...alle].sort((a, b) => b.km - a.km)[0], refT = new Date(ref.datum).getTime(), kmJaar = AUTO_CFG.kmPerJaar;
   const kmNaarT = km => refT + (km - ref.km) / kmJaar * 365.25 * 864e5, tNaarKm = t => ref.km + (t - refT) / (365.25 * 864e5) * kmJaar;
-  const grensKm = sets.map(s => A[s].nu != null ? A[s].laatst.km + A[s].tellerTotGrens : 0);
+  const grensKm = sets.map(s => A[s].grensKm || 0);
   const kmMin = Math.min(...alle.map(x => x.km)), kmMax = Math.min(kmMin + 12 * kmJaar, Math.max(ref.km + 15000, ...grensKm.map(k => k + 4000)));
   const W = 560, H = 170, L = 28, B = 34, T = 8, x = km => L + (km - kmMin) / (kmMax - kmMin) * (W - L - 10), y = mm => T + (9 - mm) / 9 * (H - T - B);
   let g = '';
   [8, 6, 4, 2].forEach(mm => g += `<line x1="${L}" x2="${W}" y1="${y(mm)}" y2="${y(mm)}" stroke="var(--border)"/><text x="${L - 4}" y="${y(mm) + 3}" text-anchor="end">${mm}</text>`);
   g += `<line x1="${L}" x2="${W}" y1="${y(AUTO_CFG.banden.wettelijk)}" y2="${y(AUTO_CFG.banden.wettelijk)}" stroke="var(--red)" stroke-dasharray="4 4"/><text x="${W - 2}" y="${y(AUTO_CFG.banden.wettelijk) - 3}" text-anchor="end" style="fill:var(--red)">wettelijk 1,6 mm</text>`;
+  // Winterperiodes lichtblauw: dan liggen de zomerbanden in de schuur (en andersom)
+  { const [vm, vd] = AUTO_CFG.banden.winter.van, [tm, td] = AUTO_CFG.banden.winter.tot;
+    for(let jr = new Date(kmNaarT(kmMin)).getFullYear() - 1; jr <= new Date(kmNaarT(kmMax)).getFullYear(); jr++){
+      const a = Math.max(kmMin, tNaarKm(new Date(jr, vm - 1, vd).getTime())), b = Math.min(kmMax, tNaarKm(new Date(jr + 1, tm - 1, td).getTime()));
+      if(b > a) g += `<rect x="${x(a)}" y="${T}" width="${x(b) - x(a)}" height="${H - B - T}" fill="#60A5FA" fill-opacity=".08" stroke="none"/>`; } }
   // Jaartallen (1 januari) met de geschatte kilometerstand eronder
   const j0 = new Date(kmNaarT(kmMin)).getFullYear() + 1, j1 = new Date(kmNaarT(kmMax)).getFullYear();
   const stap = j1 - j0 > 6 ? 2 : 1;
@@ -4854,11 +4879,12 @@ function bandGrafiek(d){
   sets.forEach(s => { const a = A[s]; if(!a.m.length) return;
     const pts = a.m.map(m => [x(m.km), y(a.laagste(m))]);
     g += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${kl[s]}" stroke-width="2.5"/>` + pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${kl[s]}"/>`).join('');
-    if(a.nu != null){ const kmG = a.laatst.km + a.tellerTotGrens, eind = Math.min(kmG, kmMax);
-      g += `<line x1="${pts[pts.length - 1][0]}" y1="${pts[pts.length - 1][1]}" x2="${x(eind)}" y2="${y(a.nu - (eind - a.laatst.km) / 1000 * a.perTellerKkm)}" stroke="${kl[s]}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    if(a.nu != null){ const kmG = a.grensKm ?? Infinity;
+      const pr = a.proj.filter(p => p.km <= kmMax);
+      g += `<polyline points="${pr.map(p => `${x(p.km).toFixed(1)},${y(p.mm).toFixed(1)}`).join(' ')}" fill="none" stroke="${kl[s]}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
       g += `<line x1="${L}" x2="${W}" y1="${y(a.grens)}" y2="${y(a.grens)}" stroke="${kl[s]}" stroke-opacity=".35" stroke-dasharray="2 4"/>`;
-      if(kmG <= kmMax){ const dt = new Date(kmNaarT(kmG)); g += `<circle cx="${x(kmG)}" cy="${y(a.grens)}" r="4" fill="none" stroke="${kl[s]}" stroke-width="2"/><text x="${Math.min(x(kmG), W - 4)}" y="${y(a.grens) - 7}" text-anchor="${x(kmG) > W - 90 ? 'end' : 'middle'}" style="fill:${kl[s]};font-weight:700">vervangen ~${dt.toLocaleDateString('nl-NL', { month:'short', year:'numeric' })}</text>`; } } });
-  return `<div class="band-grafiek"><svg viewBox="0 0 ${W} ${H}">${g}</svg><div class="bel-klein">Laagste profiel per meting (mm) · stippellijn = verwachting · jaartallen geschat met ${kmJaar.toLocaleString('nl-NL')} km per jaar; elke set zit ongeveer de helft van het jaar onder de auto</div></div>`;
+      if(kmG <= kmMax){ const dt = new Date(a.grensT); g += `<circle cx="${x(kmG)}" cy="${y(a.grens)}" r="4" fill="none" stroke="${kl[s]}" stroke-width="2"/><text x="${Math.min(x(kmG), W - 4)}" y="${y(a.grens) - 7}" text-anchor="${x(kmG) > W - 90 ? 'end' : 'middle'}" style="fill:${kl[s]};font-weight:700">vervangen ~${dt.toLocaleDateString('nl-NL', { month:'short', year:'numeric' })}</text>`; } } });
+  return `<div class="band-grafiek"><svg viewBox="0 0 ${W} ${H}">${g}</svg><div class="bel-klein">Laagste profiel per meting (mm) · stippellijn = verwachting · vlak = set ligt in de schuur · blauw vlak = winterbandenseizoen (15 okt – 15 apr) · jaartallen geschat met ${kmJaar.toLocaleString('nl-NL')} km per jaar</div></div>`;
 }
 function tekenBanden(){
   const el = $('autoBanden'); if(!el) return;
