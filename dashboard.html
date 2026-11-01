@@ -778,6 +778,10 @@ h1.met-icoon { position:relative; }
 .bel-chip { display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 8px; border-radius:999px; border:1px solid var(--border2);
   background:var(--bg-inset); color:var(--text-secondary); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap; }
 .bel-chip { position:relative; }
+.st-test { display:flex; flex-direction:column; gap:4px; font-size:12px; }
+.st-test > div { display:grid; grid-template-columns:18px 1fr; gap:2px 8px; padding:6px 8px; border-radius:8px; background:var(--bg-inset); }
+.st-test b { grid-row:span 2; } .st-test .ok b { color:var(--green); } .st-test .fout b { color:var(--red); }
+.st-test code { font-size:11px; color:var(--text-secondary); word-break:break-all; } .st-test span { color:var(--text-muted); word-break:break-word; }
 .bel-stort { display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:var(--bg-nav); border:1px solid var(--border); }
 .bel-stort-kop b { display:block; } .bel-stort-kop small { color:var(--text-muted); font-size:11.5px; }
 .bel-stort-rij { display:grid; grid-template-columns:62px 1fr 1fr 40px; gap:6px; align-items:center; }
@@ -1618,9 +1622,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '109';
+const DASHBOARD_VERSIE = '110';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'110', datum:'01-11-2026', punten:[ 'Beleggingen: testblok "Koersen via Homey" om te proberen of koersen van aandelen (zoals Nvidia) via de Homey-app Stocks kunnen worden opgehaald. Alleen lezen.' ] },
   { v:'109', datum:'01-11-2026', punten:[ 'Beleggingen hebben een eigen pagina (menu, of tik op het bitcoinlabel): totaal met ingelegd en winst/verlies, verloop per periode, bitcoin met koers en rendement, al je beleggingen, de verdeling en uitleg.',
     'Zondag bijwerken: alle handmatige beleggingen onder elkaar, nieuwe waarden invullen en in één keer opslaan. Wat je typt blijft staan tot je opslaat.',
     'Bedragen blijven zichtbaar zolang je op de pagina bezig bent en verdwijnen 2 minuten na de laatste aanraking.',
@@ -5261,6 +5266,7 @@ document.addEventListener('click', e => {
   const stw = e.target.closest('[data-bel-st-weg]'); if(stw){ belStortConcept.splice(+stw.dataset.belStWeg, 1); return tekenBelPaneel(); }
   const bo = e.target.closest('[data-bel-opslaan]'); if(bo) return belOpslaan(bo.dataset.belOpslaan);
   if(e.target.closest('[data-bel-week]')) return belWeekOpslaan();
+  if(e.target.closest('[data-st-test]')) return stocksTest();
   const belw = e.target.closest('[data-bel-weg]'); if(belw){ const d = belData(); d.posten.splice(+belw.dataset.belWeg, 1); belBewaar(d); belBewerk = null; return tekenBeleg(); }
   if(rdwOpen && (e.target === $('rdwPaneel') || e.target.closest('[data-rdw-sluit]'))) return sluitRdw();
   if(e.target.closest('[data-rdw-ok]')) return rdwAfvinken(e.target.closest('[data-rdw-ok]').dataset.rdwOk);
@@ -5952,6 +5958,7 @@ function tekenBelPaginaNu(){
       ${belOpslagFout ? `<p class="pk-melding fout">${esc(belOpslagFout)}</p>` : ''}</div>
     <div class="card"><div class="auto-kop"><span class="ico">${ic('munten')}</span><b>Mijn beleggingen</b></div>${lijst}</div>
     ${zicht ? belInlegKaart(d, T) : ''}
+    ${stocksTestKaart()}
     ${verdeling}
     <div class="card"><details class="bel-uitleg"><summary>Hoe werkt dit?</summary>
       <p><b>Koers.</b> De bitcoinkoers komt live van CoinGecko (reserve: Bitvavo) en ververst elke 5 minuten. Waarde van je bitcoin = aantal BTC × koers.</p>
@@ -5977,6 +5984,43 @@ document.addEventListener('pointerdown', e => { if(belZicht() && e.target.closes
 document.addEventListener('keydown', () => { if(belZicht() && $('page-beleg')?.classList.contains('on')) belZichtTot = Date.now() + BEL_ZICHT_MS; }, { capture:true, passive:true });
 let belWasZicht = false;
 setInterval(() => { const z = belZicht(); if(belWasZicht && !z){ belBewerk = null; belConcept = {}; belStortConcept = null; belFormConcept = {}; tekenBeleg(); } belWasZicht = z; }, 2000);
+
+/* ═════════════════════════════════════════════
+   TEST: koersen via de Homey-app Stocks (net.weejewel.stocks). Alleen lezen.
+   De app heeft een widget-eindpunt (GET / ?symbol=…) dat koers, valuta, % vandaag en 24 uur verloop van Yahoo Finance geeft.
+   Het precieze adres staat niet in de documentatie; deze test probeert de mogelijke adressen.
+═════════════════════════════════════════════ */
+const STOCKS_APP = 'net.weejewel.stocks';
+let stTest = { bezig:false, symbool:'NVDA', regels:[], gevonden:null };
+const stocksPaden = sym => { const q = '?symbol=' + encodeURIComponent(sym), a = encodeURIComponent('homey:app:' + STOCKS_APP);
+  return [`/api/app/${STOCKS_APP}/widgets/large/${q}`, `/api/app/${STOCKS_APP}/widgets/large/api/${q}`, `/api/app/${STOCKS_APP}/widget/large/${q}`,
+          `/api/app/${STOCKS_APP}/widgets/large${q}`, `/api/manager/dashboards/widget/${a}:large/api/${q}`, `/api/manager/apps/app/${STOCKS_APP}/widget/large/api/${q}`, `/api/app/${STOCKS_APP}/${q}`]; };
+async function stocksTest(){
+  const sym = ($('stSym')?.value || stTest.symbool).trim().toUpperCase() || 'NVDA';
+  stTest = { bezig:true, symbool:sym, regels:[], gevonden:null }; tekenBelPagina();
+  if(DEMO()){ stTest.regels.push({ pad:'(demo)', ok:false, tekst:'In de demo is er geen Homey om te testen.' }); stTest.bezig = false; return tekenBelPagina(); }
+  try { const apps = await homey('/api/manager/apps/app'); const a = apps?.[STOCKS_APP];
+    stTest.regels.push({ pad:'App Stocks geïnstalleerd?', ok:!!a, tekst:a ? `ja, versie ${a.version}${a.enabled === false ? ' (uitgeschakeld)' : ''}` : 'niet gevonden' }); }
+  catch(e){ stTest.regels.push({ pad:'App Stocks geïnstalleerd?', ok:false, tekst:'kon de apps niet lezen: ' + e.message }); }
+  tekenBelPagina();
+  for(const pad of stocksPaden(sym)){
+    try { const r = await homey(pad);
+      const ok = r && typeof r.price === 'number';
+      stTest.regels.push({ pad, ok, tekst: ok ? `${r.name || r.symbol}: ${r.price} ${r.currency || ''}, vandaag ${typeof r.change === 'number' ? r.change.toFixed(2) + '%' : '?'}, ${r.quotes?.length || 0} punten` : 'antwoord zonder koers: ' + JSON.stringify(r).slice(0, 120) });
+      if(ok){ stTest.gevonden = { pad, r }; break; } }
+    catch(e){ stTest.regels.push({ pad, ok:false, tekst:e.message }); }
+    tekenBelPagina();
+  }
+  stTest.bezig = false; tekenBelPagina();
+}
+function stocksTestKaart(){
+  return `<div class="card"><div class="auto-kop"><span class="ico">${ic('grafiek')}</span><b>Koersen via Homey (test)</b><span class="demo-label">test</span></div>
+    <p class="bel-klein">Probeert of het dashboard koersen kan ophalen via de Homey-app Stocks. Leest alleen; er verandert niets.</p>
+    <div class="pk-rij"><input id="stSym" value="${esc(stTest.symbool)}" placeholder="Yahoo-symbool, bijv. NVDA" style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--bg-inset);color:var(--text-primary);font:inherit">
+      <button class="pk-knop" data-st-test="1" ${stTest.bezig ? 'disabled' : ''}>${stTest.bezig ? 'Bezig…' : 'Koppeling testen'}</button></div>
+    ${stTest.regels.length ? `<div class="st-test">${stTest.regels.map(x => `<div class="${x.ok ? 'ok' : 'fout'}"><b>${x.ok ? '✓' : '✗'}</b><code>${esc(x.pad)}</code><span>${esc(x.tekst)}</span></div>`).join('')}</div>` : ''}
+    ${!stTest.bezig && stTest.regels.length ? `<p class="bel-klein" style="font-weight:700;color:${stTest.gevonden ? 'var(--green)' : 'var(--amber)'}">${stTest.gevonden ? 'Gelukt: de koppeling werkt.' : 'Geen werkend adres gevonden.'} Maak een screenshot van dit blok en stuur het naar Claude.</p>` : ''}</div>`;
+}
 </script>
 </body>
 </html>
