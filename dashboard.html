@@ -1563,9 +1563,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '106';
+const DASHBOARD_VERSIE = '107';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'107', datum:'01-11-2026', punten:[ 'Banden: de verwachting rekent nu met 12.500 km per jaar (gemeten tussen maart en november 2026) in plaats van 10.000.' ] },
   { v:'106', datum:'01-11-2026', punten:[ 'Banden: het formulier voor profiel meten en wisselen wordt niet meer leeggemaakt door het automatisch verversen van het dashboard.' ] },
   { v:'105', datum:'01-11-2026', punten:[ 'Banden: per set staat nu "Zomerbanden" of "Winterbanden" met daaronder het merk en type.',
     'Huisafbeelding: vallende regen alleen nog als Buienradar op dit moment ook regen ziet in Bemmel. Meldt het KNMI-weerstation regen maar Buienradar niet, dan zie je de natte straat zonder vallende druppels.' ] },
@@ -4779,7 +4780,7 @@ function sluitBeleg(){ belOpen = false; belBewerk = null; belZichtTot = 0; $('be
 /* ═════════════════════════════════════════════
    AUTO — VW ID.4 (Homey-app) + banden (eigen metingen) + laadpaal (demo tot er een laadpaal is)
 ═════════════════════════════════════════════ */
-const AUTO_CFG = { foto:'img/auto.webp', accuKwh:77, kmPerKwh:5.6, kmPerJaar:10000,       // ID.4 Pro: 77 kWh netto; ~5,6 km/kWh gemiddeld → schatting actieradius
+const AUTO_CFG = { foto:'img/auto.webp', accuKwh:77, kmPerKwh:5.6, kmPerJaar:12500,   // 97.000 km half maart 2026 → 104.890 km op 1 nov 2026       // ID.4 Pro: 77 kWh netto; ~5,6 km/kWh gemiddeld → schatting actieradius
   banden:{ var:'e8f91503-fcb4-4cb9-a464-573b4d98b8fc', winter:{ van:[10, 15], tot:[4, 15] },   // winterbanden ca. 15 oktober t/m 15 april
     nieuwMm:{ zomer:8, winter:8.5 }, grens:{ zomer:3, winter:4 }, wettelijk:1.6 },
   laadpaal:{ id:'', naam:'go-e Charger Gemini' } };                // id leeg = demo
