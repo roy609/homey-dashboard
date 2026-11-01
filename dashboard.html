@@ -844,6 +844,7 @@ h1.met-icoon { position:relative; }
 .auto-feiten small { display:block; font-size:11px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:var(--text-muted); }
 .auto-feiten b { font-size:var(--fs-md); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
 .auto-feiten .rood b { color:var(--red); } .auto-feiten .groen b { color:var(--green); } .auto-feiten .amber b { color:var(--amber); }
+.band-grafiek .as-km { fill:var(--text-muted); font-size:9.5px; }
 .auto-kop { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
 .auto-kop b { font-size:var(--fs-md); }
 .auto-kop .chip { margin-left:auto; }
@@ -857,7 +858,7 @@ h1.met-icoon { position:relative; }
 .band-set small { display:block; color:var(--text-muted); font-size:12px; }
 .band-set .waarsch { color:var(--amber); font-weight:700; } .band-set .slecht { color:var(--red); font-weight:700; }
 .band-wiel { display:grid; grid-template-columns:1fr 1fr; gap:3px 10px; margin:6px 0; font-size:12.5px; color:var(--text-secondary); }
-.band-grafiek svg { width:100%; height:150px; display:block; }
+.band-grafiek svg { width:100%; height:auto; display:block; }
 .band-grafiek text { font-size:10px; fill:var(--text-muted); stroke:none; font-weight:500; }
 .band-advies { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; border:1px solid var(--border2); }
 .band-advies.nu { border-color:rgba(245,165,36,.6); background:rgba(245,165,36,.08); }
@@ -1565,6 +1566,7 @@ const DASHBOARD_VERSIE = '104';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
   { v:'104', datum:'01-11-2026', punten:[ 'Kerstmodus (als de variabele Kerst Flows aan staat): warmwitte lichtjes boven in het hoofddashboard, een sneeuwkapje op het logo en een kerstkaartje dat aftelt tot Kerst, met knoppen voor de kerstboom, de kerstverlichting voor en achter en de kerstradio.',
+    'Banden: in de grafiek staan nu jaartallen met de geschatte kilometerstand, en een markering wanneer een set vervangen moet worden. De verwachting houdt er rekening mee dat elke set maar ongeveer de helft van het jaar onder de auto zit.',
     'Banden: metingen worden nu in Homey bewaard (variabele Auto banden), dus ze zijn op tablet, telefoon en laptop hetzelfde. Begonnen met de zomerbanden (Goodyear EfficientGrip Performance, 7 mm in juli 2026) en de winterbanden (Continental WinterContact TS 870 P, nog te meten).' ] },
   { v:'103', datum:'01-11-2026', punten:[ 'Huisbeelden: het dashboard kiest het beeld nu aan de hand van de bestandsnaam. Een nieuw beeld toevoegen of vervangen is alleen uploaden naar de map img; ontbreekt er een, dan valt het netjes terug op het dichtstbijzijnde beeld.',
     'Nieuwe beelden in gebruik: herfst bewolkt en regen, winter zonnig, kerstavond droog, met sneeuw en met vorst, en kerst overdag (bij Kerst Flows aan). Bij mist komt de mistlaag nu over het bewolkte herfstbeeld in plaats van het zonnige.',
@@ -4793,18 +4795,21 @@ function bandAnalyse(d, set){
   const laagste = x => Math.min(...x.mm.filter(v => typeof v === 'number'));
   const laatst = m[m.length - 1];
   const nieuw = AUTO_CFG.banden.nieuwMm[set], grens = AUTO_CFG.banden.grens[set];
-  let perKkm = set === 'zomer' ? 0.12 : 0.15;                          // standaard als er nog maar één meting is
+  // Elke set zit ongeveer de helft van de kilometers onder de auto (zomer en winter). De kilometerstand loopt door,
+  // dus per kilometer op de teller slijt een set half zo hard als per kilometer dat hij er echt onder zit.
+  const aandeel = .5;
+  let perKkm = set === 'zomer' ? 0.12 : 0.15;                          // mm per 1000 km op de band; standaard bij één meting
   if(m.length >= 2){
     const xs = m.map(x => x.km), ys = m.map(laagste), n = xs.length, mx = xs.reduce((a, b) => a + b) / n, my = ys.reduce((a, b) => a + b) / n;
     const helling = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / (xs.reduce((s, x) => s + (x - mx) ** 2, 0) || 1);
-    if(helling < 0) perKkm = -helling * 1000;
+    if(helling < 0) perKkm = -helling * 1000 / aandeel;                // helling is per km op de teller
   }
+  const perTellerKkm = perKkm * aandeel;
   const nu = laatst ? laagste(laatst) : null;
-  // kilometers per jaar op deze set: helft van het jaartotaal (twee sets), of afgeleid uit de wissels
-  const kmJaarSet = AUTO_CFG.kmPerJaar / 2;
-  const kmTotGrens = nu != null ? Math.max(0, (nu - grens) / perKkm * 1000) : null;
-  const jaren = kmTotGrens != null ? kmTotGrens / kmJaarSet : null;
-  return { m, laatst, nu, nieuw, grens, perKkm, kmTotGrens, jaren, laagste };
+  const kmTotGrens = nu != null ? Math.max(0, (nu - grens) / perKkm * 1000) : null;           // km op de band
+  const tellerTotGrens = kmTotGrens != null ? kmTotGrens / aandeel : null;                    // km op de teller
+  const jaren = tellerTotGrens != null ? tellerTotGrens / AUTO_CFG.kmPerJaar : null;
+  return { m, laatst, nu, nieuw, grens, perKkm, perTellerKkm, kmTotGrens, tellerTotGrens, jaren, laagste };
 }
 /* Wisseladvies: weerverwachting (Open-Meteo, 10 dagen) + maand. Winterbanden onder ~7 °C. */
 async function laadAutoWeer(){
@@ -4832,18 +4837,28 @@ function bandGrafiek(d){
   const sets = ['zomer', 'winter'], kl = { zomer:'#F5A524', winter:'#60A5FA' };
   const A = Object.fromEntries(sets.map(s => [s, bandAnalyse(d, s)]));
   const alle = d.metingen; if(!alle.length) return '';
-  const kmMin = Math.min(...alle.map(x => x.km)), kmMax = Math.max(...alle.map(x => x.km)) + 15000;
-  const W = 560, H = 150, L = 28, B = 18, T = 8, x = km => L + (km - kmMin) / (kmMax - kmMin) * (W - L - 6), y = mm => T + (9 - mm) / 9 * (H - T - B);
+  // Tijd op de as: vanaf de laatste meting rekenen we met de geschatte kilometers per jaar (op de teller)
+  const ref = [...alle].sort((a, b) => b.km - a.km)[0], refT = new Date(ref.datum).getTime(), kmJaar = AUTO_CFG.kmPerJaar;
+  const kmNaarT = km => refT + (km - ref.km) / kmJaar * 365.25 * 864e5, tNaarKm = t => ref.km + (t - refT) / (365.25 * 864e5) * kmJaar;
+  const grensKm = sets.map(s => A[s].nu != null ? A[s].laatst.km + A[s].tellerTotGrens : 0);
+  const kmMin = Math.min(...alle.map(x => x.km)), kmMax = Math.min(kmMin + 12 * kmJaar, Math.max(ref.km + 15000, ...grensKm.map(k => k + 4000)));
+  const W = 560, H = 170, L = 28, B = 34, T = 8, x = km => L + (km - kmMin) / (kmMax - kmMin) * (W - L - 10), y = mm => T + (9 - mm) / 9 * (H - T - B);
   let g = '';
   [8, 6, 4, 2].forEach(mm => g += `<line x1="${L}" x2="${W}" y1="${y(mm)}" y2="${y(mm)}" stroke="var(--border)"/><text x="${L - 4}" y="${y(mm) + 3}" text-anchor="end">${mm}</text>`);
   g += `<line x1="${L}" x2="${W}" y1="${y(AUTO_CFG.banden.wettelijk)}" y2="${y(AUTO_CFG.banden.wettelijk)}" stroke="var(--red)" stroke-dasharray="4 4"/><text x="${W - 2}" y="${y(AUTO_CFG.banden.wettelijk) - 3}" text-anchor="end" style="fill:var(--red)">wettelijk 1,6 mm</text>`;
+  // Jaartallen (1 januari) met de geschatte kilometerstand eronder
+  const j0 = new Date(kmNaarT(kmMin)).getFullYear() + 1, j1 = new Date(kmNaarT(kmMax)).getFullYear();
+  const stap = j1 - j0 > 6 ? 2 : 1;
+  for(let jr = j0; jr <= j1; jr += stap){ const km = tNaarKm(new Date(jr, 0, 1).getTime()); if(km < kmMin || km > kmMax) continue; const xx = x(km);
+    g += `<line x1="${xx}" x2="${xx}" y1="${T}" y2="${H - B}" stroke="var(--border)" stroke-dasharray="1 4"/><text x="${xx}" y="${H - B + 14}" text-anchor="middle" style="font-weight:700">${jr}</text><text x="${xx}" y="${H - B + 27}" text-anchor="middle" class="as-km">~${Math.round(km / 1000)}k km</text>`; }
   sets.forEach(s => { const a = A[s]; if(!a.m.length) return;
     const pts = a.m.map(m => [x(m.km), y(a.laagste(m))]);
     g += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${kl[s]}" stroke-width="2.5"/>` + pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${kl[s]}"/>`).join('');
-    if(a.nu != null){ const kmG = a.laatst.km + a.kmTotGrens; g += `<line x1="${pts[pts.length - 1][0]}" y1="${pts[pts.length - 1][1]}" x2="${x(Math.min(kmG, kmMax))}" y2="${y(a.nu - (Math.min(kmG, kmMax) - a.laatst.km) / 1000 * a.perKkm)}" stroke="${kl[s]}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
-      g += `<line x1="${L}" x2="${W}" y1="${y(a.grens)}" y2="${y(a.grens)}" stroke="${kl[s]}" stroke-opacity=".35" stroke-dasharray="2 4"/>`; } });
-  g += `<text x="${L}" y="${H - 4}">${Math.round(kmMin / 1000)}k km</text><text x="${W}" y="${H - 4}" text-anchor="end">${Math.round(kmMax / 1000)}k km</text>`;
-  return `<div class="band-grafiek"><svg viewBox="0 0 ${W} ${H}">${g}</svg><div class="bel-klein">Laagste profiel per meting (mm) tegen de kilometerstand · stippellijn = verwachting</div></div>`;
+    if(a.nu != null){ const kmG = a.laatst.km + a.tellerTotGrens, eind = Math.min(kmG, kmMax);
+      g += `<line x1="${pts[pts.length - 1][0]}" y1="${pts[pts.length - 1][1]}" x2="${x(eind)}" y2="${y(a.nu - (eind - a.laatst.km) / 1000 * a.perTellerKkm)}" stroke="${kl[s]}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+      g += `<line x1="${L}" x2="${W}" y1="${y(a.grens)}" y2="${y(a.grens)}" stroke="${kl[s]}" stroke-opacity=".35" stroke-dasharray="2 4"/>`;
+      if(kmG <= kmMax){ const dt = new Date(kmNaarT(kmG)); g += `<circle cx="${x(kmG)}" cy="${y(a.grens)}" r="4" fill="none" stroke="${kl[s]}" stroke-width="2"/><text x="${Math.min(x(kmG), W - 4)}" y="${y(a.grens) - 7}" text-anchor="${x(kmG) > W - 90 ? 'end' : 'middle'}" style="fill:${kl[s]};font-weight:700">vervangen ~${dt.toLocaleDateString('nl-NL', { month:'short', year:'numeric' })}</text>`; } } });
+  return `<div class="band-grafiek"><svg viewBox="0 0 ${W} ${H}">${g}</svg><div class="bel-klein">Laagste profiel per meting (mm) · stippellijn = verwachting · jaartallen geschat met ${kmJaar.toLocaleString('nl-NL')} km per jaar; elke set zit ongeveer de helft van het jaar onder de auto</div></div>`;
 }
 function tekenBanden(){
   const el = $('autoBanden'); if(!el) return;
@@ -4856,8 +4871,8 @@ function tekenBanden(){
       ${A.laatst ? `<div class="mm">${nl(A.nu, 1)} mm</div>
         <div class="band-wiel"><span>LV ${nl(A.laatst.mm[0], 1)}</span><span>RV ${nl(A.laatst.mm[1], 1)}</span><span>LA ${nl(A.laatst.mm[2], 1)}</span><span>RA ${nl(A.laatst.mm[3], 1)}</span></div>
         <small>Gemeten ${new Date(A.laatst.datum).toLocaleDateString('nl-NL', { day:'numeric', month:'short', year:'numeric' })} bij ${A.laatst.km.toLocaleString('nl-NL')} km</small>
-        <small>Slijt ~${nl(A.perKkm * 10, 1)} mm per 10.000 km · vervangen bij ${nl(A.grens, 0)} mm</small>
-        <small class="${status}">Nog ~${Math.round(A.kmTotGrens / 1000) * 1000 ? (Math.round(A.kmTotGrens / 1000) * 1000).toLocaleString('nl-NL') : '0'} km · ${wanneer}</small>` : '<small>Nog geen meting</small>'}</div>`; };
+        <small>Slijt ~${nl(A.perKkm * 10, 1)} mm per 10.000 km op deze set · vervangen bij ${nl(A.grens, 0)} mm</small>
+        <small class="${status}">Nog ~${(Math.round(A.kmTotGrens / 1000) * 1000).toLocaleString('nl-NL')} km op deze set · ${wanneer}</small>` : '<small>Nog geen meting</small>'}</div>`; };
   const adv = wisselAdvies(d.actief);
   let html = `<div class="auto-kop"><span class="ico">${ic('auto')}</span><b>Banden</b>${d.demo ? '<span class="demo-label">voorbeeld</span>' : ''}</div>
     <div class="band-advies ${adv.nu ? 'nu' : ''}">${ic('klok')}<div><b>${esc(adv.kop)}</b><div class="bel-klein" style="margin-top:2px">${esc(adv.tekst)}</div></div></div>
