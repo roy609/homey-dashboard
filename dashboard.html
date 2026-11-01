@@ -1544,7 +1544,7 @@ const DASHBOARD_VERSIE = '103';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
   { v:'103', datum:'01-11-2026', punten:[ 'Huisbeelden: het dashboard kiest het beeld nu aan de hand van de bestandsnaam. Een nieuw beeld toevoegen of vervangen is alleen uploaden naar de map img; ontbreekt er een, dan valt het netjes terug op het dichtstbijzijnde beeld.',
-    'Nieuwe beelden in gebruik: herfst bewolkt en regen, winter zonnig, kerstavond droog en met sneeuw (bij Kerst Flows aan). Bij mist komt de mistlaag nu over het bewolkte herfstbeeld in plaats van het zonnige.',
+    'Nieuwe beelden in gebruik: herfst bewolkt en regen, winter zonnig, kerstavond droog, met sneeuw en met vorst, en kerst overdag (bij Kerst Flows aan). Bij mist komt de mistlaag nu over het bewolkte herfstbeeld in plaats van het zonnige.',
     'Hagel toont het regenbeeld en ijzel het vorstbeeld (voorheen ten onrechte sneeuw). Onweer: regenbeeld, donkerder.',
     'Testmodus: tik op de weertekst rechtsonder in de huisafbeelding. Kies seizoen, weer, dag/avond en kerst en zie welk beeld getoond wordt, welke ontbreken, en toon het desgewenst 2 minuten op het dashboard.' ] },
   { v:'102', datum:'31-10-2026', punten:[ 'Auto: nieuw blok RDW met kenteken, APK-vervaldatum, verzekering en terugroepactie (app RDW in Homey).',
@@ -2832,10 +2832,10 @@ const BEELD_UITLEG = {
   herfst:'Herfst, zon', herfst_bewolkt:'Herfst, bewolkt en mist', herfst_regen:'Herfst, regen',
   winter:'Winter, bewolkt', winter_zon:'Winter, zon', vorst:'Vorst en ijzel', lichte_sneeuw:'Lichte sneeuw', veel_sneeuw:'Veel sneeuw',
   avond:'Avond (lente t/m oktober)', avond_regen:'Avond met regen', avond_winter:'Winteravond (november t/m februari, vorst)',
-  kerst:'Kerstavond, nat', kerst_droog:'Kerstavond, droog', kerst_sneeuw:'Kerstavond, sneeuw',
+  kerst:'Kerstavond, nat', kerst_droog:'Kerstavond, droog', kerst_sneeuw:'Kerstavond, sneeuw', kerst_vorst:'Kerstavond, vorst', kerst_dag:'Kerst overdag', lente_bewolkt:'Lente, bewolkt en mist',
 };
 const BEELD_SET = {
-  voor:   ['standaard','zon_ochtend','zon_avond','lente','bewolkt','regen','herfst','herfst_bewolkt','herfst_regen','winter','winter_zon','vorst','lichte_sneeuw','veel_sneeuw','avond','avond_regen','avond_winter','kerst','kerst_droog','kerst_sneeuw'],
+  voor:   ['standaard','zon_ochtend','zon_avond','lente','lente_bewolkt','bewolkt','regen','herfst','herfst_bewolkt','herfst_regen','winter','winter_zon','vorst','lichte_sneeuw','veel_sneeuw','avond','avond_regen','avond_winter','kerst','kerst_droog','kerst_sneeuw','kerst_vorst','kerst_dag'],
   achter: ['basis','lente','bewolkt','regen','herfst','herfst_bewolkt','herfst_regen','winter','winter_zon','vorst','lichte_sneeuw','veel_sneeuw','avond','avond_winter','kerst'],
 };
 let bgOpen = false, bgKant = 'voor', bgKeuze = { seizoen:'nu', weer:'nu', moment:'nu', kerst:'nu' };
@@ -3514,12 +3514,13 @@ function beeldReeks(kant, o, donker, kerst){
   const r = [], bekend = BEELD_SET[kant] || [], add = (k, kleur = TINT.geen, extra = {}) => { if(k && bekend.includes(k) && !r.some(x => x.k === k)) r.push({ k, kleur, ...extra }); };   // alleen namen uit de vaste lijst
   const sneeuwBeelden = (kleur, extra) => { add(o.zwaar ? 'veel_sneeuw' : 'lichte_sneeuw', kleur, extra); add(o.zwaar ? 'lichte_sneeuw' : 'veel_sneeuw', kleur, extra); };
   if(donker){
-    if(kerst){ if(sneeuw) add('kerst_sneeuw'); if(regen) add('kerst'); add('kerst_droog'); add('kerst'); }
+    if(kerst){ if(sneeuw) add('kerst_sneeuw'); if(regen) add('kerst'); if(o.vorst) add('kerst_vorst'); add('kerst_droog'); add('kerst'); }
     if(sneeuw){ add('avond_sneeuw'); sneeuwBeelden(TINT.nacht, { nachtSneeuw:true }); }
     if(regen){ add(`${S}_avond_regen`); add('avond_regen'); add('avond_winter'); }
     if(S === 'winter' || o.vorst || maand === 11) add('avond_winter');
     add(`${S}_avond`); add('avond'); add('avond_winter');
   } else {
+    if(kerst && !sneeuw && !regen) add('kerst_dag');                   // kerst overdag: decoratie zichtbaar, droog weer
     if(sneeuw) sneeuwBeelden();
     else if(o.vorst){ add(`${S}_vorst`); add('vorst'); }
     else if(regen){ add(`${S}_regen`); if(S === 'winter') add('winter', TINT.grauw); add('regen'); }
