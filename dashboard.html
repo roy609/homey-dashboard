@@ -845,6 +845,7 @@ h1.met-icoon { position:relative; }
 .auto-feiten b { font-size:var(--fs-md); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
 .auto-feiten .rood b { color:var(--red); } .auto-feiten .groen b { color:var(--green); } .auto-feiten .amber b { color:var(--amber); }
 .band-grafiek .as-km { fill:var(--text-muted); font-size:9.5px; }
+.band-merk { font-size:var(--fs-sm); font-weight:600; color:var(--text-secondary); margin:-2px 0 6px; }
 .auto-kop { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
 .auto-kop b { font-size:var(--fs-md); }
 .auto-kop .chip { margin-left:auto; }
@@ -1562,9 +1563,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '104';
+const DASHBOARD_VERSIE = '105';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'105', datum:'01-11-2026', punten:[ 'Banden: per set staat nu "Zomerbanden" of "Winterbanden" met daaronder het merk en type.' ] },
   { v:'104', datum:'01-11-2026', punten:[ 'Kerstmodus (als de variabele Kerst Flows aan staat): warmwitte lichtjes boven in het hoofddashboard, een sneeuwkapje op het logo en een kerstkaartje dat aftelt tot Kerst, met knoppen voor de kerstboom, de kerstverlichting voor en achter en de kerstradio.',
     'Banden: in de grafiek staan nu jaartallen met de geschatte kilometerstand, en een markering wanneer een set vervangen moet worden. De verwachting slijt alleen in het eigen seizoen van een set (winterbanden ca. 15 oktober t/m 15 april) en loopt vlak zolang hij in de schuur ligt.',
     'Banden: metingen worden nu in Homey bewaard (variabele Auto banden), dus ze zijn op tablet, telefoon en laptop hetzelfde. Begonnen met de zomerbanden (Goodyear EfficientGrip Performance, 7 mm in juli 2026) en de winterbanden (Continental WinterContact TS 870 P, nog te meten).' ] },
@@ -4893,7 +4895,9 @@ function tekenBanden(){
   const set = s => { const A = bandAnalyse(d, s), act = d.actief === s;
     const status = A.nu == null ? '' : A.nu <= AUTO_CFG.banden.wettelijk + .4 ? 'slecht' : A.nu <= A.grens + .5 ? 'waarsch' : '';
     const jr = A.jaren; const wanneer = jr == null ? '–' : jr < .5 ? 'dit seizoen' : `over ~${nl(jr, jr < 2 ? 1 : 0)} jaar`;
-    return `<div class="band-set ${act ? 'actief' : ''}"><h4>${s === 'zomer' ? '☀️' : '❄️'} ${esc(d.sets?.[s]?.naam || (s === 'zomer' ? 'Zomerbanden' : 'Winterbanden'))}${act ? ' <span class="band-actief">onder de auto</span>' : ''}</h4>
+    const merk = d.sets?.[s]?.naam;
+    return `<div class="band-set ${act ? 'actief' : ''}"><h4>${s === 'zomer' ? '☀️ Zomerbanden' : '❄️ Winterbanden'}${act ? ' <span class="band-actief">onder de auto</span>' : ''}</h4>
+      ${merk ? `<div class="band-merk">${esc(merk)}</div>` : ''}
       ${A.laatst ? `<div class="mm">${nl(A.nu, 1)} mm</div>
         <div class="band-wiel"><span>LV ${nl(A.laatst.mm[0], 1)}</span><span>RV ${nl(A.laatst.mm[1], 1)}</span><span>LA ${nl(A.laatst.mm[2], 1)}</span><span>RA ${nl(A.laatst.mm[3], 1)}</span></div>
         <small>Gemeten ${new Date(A.laatst.datum).toLocaleDateString('nl-NL', { day:'numeric', month:'short', year:'numeric' })} bij ${A.laatst.km.toLocaleString('nl-NL')} km</small>
@@ -4905,7 +4909,7 @@ function tekenBanden(){
     <div class="band-onder"><div class="band-sets">${set('zomer')}${set('winter')}</div>${bandGrafiek(d)}</div>`;
   if(bandBewerk === 'meting'){
     const L = bandAnalyse(d, d.actief).laatst;
-    html += `<div class="band-form"><label class="breed">Set<select id="bdSet"><option value="zomer" ${d.actief === 'zomer' ? 'selected' : ''}>Zomerbanden</option><option value="winter" ${d.actief === 'winter' ? 'selected' : ''}>Winterbanden</option></select></label>
+    html += `<div class="band-form"><label class="breed">Set<select id="bdSet"><option value="zomer" ${d.actief === 'zomer' ? 'selected' : ''}>Zomerbanden${d.sets?.zomer?.naam ? ' · ' + esc(d.sets.zomer.naam) : ''}</option><option value="winter" ${d.actief === 'winter' ? 'selected' : ''}>Winterbanden${d.sets?.winter?.naam ? ' · ' + esc(d.sets.winter.naam) : ''}</option></select></label>
       <label class="breed">Kilometerstand<input id="bdKm" inputmode="numeric" value="${km || L?.km || ''}"></label>
       ${['Linksvoor', 'Rechtsvoor', 'Linksachter', 'Rechtsachter'].map((n, i) => `<label>${n} (mm)<input id="bdMm${i}" inputmode="decimal" placeholder="bijv. 6,5"></label>`).join('')}
       <div class="knoppen"><button class="btn" data-band="annuleer">Annuleren</button><button class="pk-knop" data-band="opslaan">Opslaan</button></div></div>`;
