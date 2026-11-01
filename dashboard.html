@@ -785,6 +785,25 @@ h1.met-icoon { position:relative; }
 .bel-totaal b { display:block; font-size:1.9rem; letter-spacing:-.02em; margin-top:2px; }
 .bel-totaal .verborgen { letter-spacing:.2em; color:var(--text-muted); }
 .bel-totaal .hint { font-size:11.5px; color:var(--text-muted); margin-top:4px; }
+.beleg-grid { display:grid; grid-template-columns:1.15fr 1fr; gap:18px; align-items:start; }
+.beleg-kolom { display:flex; flex-direction:column; gap:18px; min-width:0; }
+@media (max-width:1100px){ .beleg-grid { grid-template-columns:1fr; } }
+#page-beleg .card { padding:16px; gap:12px; display:flex; flex-direction:column; }
+#page-beleg .bel-totaal b { font-size:2.6rem; }
+#page-beleg .bel-grafiek svg { height:170px; }
+.bel-feiten { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:10px; }
+.bel-feiten div { padding:8px 10px; border-radius:10px; background:var(--bg-nav); border:1px solid var(--border); min-width:0; }
+.bel-feiten small { display:block; font-size:10.5px; letter-spacing:.5px; text-transform:uppercase; color:var(--text-muted); font-weight:600; }
+.bel-feiten b { font-size:var(--fs-md) !important; letter-spacing:0 !important; margin:0 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bel-week { display:flex; flex-direction:column; gap:8px; }
+.bel-week-rij { display:grid; grid-template-columns:1fr 150px; gap:10px; align-items:center; padding:8px 10px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
+.bel-week-rij b { display:block; } .bel-week-rij small { color:var(--text-muted); font-size:11.5px; }
+.bel-week-rij input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border2); background:var(--bg-nav); color:var(--text-primary); font:inherit; font-weight:700; text-align:right; }
+.bel-week-rij.gewijzigd { border-color:rgba(245,165,36,.55); }
+.bel-slot { display:flex; gap:10px; align-items:center; padding:14px; border-radius:12px; background:var(--bg-inset); border:1px dashed var(--border2); color:var(--text-muted); }
+.bel-verdeling { display:flex; height:14px; border-radius:7px; overflow:hidden; background:var(--bg-inset); }
+.bel-legenda { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:var(--fs-sm); color:var(--text-secondary); }
+.bel-legenda i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
 .bel-rij { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
 .bel-rij .munt { width:34px; height:34px; border-radius:50%; background:#F7931A; color:#fff; display:grid; place-items:center; font-weight:800; flex-shrink:0; }
 .bel-rij .munt.hand { background:var(--bg-nav); color:var(--text-secondary); border:1px solid var(--border2); font-size:13px; }
@@ -1027,6 +1046,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <div class="nav-item active" data-page="home"><span class="ic" data-icon="home"></span><span class="nav-label">Hoofddashboard</span></div>
   <div class="nav-item" data-page="energie"><span class="ic" data-icon="bolt"></span><span class="nav-label">Energie</span></div>
   <div class="nav-item" data-page="tuin"><span class="ic" data-icon="tree"></span><span class="nav-label">Tuin</span></div>
+  <div class="nav-item" data-page="beleg"><span class="ic" data-icon="grafiek"></span><span class="nav-label">Beleggingen</span></div>
   <div class="nav-item" data-page="auto"><span class="ic" data-icon="car"></span><span class="nav-label">Auto</span></div>
   <div class="nav-item" data-page="camera"><span class="ic" data-icon="camera"></span><span class="nav-label">Camera's</span></div>
   <div class="nav-item" data-page="systeem"><span class="ic" data-icon="hart"></span><span class="nav-label">Systeem</span></div>
@@ -1147,6 +1167,11 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </section>
 
   <!-- ═══════════ AUTO ═══════════ -->
+  <section class="page" id="page-beleg">
+    <div class="statusbar"><h1>Beleggingen</h1><span class="pill" id="belStand"><i></i><span>–</span></span></div>
+    <div class="beleg-grid" id="belPagina"></div>
+  </section>
+
   <section class="page" id="page-auto">
     <div class="statusbar"><h1 id="autoTitel">Auto</h1><span class="pill" id="autoStand"><i></i><span>–</span></span></div>
     <div class="auto-grid">
@@ -1568,9 +1593,12 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '108';
+const DASHBOARD_VERSIE = '109';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'109', datum:'01-11-2026', punten:[ 'Beleggingen hebben een eigen pagina (menu, of tik op het bitcoinlabel): totaal met ingelegd en winst/verlies, verloop per periode, bitcoin met koers en rendement, al je beleggingen, de verdeling en uitleg.',
+    'Zondag bijwerken: alle handmatige beleggingen onder elkaar, nieuwe waarden invullen en in één keer opslaan. Wat je typt blijft staan tot je opslaat.',
+    'Bedragen blijven zichtbaar zolang je op de pagina bezig bent en verdwijnen 2 minuten na de laatste aanraking.' ] },
   { v:'108', datum:'01-11-2026', punten:[ 'Pop-ups sluiten vanzelf na 30 seconden zonder bediening. De laatste 10 seconden loopt er een oranje rand rondom de pop-up af. Aanraken, scrollen of typen zet de tijd weer op nul; in een tekstveld bezig zijn telt als bediening. De instellingen sluiten nooit vanzelf.',
     'Pakjes en beleggingen: tijdens het typen in de pop-up raakte het tekstveld soms zijn cursor kwijt door het automatisch verversen. Dat is opgelost.' ] },
   { v:'107', datum:'01-11-2026', punten:[ 'Banden: de verwachting rekent nu met 12.500 km per jaar (gemeten tussen maart en november 2026) in plaats van 10.000.' ] },
@@ -1729,6 +1757,9 @@ const ICONS = {
   mirror:'<rect x="5" y="2" width="14" height="20" rx="7"/>',
   slot:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   deurOpen:'<path d="M13 4h3a2 2 0 0 1 2 2v14M2 20h20M13 20V3.5a1 1 0 0 0-1.2-1L6 4v16"/><path d="M10 12v.01"/>',
+  taart:'<path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
+  munten:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+  grafiek:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
   camera:'<path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>',
   hart:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
   chip:'<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4"/>',
@@ -4718,6 +4749,7 @@ function tekenBeleg(){
     el.innerHTML = `<span class="munt">₿</span>${belZicht() && T.tot ? `<span>${euroHeel(T.tot)}</span>` : BTC ? `<span>${euroHeel(BTC.koers)}</span>` : ''}<span class="${cl}">${pctTekst(p)}</span>`;
   }
   if(belOpen) tekenBelPaneel();
+  tekenBelPagina();
 }
 function belGrafiek(r, label){
   if(!r || r.length < 2) return '';
@@ -4728,7 +4760,7 @@ function belGrafiek(r, label){
   return `<div class="bel-grafiek"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${kl}" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg>
     <div class="bel-klein">${label} · <span class="${pct >= 0 ? 'bel-op' : 'bel-neer'}" style="font-weight:700">${pctTekst(pct)}</span></div></div>`;
 }
-function tekenBelPaneel(){ behoudFocus(tekenBelPaneelNu); }
+function tekenBelPaneel(){ if(belOpen) behoudFocus(tekenBelPaneelNu); tekenBelPagina(); }
 function tekenBelPaneelNu(){
   const T = belTotalen(), d = T.d, zicht = belZicht(), verb = '••••••';
   const leeftijd = t => { const dg = Math.floor((Date.now() - Date.parse(t)) / 864e5); return isNaN(dg) ? '' : dg <= 0 ? 'vandaag bijgewerkt' : dg === 1 ? 'gisteren bijgewerkt' : `${dg} dagen geleden bijgewerkt`; };
@@ -5166,12 +5198,13 @@ function rdwTerug(){ const st = rdwStaat(); delete st.apk; rdwBewaar(st); }
 document.addEventListener('click', e => {
   const bd = e.target.closest('[data-band]'); if(bd) return bandActie(bd.dataset.band);
   if(belOpen && (e.target === $('belPaneel') || e.target.closest('[data-bel-sluit]'))) return sluitBeleg();
-  if(e.target.closest('[data-beleg]')) return openBeleg();
+  if(e.target.closest('[data-beleg]')) return goPage('beleg', document.querySelector('.nav-item[data-page="beleg"]'));
   if(e.target.closest('[data-bel-tik]')) return belTik();
   const bp = e.target.closest('[data-bel-periode]'); if(bp){ belPeriode = bp.dataset.belPeriode; return tekenBelPaneel(); }
   const bb = e.target.closest('[data-bel-bewerk]'); if(bb){ belBewerk = bb.dataset.belBewerk === 'btc' || bb.dataset.belBewerk === 'nieuw' ? bb.dataset.belBewerk : +bb.dataset.belBewerk; belZichtTot = Date.now() + BEL_ZICHT_MS; return tekenBelPaneel(); }
   if(e.target.closest('[data-bel-annuleer]')){ belBewerk = null; return tekenBelPaneel(); }
   const bo = e.target.closest('[data-bel-opslaan]'); if(bo) return belOpslaan(bo.dataset.belOpslaan);
+  if(e.target.closest('[data-bel-week]')) return belWeekOpslaan();
   const belw = e.target.closest('[data-bel-weg]'); if(belw){ const d = belData(); d.posten.splice(+belw.dataset.belWeg, 1); belBewaar(d); belBewerk = null; return tekenBeleg(); }
   if(rdwOpen && (e.target === $('rdwPaneel') || e.target.closest('[data-rdw-sluit]'))) return sluitRdw();
   if(e.target.closest('[data-rdw-ok]')) return rdwAfvinken(e.target.closest('[data-rdw-ok]').dataset.rdwOk);
@@ -5703,6 +5736,7 @@ function goPage(id, el){
   if(id === 'energie') laadEnergie();
   if(id === 'systeem') laadSysteem();
   if(id === 'auto') tekenAuto();
+  if(id === 'beleg'){ tekenBelPagina(); if(!BTC || Date.now() - BTC.t > 60000) laadBtc(); }
   if(id === 'camera') startCamera(); else if(!camGrootId) stopCamera();
 }
 function toggleTheme(){
@@ -5760,6 +5794,101 @@ setInterval(() => {
     kader.insertAdjacentHTML('beforeend', `<svg class="popup-aftel" aria-hidden="true" style="--aftel:${((POPUP_STIL_MS - stil) / 1000).toFixed(1)}s"><rect x="1.5" y="1.5" style="width:calc(100% - 3px);height:calc(100% - 3px)" rx="${r + 2}" pathLength="100"/></svg>`);
   }
 }, 250);
+
+/* ═════════════════════════════════════════════
+   BELEGGINGEN — eigen pagina (zelfde gegevens als het label in de bovenbalk). Bedragen verborgen tot je ze zichtbaar maakt;
+   zolang je op deze pagina bezig bent, blijven ze zichtbaar.
+═════════════════════════════════════════════ */
+let belConcept = {};                                                   // wat je bij "Zondag bijwerken" hebt getypt maar nog niet opgeslagen
+const BEL_KLEUR = ['#F7931A', '#60A5FA', '#4ADE80', '#A78BFA', '#F472B6', '#FBBF24', '#5EEAD4'];
+function tekenBelPagina(){ if($('page-beleg')?.classList.contains('on')) behoudFocus(tekenBelPaginaNu); }
+function tekenBelPaginaNu(){
+  const el = $('belPagina'); if(!el) return;
+  const T = belTotalen(), d = T.d, zicht = belZicht(), verb = '••••••';
+  const st = $('belStand'); if(st){ st.className = 'pill' + (belFout ? ' fout' : BTC ? ' ok' : ''); st.lastElementChild.textContent = belFout ? belFout : BTC ? 'Koers ' + new Date(BTC.t).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' }) : 'Koers laden…'; }
+  const datumTxt = t => { const x = Date.parse(t); return isNaN(x) ? '–' : new Date(x).toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' }); };
+  const geleden = t => { const dg = Math.floor((Date.now() - Date.parse(t)) / 864e5); return isNaN(dg) ? 'nog nooit bijgewerkt' : dg <= 0 ? 'vandaag bijgewerkt' : dg === 1 ? 'gisteren bijgewerkt' : `${dg} dagen geleden bijgewerkt`; };
+  const laatst = d.posten.map(p => p.datum).filter(Boolean).sort().pop();
+  const btcRend = d.btcInleg && BTC ? (d.btc * BTC.koers - d.btcInleg) / d.btcInleg * 100 : null;
+  const winst = T.inleg ? T.tot - T.inleg : null;
+  const pctSpan = p => typeof p === 'number' ? `<span class="${p >= 0 ? 'bel-op' : 'bel-neer'}" style="font-weight:700">${pctTekst(p)}</span>` : '';
+  // ── links: totaal, verloop, bitcoin
+  const H = belHist[belPeriode]; if(!H || Date.now() - H.t > 10 * 60000) belLaadHist(belPeriode);
+  const pTekst = { dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'sinds de start' }, bTekst = { dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'laatste jaar' };
+  let grafiek;
+  if(H && H.pts.length >= 2) grafiek = belGrafiek(H.pts, 'Totale waarde, ' + pTekst[belPeriode]);
+  else { const B = btcHist[belPeriode]; if(!B || (!B.pts && !B.bezig)) laadBtcHist(belPeriode);
+    grafiek = (B && B.pts?.length >= 2 ? belGrafiek(B.pts, 'Bitcoinkoers, ' + bTekst[belPeriode]) : `<p class="bel-klein" style="padding:40px 0;text-align:center">Grafiek laden…</p>`)
+      + `<p class="bel-klein">Je eigen totaal wordt nog opgebouwd in Homey Insights; tot die tijd zie je hier de bitcoinkoers.</p>`; }
+  const links = `<div class="beleg-kolom">
+    <div class="card"><div class="bel-totaal" data-bel-tik="1"><small>Totaal</small>
+        <b class="${zicht ? '' : 'verborgen'}">${zicht ? euroHeel(T.tot) : verb}</b>
+        <div>${typeof T.rend === 'number' ? `${pctSpan(T.rend)} <span class="bel-klein">t.o.v. je inleg</span>` : '<span class="bel-klein">Vul je inleg in voor winst/verlies</span>'}</div>
+        <div class="bel-feiten"><div><small>Ingelegd</small><b>${zicht ? euroHeel(T.inleg) : verb}</b></div><div><small>Winst / verlies</small><b class="${!zicht || winst == null ? '' : winst >= 0 ? 'bel-op' : 'bel-neer'}">${zicht && winst != null ? (winst >= 0 ? '+ ' : '− ') + euroHeel(Math.abs(winst)).replace('€ ', '€ ') : verb}</b></div><div><small>Laatst bijgewerkt</small><b>${laatst ? datumTxt(laatst) : '–'}</b></div></div>
+      </div></div>
+    <div class="card"><div class="auto-kop"><span class="ico blue">${ic('grafiek')}</span><b>Verloop</b></div>
+      <div class="segment bel-perioden" role="tablist">${['dag','week','maand','alles'].map(k => `<button class="${belPeriode === k ? 'on' : ''}" data-bel-periode="${k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}</div>${grafiek}</div>
+    <div class="card"><div class="auto-kop"><span class="ico" style="color:#F7931A;font-weight:800">₿</span><b>Bitcoin</b>${BTC ? `<span class="chip">${euroHeel(BTC.koers)}</span>` : ''}</div>
+      <div class="auto-feiten">${feit('Koers', BTC ? euroHeel(BTC.koers) : '–')}${feit('24 uur', BTC ? pctTekst(BTC.pct) : '–', BTC?.pct >= 0 ? 'groen' : 'rood')}${feit('Rendement', typeof btcRend === 'number' ? pctTekst(btcRend) : '–', btcRend >= 0 ? 'groen' : btcRend < 0 ? 'rood' : '')}
+        ${feit('In bezit', zicht ? `${nl(+d.btc || 0, 6)} BTC` : verb)}${feit('Waarde', zicht ? euroHeel(T.btcW) : verb)}${feit('Ingelegd', zicht ? euroHeel(+d.btcInleg || 0) : verb)}</div>
+      ${zicht ? (belBewerk === 'btc' ? `<div class="bel-form"><label>Aantal bitcoin<input id="belBtc" inputmode="decimal" value="${d.btc || ''}" placeholder="bijv. 0,125"></label>
+        <label>Totaal ingelegd (€)<input id="belBtcInleg" inputmode="decimal" value="${d.btcInleg || ''}" placeholder="bijv. 4500"></label>
+        <div class="knoppen"><button class="btn" data-bel-annuleer="1">Annuleren</button><button class="pk-knop" data-bel-opslaan="btc">Opslaan</button></div></div>`
+        : `<div class="pk-rij"><button class="btn" data-bel-bewerk="btc">₿ Bitcoin aanpassen</button></div>`) : ''}
+      <p class="bel-klein">Bitcoin alleen aanpassen als je hebt gekocht of verkocht; de waarde rekent het dashboard zelf uit met de live koers.</p></div>
+  </div>`;
+  // ── rechts: zondag bijwerken, beleggingen, verdeling, uitleg
+  const week = !zicht ? `<div class="bel-slot">${ic('slot')}<span>Bedragen zijn verborgen.</span></div>`
+    : d.posten.length ? `<div class="bel-week">${d.posten.map((p, i) => { const c = belConcept[i], w = c ?? (p.waarde ? String(p.waarde).replace('.', ',') : '');
+        return `<label class="bel-week-rij ${c != null && getal(c) !== (+p.waarde || 0) ? 'gewijzigd' : ''}"><span><b>${esc(p.naam)}</b><small>${geleden(p.datum)} · nu ${euroHeel(+p.waarde || 0)}</small></span>
+          <input id="belWk${i}" data-bel-wk="${i}" inputmode="decimal" value="${esc(w)}" placeholder="waarde in €" aria-label="Nieuwe waarde ${esc(p.naam)}"></label>`; }).join('')}
+        <div class="knoppen" style="display:flex;justify-content:flex-end;gap:8px"><button class="pk-knop" data-bel-week="1">Alles opslaan</button></div></div>`
+    : `<p class="bel-klein">Nog geen handmatige beleggingen. Voeg ze hieronder toe; daarna vul je hier elke zondag in één keer de actuele waarden in.</p>`;
+  const rij = (munt, hand, naam, sub, waarde, pct, i) => `<div class="bel-rij"><span class="munt ${hand ? 'hand' : ''}">${munt}</span><span class="grow"><b>${esc(naam)}</b><small>${sub}</small></span>
+      <span class="rechts">${zicht ? euroHeel(waarde) : verb}${typeof pct === 'number' ? `<small class="${pct >= 0 ? 'bel-op' : 'bel-neer'}">${pctTekst(pct)}</small>` : ''}</span>
+      ${zicht && i != null ? `<button class="lp-knop" data-bel-bewerk="${i}" aria-label="${esc(naam)} bewerken">${ic('pen')}</button>` : ''}</div>`;
+  let lijst = rij('₿', false, 'Bitcoin', zicht ? `${nl(+d.btc || 0, 6)} BTC · live koers` : 'live koers', T.btcW, btcRend, null)
+    + d.posten.map((p, i) => rij(esc((p.naam || '?').slice(0, 2).toUpperCase()), true, p.naam, `${geleden(p.datum)}${zicht && p.inleg ? ' · ingelegd ' + euroHeel(+p.inleg) : ''}`, +p.waarde || 0, p.inleg ? (p.waarde - p.inleg) / p.inleg * 100 : null, i)).join('');
+  if(zicht && belBewerk != null && belBewerk !== 'btc'){ const p = belBewerk === 'nieuw' ? {} : d.posten[belBewerk] || {};
+    lijst += `<div class="bel-form"><label class="breed">Naam (bijv. DEGIRO aandelen, ING ETF)<input id="belNaam" value="${esc(p.naam || '')}"></label>
+      <label>Huidige waarde (€)<input id="belWaarde" inputmode="decimal" value="${p.waarde || ''}"></label>
+      <label>Totaal ingelegd (€)<input id="belInleg" inputmode="decimal" value="${p.inleg || ''}"></label>
+      <div class="knoppen">${belBewerk !== 'nieuw' ? `<button class="btn" data-bel-weg="${belBewerk}">Verwijderen</button>` : ''}<button class="btn" data-bel-annuleer="1">Annuleren</button><button class="pk-knop" data-bel-opslaan="hand">Opslaan</button></div></div>`; }
+  else if(zicht) lijst += `<div class="pk-rij"><button class="btn" data-bel-bewerk="nieuw">+ Belegging toevoegen</button></div>`;
+  const delen = [{ naam:'Bitcoin', w:T.btcW }, ...d.posten.map(p => ({ naam:p.naam, w:+p.waarde || 0 }))].filter(x => x.w > 0);
+  const verdeling = zicht && T.tot > 0 && delen.length ? `<div class="card"><div class="auto-kop"><span class="ico">${ic('taart')}</span><b>Verdeling</b></div>
+      <div class="bel-verdeling">${delen.map((x, i) => `<span style="width:${(x.w / T.tot * 100).toFixed(2)}%;background:${BEL_KLEUR[i % BEL_KLEUR.length]}"></span>`).join('')}</div>
+      <div class="bel-legenda">${delen.map((x, i) => `<span><i style="background:${BEL_KLEUR[i % BEL_KLEUR.length]}"></i>${esc(x.naam)} ${nl(x.w / T.tot * 100, 0)}%</span>`).join('')}</div></div>` : '';
+  const rechts = `<div class="beleg-kolom">
+    <div class="card"><div class="auto-kop"><span class="ico amber">${ic('klok')}</span><b>Zondag bijwerken</b><span class="chip">${laatst ? 'laatst ' + datumTxt(laatst) : 'nog niet gedaan'}</span></div>
+      ${week}<p class="bel-klein">Herinnering: elke zondag om 19:00. Vul de actuele waarde uit de app van je bank of broker in.</p>
+      ${belOpslagFout ? `<p class="pk-melding fout">${esc(belOpslagFout)}</p>` : ''}</div>
+    <div class="card"><div class="auto-kop"><span class="ico">${ic('munten')}</span><b>Mijn beleggingen</b></div>${lijst}</div>
+    ${verdeling}
+    <div class="card"><details class="bel-uitleg"><summary>Hoe werkt dit?</summary>
+      <p><b>Koers.</b> De bitcoinkoers komt live van CoinGecko (reserve: Bitvavo) en ververst elke 5 minuten. Waarde van je bitcoin = aantal BTC × koers.</p>
+      <p><b>Opslag in Homey.</b> Je bezit staat in de Logic-variabele <i>Beleggingen (dashboard)</i>. Daardoor zie je hetzelfde op tablet, telefoon en laptop. Niets staat in de code op GitHub.</p>
+      <p><b>Historie.</b> Elke 15 minuten zet het dashboard <i>Beleggingen totaal €</i>, <i>bitcoin €</i>, <i>handmatig €</i> en <i>Bitcoinkoers €</i> in Homey; Insights bewaart die (tot 2 jaar) en daar komt de grafiek vandaan. Staat geen enkel dashboard open, dan ontstaat er een gat in de lijn.</p>
+      <p><b>Handmatige beleggingen</b> hebben geen koppeling: vul ze bij "Zondag bijwerken" in. Bij elke belegging staat hoe lang geleden dat was.</p>
+      <p><b>Let op.</b> Het verbergen van bedragen is een drempel, geen beveiliging. Wie toegang heeft tot jullie Homey kan de variabelen en Insights zien.</p></details></div>
+  </div>`;
+  el.innerHTML = links + rechts;
+}
+function belWeekOpslaan(){
+  const d = belData(); let n = 0;
+  d.posten.forEach((p, i) => { const inp = $('belWk' + i); if(!inp) return; const w = getal(inp.value);
+    if(String(inp.value).trim() === '') return;
+    p.waarde = w; p.datum = new Date().toISOString(); n++; });
+  belConcept = {};
+  if(n){ belBewaar(d); belZichtTot = Date.now() + BEL_ZICHT_MS; }
+  tekenBeleg();
+}
+document.addEventListener('input', e => { const t = e.target.closest?.('[data-bel-wk]'); if(t){ belConcept[t.dataset.belWk] = t.value; t.closest('.bel-week-rij')?.classList.add('gewijzigd'); } });
+/* Op de beleggingenpagina blijven de bedragen zichtbaar zolang je bezig bent; daarna weer verbergen */
+document.addEventListener('pointerdown', e => { if(belZicht() && e.target.closest?.('#page-beleg')) belZichtTot = Date.now() + BEL_ZICHT_MS; }, { capture:true, passive:true });
+document.addEventListener('keydown', () => { if(belZicht() && $('page-beleg')?.classList.contains('on')) belZichtTot = Date.now() + BEL_ZICHT_MS; }, { capture:true, passive:true });
+let belWasZicht = false;
+setInterval(() => { const z = belZicht(); if(belWasZicht && !z){ belBewerk = null; belConcept = {}; tekenBeleg(); } belWasZicht = z; }, 2000);
 </script>
 </body>
 </html>
