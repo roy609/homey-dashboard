@@ -88,6 +88,22 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .bg-kaart { border-radius:12px; overflow:hidden; background:var(--bg-inset); border:2px solid transparent; }
 .bg-kaart.nu { border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-dim); }
 .bg-kaart img { width:100%; aspect-ratio:3/2; object-fit:cover; display:block; background:#0B0F14; }
+.bg-kaart.mist { border-style:dashed; border-color:var(--border2); opacity:.75; }
+.bg-leeg { aspect-ratio:3/2; display:grid; place-items:center; text-align:center; color:var(--text-muted); font-weight:700; background:#0B0F14; }
+.bg-leeg small { font-weight:500; }
+.bg-kop { display:block; margin:6px 0 8px; font-size:var(--fs-md); }
+.bg-test { display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:14px; background:var(--bg-inset); border:1px solid var(--border); margin-bottom:14px; }
+.bg-test .bg-kop { margin:0; }
+.bg-seg { margin:0; flex-wrap:wrap; background:var(--bg-card, rgba(255,255,255,.03)); }
+.bg-seg button { flex:1 1 auto; min-width:0; }
+.bg-voorbeeld { border-radius:12px; overflow:hidden; aspect-ratio:3/2; background:#0B0F14; width:min(100%, 520px); align-self:center; }
+.bg-voorbeeld svg { width:100%; height:100%; display:block; }
+.bg-keuze { font-size:var(--fs-sm); color:var(--text-secondary); }
+.bg-reeks { display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; font-size:11.5px; color:var(--text-muted); }
+.bg-reeks span { padding:2px 7px; border-radius:999px; border:1px solid var(--border); }
+.bg-reeks span.ok { color:var(--green); } .bg-reeks span.mis { text-decoration:line-through; opacity:.7; }
+.bg-reeks span.nu { border-color:var(--amber); color:var(--amber); font-weight:700; }
+.bg-reeks i { font-style:normal; opacity:.5; }
 .bg-tekst { padding:8px 10px 10px; }
 .bg-tekst b { display:block; font-size:var(--fs-md); }
 .bg-tekst b em { font-style:normal; font-size:var(--fs-micro); font-weight:800; color:#1B1200; background:var(--amber); padding:1px 7px; border-radius:100px; margin-left:4px; vertical-align:2px; }
@@ -1489,6 +1505,8 @@ const CONFIG = {
   regen: { lat:51.89, lon:5.90, plaats:'Bemmel' },
   // Pakjes: apparaat "Pakjes" van de app Parcel Tracker (leeg = automatisch het apparaat met parcels_active)
   pakjes: { id:'f6d1803c-bb0a-40b7-aa34-e602d3d9b408', voor:['Roy','Beau'] },
+  // Kerst: variabele "Kerst Flows" (aan = 's avonds de kerstbeelden van het huis)
+  kerst: { var:'0ca37567-f5aa-4c86-b307-60479d76a1b9' },
   // RDW: apparaat van de app RDW (APK, verzekering, terugroepactie) en de variabele die onthoudt wat is afgevinkt
   rdw: { id:'d9d8bd32-ee3b-467a-a249-57b24cd972fe', var:'73a957d8-df54-4f12-9883-47394fccf988', vooraf:30, rood:7 },
   tuinZones: [
@@ -1522,9 +1540,13 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '102';
+const DASHBOARD_VERSIE = '103';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'103', datum:'01-11-2026', punten:[ 'Huisbeelden: het dashboard kiest het beeld nu aan de hand van de bestandsnaam. Een nieuw beeld toevoegen of vervangen is alleen uploaden naar de map img; ontbreekt er een, dan valt het netjes terug op het dichtstbijzijnde beeld.',
+    'Nieuwe beelden in gebruik: herfst bewolkt en regen, winter zonnig, kerstavond droog en met sneeuw (bij Kerst Flows aan). Bij mist komt de mistlaag nu over het bewolkte herfstbeeld in plaats van het zonnige.',
+    'Hagel toont het regenbeeld en ijzel het vorstbeeld (voorheen ten onrechte sneeuw). Onweer: regenbeeld, donkerder.',
+    'Testmodus: tik op de weertekst rechtsonder in de huisafbeelding. Kies seizoen, weer, dag/avond en kerst en zie welk beeld getoond wordt, welke ontbreken, en toon het desgewenst 2 minuten op het dashboard.' ] },
   { v:'102', datum:'31-10-2026', punten:[ 'Auto: nieuw blok RDW met kenteken, APK-vervaldatum, verzekering en terugroepactie (app RDW in Homey).',
     'Hoofddashboard: melding "APK over X dagen" vanaf een maand voor de vervaldatum (rood in de laatste week of als hij verlopen is). Met "Afspraak gemaakt" verdwijnt hij tot de volgende APK weer binnen een maand valt; dat wordt in Homey bewaard, dus geldt op tablet, telefoon en laptop.',
     'Ook een rode melding als RDW meldt dat de auto niet verzekerd is of er een terugroepactie openstaat, af te vinken met "Afgehandeld".',
@@ -2803,39 +2825,89 @@ async function radioVolume(pct){
 /* ── Verversen: pagina opnieuw laden. De lader haalt dan de nieuwste versie direct bij GitHub (via de API, zonder 5 minuten cache). ── */
 function verversNu(){ document.querySelector('.nav-ververs')?.classList.add('draait'); setTimeout(() => location.reload(), 150); }
 
-/* ── Uitleg huisbeelden: welk beeld wanneer (zelfde regels als kiesBeeld) ── */
+/* ── Huisbeelden: overzicht, wat ontbreekt en een testmodus om situaties na te bootsen ── */
 const BEELD_UITLEG = {
-  standaard:     ['Zon overdag',            'Zonnig in lente of zomer, zon hoger dan 15°. Ook bij half bewolkt (iets gedempter).'],
-  basis:         ['Zon overdag',            'Zonnig in lente of zomer, en de standaard als niets anders past.'],
-  zon_ochtend:   ['Ochtendzon',             'Zonnig en de zon staat laag in het oosten (lager dan 15°).'],
-  zon_avond:     ['Avondzon',               'Zonnig en de zon staat laag in het westen (lager dan 15°).'],
-  bewolkt:       ['Bewolkt',                'Overdag bij bewolking of mist in lente of zomer.'],
-  herfst:        ['Herfst',                 'Overdag in september t/m november, droog.'],
-  winter:        ['Winter',                 'Overdag in december t/m februari, droog. Bij regen in november–februari ook dit beeld, maar grauwer.'],
-  vorst:         ['Vorst',                  'Overdag bij 0° of kouder, zonder neerslag.'],
-  regen:         ['Regen',                  'Overdag bij regen, of als het net geregend heeft ("Nat"), in maart t/m oktober.'],
-  lichte_sneeuw: ['Lichte sneeuw',          'Bij sneeuw. \'s Avonds wordt dit beeld donker en blauwig gemaakt.'],
-  veel_sneeuw:   ['Veel sneeuw',            'Bij zware sneeuwval of als er een sneeuwdek ligt.'],
-  avond:         ['Avond',                  'Na zonsondergang in lente, zomer en herfst (droog).'],
-  avond_regen:   ['Avond met regen',        'Na zonsondergang bij regen of als het nat is.'],
-  avond_winter:  ['Winteravond',            'Na zonsondergang in november t/m februari of bij vorst (zonder sneeuw).'],
+  standaard:'Zomer, zon', basis:'Zomer, zon (standaard)', zon_ochtend:'Ochtendzon (lente/zomer)', zon_avond:'Avondzon (lente/zomer)',
+  lente:'Lente, zon', bewolkt:'Bewolkt (lente/zomer)', regen:'Regen (lente/zomer)',
+  herfst:'Herfst, zon', herfst_bewolkt:'Herfst, bewolkt en mist', herfst_regen:'Herfst, regen',
+  winter:'Winter, bewolkt', winter_zon:'Winter, zon', vorst:'Vorst en ijzel', lichte_sneeuw:'Lichte sneeuw', veel_sneeuw:'Veel sneeuw',
+  avond:'Avond (lente t/m oktober)', avond_regen:'Avond met regen', avond_winter:'Winteravond (november t/m februari, vorst)',
+  kerst:'Kerstavond, nat', kerst_droog:'Kerstavond, droog', kerst_sneeuw:'Kerstavond, sneeuw',
 };
-let bgOpen = false;
-function openBeelden(kant){
-  bgOpen = true;
-  const o = omstandigheden(), nu = kiesBeeld(kant, o, isDonker()).sleutel;
-  const volgorde = ['standaard','basis','zon_ochtend','zon_avond','bewolkt','herfst','winter','vorst','regen','lichte_sneeuw','veel_sneeuw','avond','avond_regen','avond_winter'];
-  const lijst = volgorde.filter(k => BEELDEN[kant].includes(k));
-  $('bgTitel').textContent = kant === 'voor' ? 'Huisbeelden · voorkant' : 'Tuinbeelden · achtertuin';
-  $('bgSub').textContent = `Nu: ${BEELD_UITLEG[nu]?.[0] || nu} · ${o.label}`;
-  $('bgLijst').innerHTML = `<div class="bg-grid">${lijst.map(k => `<div class="bg-kaart ${k === nu ? 'nu' : ''}">
-      <img src="${BEELD_MAP}${kant}_${k}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-      <div class="bg-tekst"><b>${esc(BEELD_UITLEG[k]?.[0] || k)}${k === nu ? ' <em>nu</em>' : ''}</b><small>${esc(BEELD_UITLEG[k]?.[1] || '')}</small></div></div>`).join('')}</div>
-    <div class="st-noot">Het weer komt van de KNMI-app in Homey, de zonnestand wordt berekend voor Bemmel en "donker" volgt zonsopkomst en -ondergang. Vallende regen en sneeuw worden over het beeld heen getekend.</div>`;
-  $('beeldPaneel').classList.add('on'); $('bgLijst').scrollTop = 0;
+const BEELD_SET = {
+  voor:   ['standaard','zon_ochtend','zon_avond','lente','bewolkt','regen','herfst','herfst_bewolkt','herfst_regen','winter','winter_zon','vorst','lichte_sneeuw','veel_sneeuw','avond','avond_regen','avond_winter','kerst','kerst_droog','kerst_sneeuw'],
+  achter: ['basis','lente','bewolkt','regen','herfst','herfst_bewolkt','herfst_regen','winter','winter_zon','vorst','lichte_sneeuw','veel_sneeuw','avond','avond_winter','kerst'],
+};
+let bgOpen = false, bgKant = 'voor', bgKeuze = { seizoen:'nu', weer:'nu', moment:'nu', kerst:'nu' };
+let beeldTest = null;                                    // { o, donker, kerst, tot } = dashboard tijdelijk in testmodus
+const beeldTestActief = () => !!beeldTest && Date.now() < beeldTest.tot;
+const BG_OPTIES = {
+  seizoen: [['nu','Nu'],['lente','Lente'],['zomer','Zomer'],['herfst','Herfst'],['winter','Winter']],
+  weer:    [['nu','Nu'],['helder','Zon'],['half','Half'],['bewolkt','Bewolkt'],['mist','Mist'],['regen','Regen'],['onweer','Onweer'],['vorst','Vorst'],['sneeuw','Sneeuw'],['veel','Veel sneeuw']],
+  moment:  [['nu','Nu'],['dag','Dag'],['ochtend','Ochtendzon'],['avondzon','Avondzon'],['avond','Avond']],
+  kerst:   [['nu','Nu'],['aan','Kerst aan'],['uit','Uit']],
+};
+/* Situatie zoals in de testkeuze (alles wat op "Nu" staat komt van het echte weer) */
+function bgSituatie(){
+  const echt = (() => { const t = beeldTest; beeldTest = null; const o = omstandigheden(), d = isDonker(); beeldTest = t; return { o, d }; })();
+  const K = bgKeuze, o = { ...echt.o, zon:{ ...echt.o.zon } };
+  if(K.seizoen !== 'nu') o.seizoen = K.seizoen;
+  if(K.weer !== 'nu'){
+    Object.assign(o, { weer:K.weer, zwaar:false, natNa:false, vorst:false, onweer:false });
+    if(K.weer === 'onweer') Object.assign(o, { weer:'regen', onweer:true });
+    if(K.weer === 'vorst') Object.assign(o, { weer:'helder', vorst:true });
+    if(K.weer === 'veel') Object.assign(o, { weer:'sneeuw', zwaar:true });
+  }
+  let donker = echt.d;
+  if(K.moment !== 'nu'){
+    donker = K.moment === 'avond';
+    o.zon = K.moment === 'ochtend' ? { el:8, az:110 } : K.moment === 'avondzon' ? { el:8, az:250 } : K.moment === 'dag' ? { el:30, az:180 } : { el:-10, az:300 };
+  }
+  const kerst = K.kerst === 'nu' ? (VARS[CONFIG.kerst?.var]?.value === true) : K.kerst === 'aan';
+  const SEIZ = { lente:'Lente', zomer:'Zomer', herfst:'Herfst', winter:'Winter' }, NM = { helder:'Zonnig', half:'Half bewolkt', bewolkt:'Bewolkt', regen:'Regen', sneeuw:o.zwaar ? 'Veel sneeuw' : 'Lichte sneeuw', mist:'Mist' };
+  o.label = [SEIZ[o.seizoen], o.vorst ? 'Vorst' : o.natNa ? 'Nat' : o.onweer ? 'Onweer' : NM[o.weer], o.temp != null ? Math.round(o.temp) + '°' : ''].filter(Boolean).join(' · ');
+  return { o, donker, kerst };
 }
+function openBeelden(kant){ bgOpen = true; bgKant = kant; $('beeldPaneel').classList.add('on'); tekenBeeldPaneel(); $('bgLijst').scrollTop = 0; }
 function sluitBeelden(){ bgOpen = false; $('beeldPaneel').classList.remove('on'); }
-
+function tekenBeeldPaneel(){
+  const kant = bgKant, sit = bgSituatie();
+  const reeks = beeldReeks(kant, sit.o, sit.donker, sit.kerst);
+  reeks.forEach(x => beeldControleer(`${kant}_${x.k}`));
+  const keuze = reeks.find(x => beeldStaat[`${kant}_${x.k}`] === true) || reeks[reeks.length - 1];
+  const W = (() => { const t = beeldTest; beeldTest = { ...sit, tot:Date.now() + 1000 }; const w = weerLagen(sit.o, sit.donker, kant, 'bgt'); beeldTest = t; return w; })();
+  const echtNu = beeldTestActief() ? null : kiesBeeld(kant, omstandigheden(), isDonker()).sleutel;
+  $('bgTitel').textContent = kant === 'voor' ? 'Huisbeelden · voorkant' : 'Tuinbeelden · achtertuin';
+  $('bgSub').textContent = beeldTestActief() ? 'Testmodus staat aan op het dashboard' : `Nu: ${BEELD_UITLEG[echtNu] || echtNu} · ${omstandigheden().label}`;
+  const seg = (veld) => `<div class="segment bg-seg" role="radiogroup" aria-label="${veld}">${BG_OPTIES[veld].map(([w, t]) =>
+      `<button role="radio" aria-checked="${bgKeuze[veld] === w}" class="${bgKeuze[veld] === w ? 'on' : ''}" data-bgkeuze="${veld}:${w}">${t}</button>`).join('')}</div>`;
+  const status = k => { const st = beeldStaat[`${kant}_${k}`]; return st === true ? '✓' : st === false ? '✗' : '…'; };
+  const set = BEELD_SET[kant];
+  const ontbreekt = set.filter(k => beeldStaat[`${kant}_${k}`] === false);
+  $('bgLijst').innerHTML = `
+    <div class="bg-test">
+      <b class="bg-kop">Uitproberen</b>
+      ${seg('seizoen')}${seg('weer')}${seg('moment')}${kant === 'voor' || true ? seg('kerst') : ''}
+      <div class="bg-voorbeeld"><svg viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid slice"><defs>${kleurFilter('bgtKleur', W.kleur)}${neerslagDefs('bgt')}</defs>
+        <image href="${W.basis}" width="1536" height="1024" filter="url(#bgtKleur)"/>${W.lagen}
+        <text x="1510" y="1000" class="f-weer" style="text-anchor:end">${esc(sit.o.label)}</text></svg></div>
+      <div class="bg-keuze">Getoond: <b>${kant}_${esc(keuze.k)}.jpg</b>${keuze.kleur !== TINT.geen && JSON.stringify(keuze.kleur) !== JSON.stringify(TINT.geen) ? ' (met kleurcorrectie)' : ''}</div>
+      <div class="bg-reeks">${reeks.map(x => `<span class="${beeldStaat[`${kant}_${x.k}`] === true ? 'ok' : beeldStaat[`${kant}_${x.k}`] === false ? 'mis' : ''} ${x.k === keuze.k ? 'nu' : ''}">${status(x.k)} ${esc(x.k)}</span>`).join('<i>→</i>')}</div>
+      <div class="rdw-knoppen"><button class="btn primary" data-bgtest="1">${ic('play')} 2 minuten op het dashboard tonen</button>${beeldTestActief() ? '<button class="btn" data-bgtest="stop">Testmodus stoppen</button>' : ''}</div>
+    </div>
+    <b class="bg-kop">Alle beelden${ontbreekt.length ? ` · ${ontbreekt.length} ontbreken` : ''}</b>
+    <div class="bg-grid">${set.map(k => { const st = beeldStaat[`${kant}_${k}`]; return `<div class="bg-kaart ${k === keuze.k ? 'nu' : ''} ${st === false ? 'mist' : ''}">
+      ${st === false ? `<div class="bg-leeg">Ontbreekt<br><small>${kant}_${esc(k)}.jpg</small></div>` : `<img src="${BEELD_MAP}${kant}_${k}.jpg" alt="" loading="lazy">`}
+      <div class="bg-tekst"><b>${esc(BEELD_UITLEG[k] || k)}${k === keuze.k ? ' <em>getoond</em>' : ''}</b><small>${kant}_${esc(k)}.jpg</small></div></div>`; }).join('')}</div>
+    <div class="st-noot">Een beeld toevoegen of vervangen: zet het bestand met precies deze naam in de map img op de Homey. Het dashboard ziet het binnen een uur vanzelf (of meteen na verversen). Ontbreekt een beeld, dan valt het terug op het volgende in de reeks, eventueel met een kleurcorrectie. Vallende regen, sneeuw en mist worden over het beeld heen getekend.</div>`;
+}
+function beeldTestAan(){
+  const sit = bgSituatie();
+  beeldTest = { ...sit, o:{ ...sit.o, label:'Test · ' + sit.o.label }, tot:Date.now() + 120000 };
+  hertekenBeelden(); tekenBeeldPaneel();
+  clearTimeout(beeldTestAan.t); beeldTestAan.t = setTimeout(() => { beeldTest = null; hertekenBeelden(); if(bgOpen) tekenBeeldPaneel(); }, 120000);
+}
+function beeldTestUit(){ beeldTest = null; clearTimeout(beeldTestAan.t); hertekenBeelden(); tekenBeeldPaneel(); }
 /* ── Wat is er nieuw ── */
 let nwOpen = false;
 function openNieuw(){
@@ -3396,42 +3468,86 @@ function huisSvgLijn(net, zon, auto, s){
    Coördinaten in pixels van de originele afbeelding (1536 × 1024).
 ═════════════════════════════════════════════ */
 /* Beelden per situatie (Copilot), als losse bestanden in de map img/ naast index.html.
-   Ontbreekt een variant, dan valt de keuze terug op de dichtstbijzijnde die er wél is. */
+   Naam = <kant>_<situatie>.jpg. Het dashboard probeert per situatie een vaste reeks namen (meest passend eerst)
+   en toont de eerste die bestaat. Een nieuw beeld toevoegen of vervangen = alleen uploaden; de code hoeft niet mee. */
 const BEELD_MAP = 'img/';
+/* Beelden waarvan zeker is dat ze op de Homey staan (worden niet eerst gecontroleerd) */
 const BEELDEN = {
-  voor:   ['standaard','zon_ochtend','zon_avond','avond','avond_regen','avond_winter','bewolkt','herfst','lichte_sneeuw','veel_sneeuw','regen','vorst','winter'],
+  voor:   ['standaard','zon_ochtend','zon_avond','avond','avond_regen','avond_winter','bewolkt','herfst','lichte_sneeuw','veel_sneeuw','regen','vorst','winter','kerst'],
   achter: ['basis','avond','avond_winter','bewolkt','herfst','lichte_sneeuw','veel_sneeuw','regen','vorst','winter'],
 };
-/* Kiest het basisbeeld bij seizoen, weer en zonnestand. Geeft ook een kleurcorrectie terug
-   (r/g/b-helderheid en verzadiging) voor situaties waar geen eigen beeld voor is. */
-function kiesBeeld(kant, o, donker){
-  const lijst = BEELDEN[kant], std = kant === 'voor' ? 'standaard' : 'basis';
-  const heeft = k => lijst.includes(k);
-  const maand = new Date().getMonth() + 1, kaal = o.seizoen === 'winter' || maand === 11;
-  let k = std, kleur = { r:1, g:1, b:1, sat:1 }, nachtSneeuw = false;
+/* Bestaat een beeld? true/false, of undefined = nog niet gecontroleerd. Wordt een dag onthouden (ontbrekend: 1 uur). */
+const BEELD_KEY = 'dashboard_beelden';
+let beeldStaat = {};
+try { const j = JSON.parse(localStorage.getItem(BEELD_KEY) || '{}'); for(const [k, [w, t]] of Object.entries(j)) if(Date.now() - t < (w ? 864e5 : 36e5)) beeldStaat[k] = w; } catch(e){}
+for(const kant of ['voor','achter']) for(const k of BEELDEN[kant]) beeldStaat[`${kant}_${k}`] = true;
+const beeldBezig = new Set();
+function beeldControleer(naam){
+  if(beeldStaat[naam] !== undefined || beeldBezig.has(naam)) return;
+  beeldBezig.add(naam);
+  const im = new Image();
+  const klaar = ok => {
+    beeldBezig.delete(naam); beeldStaat[naam] = ok;
+    try { const j = JSON.parse(localStorage.getItem(BEELD_KEY) || '{}'); j[naam] = [ok, Date.now()]; localStorage.setItem(BEELD_KEY, JSON.stringify(j)); } catch(e){}
+    if(ok){ clearTimeout(beeldHerteken); beeldHerteken = setTimeout(hertekenBeelden, 300); }
+    if(bgOpen) tekenBeeldPaneel();
+  };
+  im.onload = () => klaar(true); im.onerror = () => klaar(false);
+  im.src = `${BEELD_MAP}${naam}.jpg`;
+}
+let beeldHerteken;
+function hertekenBeelden(){ flowSleutel = ''; achterSleutel = ''; try { tekenEnergieLive(); } catch(e){} try { tekenAchtertuin(); } catch(e){} }
+const TINT = {
+  geen:     { r:1, g:1, b:1, sat:1 },
+  half:     { r:.96, g:.96, b:.97, sat:.95 },     // half bewolkt: zonnig beeld iets gedempt
+  grauw:    { r:.8, g:.82, b:.86, sat:.8 },       // regen zonder eigen regenbeeld
+  grijs:    { r:.9, g:.91, b:.94, sat:.82 },      // bewolkt zonder eigen bewolkt beeld
+  onweer:   { r:.7, g:.72, b:.8, sat:.82 },       // onweer: regenbeeld donkerder
+  nacht:    { r:.34, g:.4, b:.58, sat:.65 },      // dagbeeld 's avonds (sneeuw), donker en blauwig
+};
+const tintKeer = (a, b) => ({ r:a.r * b.r, g:a.g * b.g, b:a.b * b.b, sat:a.sat * b.sat });
+const kerstAan = () => beeldTestActief() && beeldTest.kerst != null ? beeldTest.kerst : VARS[CONFIG.kerst?.var]?.value === true;
+/* De reeks namen voor deze situatie, meest passend eerst. Elk item: { k, kleur, nachtSneeuw } */
+function beeldReeks(kant, o, donker, kerst){
+  const S = o.seizoen, std = kant === 'voor' ? 'standaard' : 'basis', maand = new Date().getMonth() + 1;
+  const regen = o.weer === 'regen' || o.natNa, sneeuw = o.weer === 'sneeuw', grijs = o.weer === 'bewolkt' || o.weer === 'mist';
+  const r = [], bekend = BEELD_SET[kant] || [], add = (k, kleur = TINT.geen, extra = {}) => { if(k && bekend.includes(k) && !r.some(x => x.k === k)) r.push({ k, kleur, ...extra }); };   // alleen namen uit de vaste lijst
+  const sneeuwBeelden = (kleur, extra) => { add(o.zwaar ? 'veel_sneeuw' : 'lichte_sneeuw', kleur, extra); add(o.zwaar ? 'lichte_sneeuw' : 'veel_sneeuw', kleur, extra); };
   if(donker){
-    if(o.weer === 'sneeuw'){ k = o.zwaar ? 'veel_sneeuw' : 'lichte_sneeuw'; nachtSneeuw = true;
-      kleur = { r:.34, g:.4, b:.58, sat:.65 }; }                                   // sneeuwbeeld, donker en blauwig
-    else if((o.weer === 'regen' || o.natNa) && heeft('avond_regen')) k = 'avond_regen';
-    else if(kaal || o.vorst || o.weer === 'regen' || o.natNa) k = 'avond_winter';
-    else k = 'avond';
-  } else if(o.weer === 'sneeuw') k = o.zwaar ? 'veel_sneeuw' : 'lichte_sneeuw';
-  else if(o.weer === 'regen' || o.natNa){
-    if(kaal){ k = 'winter'; kleur = { r:.8, g:.82, b:.86, sat:.8 }; }               // winterse regen: kale tuin, grauw
-    else k = 'regen';
+    if(kerst){ if(sneeuw) add('kerst_sneeuw'); if(regen) add('kerst'); add('kerst_droog'); add('kerst'); }
+    if(sneeuw){ add('avond_sneeuw'); sneeuwBeelden(TINT.nacht, { nachtSneeuw:true }); }
+    if(regen){ add(`${S}_avond_regen`); add('avond_regen'); add('avond_winter'); }
+    if(S === 'winter' || o.vorst || maand === 11) add('avond_winter');
+    add(`${S}_avond`); add('avond'); add('avond_winter');
+  } else {
+    if(sneeuw) sneeuwBeelden();
+    else if(o.vorst){ add(`${S}_vorst`); add('vorst'); }
+    else if(regen){ add(`${S}_regen`); if(S === 'winter') add('winter', TINT.grauw); add('regen'); }
+    else if(grijs){ add(`${S}_bewolkt`); if(S === 'winter') add('winter', TINT.grijs); if(S === 'herfst') add('herfst', TINT.grijs); add('bewolkt'); }
+    else {
+      const laag = o.zon.el > 0 && o.zon.el < 15, zonnig = o.weer === 'helder';
+      if(zonnig && laag && (S === 'lente' || S === 'zomer')) add(o.zon.az < 180 ? 'zon_ochtend' : 'zon_avond');
+      const half = o.weer === 'half' ? TINT.half : TINT.geen;
+      if(S === 'winter'){ add('winter_zon', half); add('winter', TINT.grijs); }
+      else if(S === 'zomer') add(std, half);
+      else add(S, half);
+    }
+    add(std);
   }
-  else if(o.vorst) k = 'vorst';
-  else if(o.seizoen === 'winter'){ k = 'winter'; if(o.weer !== 'helder') kleur = { r:.9, g:.91, b:.94, sat:.82 }; }
-  else if(o.seizoen === 'herfst') k = 'herfst';
-  else if(o.weer === 'helder'){
-    const laag = o.zon.el > 0 && o.zon.el < 15;
-    if(laag && o.zon.az < 180 && heeft('zon_ochtend')) k = 'zon_ochtend';
-    else if(laag && o.zon.az >= 180 && heeft('zon_avond')) k = 'zon_avond';
+  add(std);
+  return o.onweer ? r.map(x => ({ ...x, kleur:tintKeer(x.kleur, TINT.onweer) })) : r;
+}
+/* Kiest het eerste beeld uit de reeks dat bestaat; nog onbekende namen ervoor worden op de achtergrond gecontroleerd. */
+function kiesBeeld(kant, o, donker){
+  const reeks = beeldReeks(kant, o, donker, kerstAan());
+  let keuze = null;
+  for(const x of reeks){
+    const st = beeldStaat[`${kant}_${x.k}`];
+    if(st === true){ keuze = x; break; }
+    if(st === undefined) beeldControleer(`${kant}_${x.k}`);
   }
-  else if(o.weer === 'bewolkt' || o.weer === 'mist') k = 'bewolkt';
-  else if(o.weer === 'half') kleur = { r:.96, g:.96, b:.97, sat:.95 };
-  if(!heeft(k)) k = std;
-  return { src:`${BEELD_MAP}${kant}_${k}.jpg`, sleutel:k, kleur, nachtSneeuw };
+  keuze = keuze || reeks[reeks.length - 1];
+  return { src:`${BEELD_MAP}${kant}_${keuze.k}.jpg`, sleutel:keuze.k, kleur:keuze.kleur, nachtSneeuw:!!keuze.nachtSneeuw, reeks };
 }
 /* Kleurfilter bij het gekozen beeld (alleen nodig als er geen exact passend beeld is) */
 const kleurFilter = (id, c) => `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="${c.sat}"/>
@@ -3484,6 +3600,7 @@ function zonVermogen(){
 /* Zelfde regel voor de grafiek: punten met de zon onder de horizon tellen als 0 */
 const zonReeks = r => (r || []).map(p => zonStand(new Date(p.t)).el < 0 ? { ...p, v:0 } : p);
 function isDonker(){
+  if(beeldTestActief()) return beeldTest.donker;
   const w = dev(CONFIG.apparaten.weer), nu = new Date();
   const uurMin = (t, standaard) => { const m = /^(\d{1,2}):(\d{2})/.exec(String(t ?? '')); return m ? +m[1] * 60 + +m[2] : standaard; };
   const op = uurMin(cap(w,'sun_up'), 450), onder = uurMin(cap(w,'sun_down'), 1080);
@@ -3515,6 +3632,7 @@ function zichtMist(w){
   return zicht <= 1 || (zicht <= 3 && typeof vocht === 'number' && vocht >= 95);
 }
 function omstandigheden(){
+  if(beeldTestActief()) return beeldTest.o;
   const w = dev(CONFIG.apparaten.weer);
   const maand = new Date().getMonth() + 1;
   const seizoen = maand >= 3 && maand <= 5 ? 'lente' : maand >= 6 && maand <= 8 ? 'zomer' : maand >= 9 && maand <= 11 ? 'herfst' : 'winter';
@@ -3522,8 +3640,9 @@ function omstandigheden(){
   const tekst = nu || vandaag;
   const droog = /droog/.test(nu);
   let weer = 'helder';
-  if(/sneeuw|hagel|ijzel|winterse/.test(tekst)) weer = 'sneeuw';
-  else if(!droog && /regen|bui|motregen|onweer/.test(tekst)) weer = 'regen';
+  const ijzel = /ijzel|ijsregen|gladheid/.test(tekst), onweer = !droog && /onweer/.test(tekst);
+  if(/sneeuw|winterse/.test(tekst)) weer = 'sneeuw';
+  else if(!droog && !ijzel && /regen|bui|motregen|onweer|hagel/.test(tekst)) weer = 'regen';   // hagel en onweer: regenbeeld
   else if(/mist|nevel/.test(tekst)) weer = 'mist';
   else if(zichtMist(w)) weer = 'mist';                                     // recap zegt bv. "Zwaar bewolkt", maar het zicht is 1 km
   else if(/half|wisselend|opklaring/.test(tekst)) weer = 'half';
@@ -3533,11 +3652,11 @@ function omstandigheden(){
   const vocht = cap(w,'humidity');
   const natNa = droog && /regen|bui/.test(nu) && typeof vocht === 'number' && vocht >= 85;
   const temp = typeof cap(w,'current_temp') === 'number' ? cap(w,'current_temp') : null;
-  const vorst = temp != null && temp <= 0 && weer !== 'sneeuw';
+  const vorst = (ijzel || (temp != null && temp <= 0)) && weer !== 'sneeuw';    // ijzel: vorstbeeld
   const NAAM = { helder:'Zonnig', half:'Half bewolkt', bewolkt:'Bewolkt', regen:'Regen', sneeuw:zwaar ? 'Veel sneeuw' : 'Lichte sneeuw', mist:'Mist' };
   const SEIZ = { lente:'Lente', zomer:'Zomer', herfst:'Herfst', winter:'Winter' };
-  return { seizoen, weer, zwaar, natNa, vorst, temp, zon:zonStand(),
-           label:[SEIZ[seizoen], vorst ? 'Vorst' : natNa ? 'Nat' : NAAM[weer], temp != null ? Math.round(temp) + '°' : ''].filter(Boolean).join(' · ') };
+  return { seizoen, weer, zwaar, natNa, vorst, onweer, temp, zon:zonStand(),
+           label:[SEIZ[seizoen], ijzel ? 'IJzel' : vorst ? 'Vorst' : natNa ? 'Nat' : onweer ? 'Onweer' : NAAM[weer], temp != null ? Math.round(temp) + '°' : ''].filter(Boolean).join(' · ') };
 }
 
 /* Basisbeeld + wat er nog overheen komt: alleen vallende regen/sneeuw, mist en (zonder eigen beeld) laag zonlicht. */
@@ -4938,6 +5057,8 @@ document.addEventListener('click', e => {
   if(e.target.closest('[data-regen]')) return openRegen();
   if(bgOpen && (e.target === $('beeldPaneel') || e.target.closest('[data-bg-sluit]'))) return sluitBeelden();
   const bgk = e.target.closest('[data-beelden]'); if(bgk) return openBeelden(bgk.dataset.beelden);
+  const bgc = e.target.closest('[data-bgkeuze]'); if(bgc){ const [v, w] = bgc.dataset.bgkeuze.split(':'); bgKeuze[v] = w; return tekenBeeldPaneel(); }
+  const bgt = e.target.closest('[data-bgtest]'); if(bgt) return bgt.dataset.bgtest === 'stop' ? beeldTestUit() : beeldTestAan();
   if(nwOpen && (e.target === $('nieuwPaneel') || e.target.closest('[data-nw-sluit]'))) return sluitNieuw();
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
