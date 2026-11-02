@@ -1647,9 +1647,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '113';
+const DASHBOARD_VERSIE = '114';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'114', datum:'02-11-2026', punten:[ 'Na 1 minuut zonder aanraking gaat het dashboard vanzelf terug naar het hoofddashboard. Niet als je op dat moment iets invult (bijvoorbeeld banden of beleggingen).' ] },
   { v:'113', datum:'02-11-2026', punten:[ 'Persoonlijke onderdelen (beleggingen en de takenlijst uit Notion) zijn beter afgeschermd voor meekijkers. Het takenlabel toont alleen nog het aantal.' ] },
   { v:'112', datum:'02-11-2026', punten:[ 'Notion: label in de bovenbalk met het aantal taken waarvan de deadline geweest is (oranje, rood als er een meer dan een week te laat is). Tik erop voor de lijst per Notion-pagina, met wat binnenkort verloopt; tik op een taak om hem in Notion te openen. Bijgewerkt elk half uur via HomeyScript.' ] },
   { v:'111', datum:'02-11-2026', punten:[ 'Beleggingen: Ethereum (ETH) en Monad (MON) werken nu net als bitcoin: live koers van CoinGecko (reserve Bitvavo), aantal in bezit en aankopen met datum. Ze tellen mee in het totaal, de verdeling en het overzicht Inleg en winst.' ] },
@@ -6136,6 +6137,18 @@ document.addEventListener('pointerdown', e => { const el = e.target.closest?.('[
 ['pointerup','pointercancel','pointerleave'].forEach(ev => document.addEventListener(ev, () => { if(slotEl) slotStop(); }, true));
 document.addEventListener('pointermove', e => { if(slotEl && slotXY && Math.hypot(e.clientX - slotXY[0], e.clientY - slotXY[1]) > 12) slotStop(); }, true);
 document.addEventListener('contextmenu', e => { if(e.target.closest?.('[data-slot]')) e.preventDefault(); });
+
+/* ── Na 1 minuut zonder aanraking terug naar het hoofddashboard (niet tijdens invullen) ── */
+const TERUG_MS = 60000;
+let laatsteAanraking = Date.now();
+['pointerdown','pointermove','keydown','input','wheel','touchstart','scroll'].forEach(ev => document.addEventListener(ev, () => { laatsteAanraking = Date.now(); }, { capture:true, passive:true }));
+setInterval(() => {
+  const op = document.querySelector('.page.on'); if(!op || op.id === 'page-home') return;
+  const f = document.activeElement;
+  if(f && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)){ laatsteAanraking = Date.now(); return; }   // bezig met invullen
+  if(op.querySelector('.band-form, .bel-form')){ laatsteAanraking = Date.now(); return; }         // formulier open
+  if(Date.now() - laatsteAanraking >= TERUG_MS){ laatsteAanraking = Date.now(); goPage('home', document.querySelector('.nav-item[data-page="home"]')); document.querySelector('main')?.scrollTo?.(0, 0); }
+}, 2000);
 </script>
 </body>
 </html>
