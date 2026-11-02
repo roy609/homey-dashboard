@@ -746,6 +746,14 @@ h1.met-icoon { position:relative; }
 .pakje-blok.met-info .pakje-plus svg { display:none; }
 .pakje-blok.met-info .pakje-plus b { position:static; box-shadow:none; }
 /* Meldingen over de auto (APK, verzekering, terugroepactie) */
+.nt-groep { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.nt-groep h3 { margin:0 0 2px; font-size:var(--fs-md); } .nt-groep h3 small { display:block; font-size:11.5px; font-weight:500; color:var(--text-muted); }
+.nt-taak { display:grid; grid-template-columns:1fr auto; gap:2px 12px; padding:10px 12px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); color:inherit; text-decoration:none; }
+.nt-taak b { font-size:var(--fs-sm); } .nt-taak small { color:var(--text-muted); font-size:11.5px; grid-column:1; }
+.nt-taak .nt-wanneer { grid-row:span 2; grid-column:2; text-align:right; font-weight:700; font-size:var(--fs-sm); white-space:nowrap; }
+.nt-taak.laat { border-color:rgba(245,165,36,.45); } .nt-taak.laat .nt-wanneer { color:var(--amber); }
+.nt-taak.rood { border-color:rgba(239,68,68,.45); } .nt-taak.rood .nt-wanneer { color:var(--red); }
+.nt-kop { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--text-muted); margin:4px 0; }
 .rdw-chip { display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 9px; border-radius:999px; font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;
   border:1px solid rgba(245,165,36,.6); background:rgba(245,165,36,.12); color:var(--amber); }
 .rdw-chip svg { width:15px; height:15px; flex-shrink:0; }
@@ -1098,7 +1106,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <div class="top-eind"><span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div></div>
       <div class="top-meldingen"><button class="bel-chip" id="belChip" data-beleg="1" aria-label="Beleggingen"></button>
         <div class="pakje-blok" id="pakjeBlok"><button class="pakje-chip" id="pakjeChip" hidden data-pakjes="1"></button><button class="pakje-plus" data-pakje-plus="1" aria-label="Pakje toevoegen" title="Pakje toevoegen"><span data-icon="pakket"></span><b>+</b></button></div>
-        <span class="rdw-chips" id="rdwChips"></span></div>
+        <span class="rdw-chips" id="rdwChips"></span><span class="rdw-chips" id="notionChip"></span></div>
     </div>
     <div class="board">
       <!-- Links: huiskaart (energie, klok, weer) en variabelen -->
@@ -1282,6 +1290,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     <div class="lp-lijst" id="belInhoud"></div>
   </div>
 </div>
+<div class="overlay" id="notionPaneel">
+  <div class="modal lp" role="dialog" aria-label="Taken uit Notion">
+    <div class="lp-kop">
+      <div class="ico amber" data-icon="check"></div>
+      <div class="grow"><h2>Taken uit Notion</h2><div class="card-sub" id="ntSub"></div></div>
+      <button class="lp-knop" data-nt-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst" id="ntInhoud"></div>
+  </div>
+</div>
+
 <div class="overlay" id="rdwPaneel">
   <div class="modal lp" role="dialog" aria-label="APK en RDW">
     <div class="lp-kop">
@@ -1590,6 +1609,9 @@ const CONFIG = {
               { id:'2953ad44-a2c2-44f5-930e-a071674e3b27', naam:'Achter' },           // Kerstverlichting Achtertuin
               { id:'2e249d2d-28fa-495a-97da-501969c01642', naam:'🎵 Muziek' } ] },    // Kerstradio
   // RDW: apparaat van de app RDW (APK, verzekering, terugroepactie) en de variabele die onthoudt wat is afgevinkt
+  // Notion: taken met een deadline die geweest is (HomeyScript "Notion Taken" vult deze variabele elk half uur)
+  notion: { var:'7adc015a-6e2f-4152-b725-fd454b87006e', rood:7, oudNa:2,
+    paginas:{ 'Baby':'Onze baby – april 2027 · Baby checklist', 'Verhuizing':'Bonenkamp 66 – Nieuw Huis · Verhuis Checklist' } },
   rdw: { id:'d9d8bd32-ee3b-467a-a249-57b24cd972fe', var:'73a957d8-df54-4f12-9883-47394fccf988', vooraf:30, rood:7 },
   tuinZones: [
     '5204dc44-8e9c-49e7-aed8-9d5c93330126', // Achtertuin
@@ -1622,9 +1644,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '111';
+const DASHBOARD_VERSIE = '112';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'112', datum:'02-11-2026', punten:[ 'Notion: label in de bovenbalk met het aantal taken waarvan de deadline geweest is (oranje, rood als er een meer dan een week te laat is). Tik erop voor de lijst per Notion-pagina, met wat binnenkort verloopt; tik op een taak om hem in Notion te openen. Bijgewerkt elk half uur via HomeyScript.' ] },
   { v:'111', datum:'02-11-2026', punten:[ 'Beleggingen: Ethereum (ETH) en Monad (MON) werken nu net als bitcoin: live koers van CoinGecko (reserve Bitvavo), aantal in bezit en aankopen met datum. Ze tellen mee in het totaal, de verdeling en het overzicht Inleg en winst.' ] },
   { v:'110', datum:'01-11-2026', punten:[ 'Beleggingen: testblok "Koersen via Homey" om te proberen of koersen van aandelen (zoals Nvidia) via de Homey-app Stocks kunnen worden opgehaald. Alleen lezen.' ] },
   { v:'109', datum:'01-11-2026', punten:[ 'Beleggingen hebben een eigen pagina (menu, of tik op het bitcoinlabel): totaal met ingelegd en winst/verlies, verloop per periode, bitcoin met koers en rendement, al je beleggingen, de verdeling en uitleg.',
@@ -4359,7 +4382,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenKerst(); tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenNotion(); tekenKerst(); tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -5288,6 +5311,8 @@ document.addEventListener('click', e => {
   if(e.target.closest('[data-rdw-ok]')) return rdwAfvinken(e.target.closest('[data-rdw-ok]').dataset.rdwOk);
   if(e.target.closest('[data-rdw-terug]')) return rdwTerug();
   if(e.target.closest('[data-rdw]')) return openRdw();
+  if(ntOpen && (e.target === $('notionPaneel') || e.target.closest('[data-nt-sluit]'))) return sluitNotion();
+  if(e.target.closest('[data-notion]')) return openNotion();
   if(pkOpen && (e.target === $('pakjePaneel') || e.target.closest('[data-pk-sluit]'))) return sluitPakjes();
   if(e.target.closest('[data-pakjes]')) return openPakjes();
   if(e.target.closest('[data-pakje-plus]')){ openPakjes(); return setTimeout(() => $('pkTekst')?.focus(), 250); }
@@ -5364,6 +5389,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && rdwOpen) return sluitRdw();
+  if(e.key === 'Escape' && ntOpen) return sluitNotion();
   if(e.key === 'Escape' && bgOpen) return sluitBeelden();
   if(e.key === 'Escape' && nwOpen) return sluitNieuw();
   if(e.key === 'Escape' && camGrootId) return sluitCam();
@@ -5796,7 +5822,7 @@ async function verversApparaten(){
 }
 async function verversVariabelen(){
   if(DEMO()){ VARS = DEMO_VARS; tekenVariabelen(); if(energieGeladen) tekenEnergie(); return; }
-  try { VARS = await homey('/api/manager/logic/variable') || {}; tekenVariabelen(); if(energieGeladen) tekenEnergie(); belMigreer(); tekenBeleg(); tekenRdw(); tekenKerst(); tekenTegels(); }
+  try { VARS = await homey('/api/manager/logic/variable') || {}; tekenVariabelen(); if(energieGeladen) tekenEnergie(); belMigreer(); tekenBeleg(); tekenRdw(); tekenNotion(); tekenKerst(); tekenTegels(); }
   catch(e){ /* variabelen zijn bijzaak: oude waarden blijven staan */ }
 }
 
@@ -6047,6 +6073,48 @@ function stocksTestKaart(){
     ${stTest.regels.length ? `<div class="st-test">${stTest.regels.map(x => `<div class="${x.ok ? 'ok' : 'fout'}"><b>${x.ok ? '✓' : '✗'}</b><code>${esc(x.pad)}</code><span>${esc(x.tekst)}</span></div>`).join('')}</div>` : ''}
     ${!stTest.bezig && stTest.regels.length ? `<p class="bel-klein" style="font-weight:700;color:${stTest.gevonden ? 'var(--green)' : 'var(--amber)'}">${stTest.gevonden ? 'Gelukt: de koppeling werkt.' : 'Geen werkend adres gevonden.'} Maak een screenshot van dit blok en stuur het naar Claude.</p>` : ''}</div>`;
 }
+
+/* ═════════════════════════════════════════════
+   NOTION — taken met een deadline die geweest is (label + pop-up). Gegevens: Homey-variabele, gevuld door HomeyScript.
+═════════════════════════════════════════════ */
+var ntOpen = false;   // var: tekenNotion() kan al bij het opstarten lopen
+function notionData(){ const v = VARS[CONFIG.notion?.var]; try { return v && typeof v.value === 'string' ? JSON.parse(v.value || '{}') : null; } catch(e){ return null; } }
+const ntDagen = d => { const t = rdwDatum(d); return t ? rdwDagen(t) : null; };      // negatief = te laat
+function ntTe(dg){ if(dg === 0) return 'vandaag'; if(dg > 0) return dg === 1 ? 'morgen' : `over ${dg} dagen`;
+  const n = -dg; return n === 1 ? 'gisteren' : n < 14 ? `${n} dagen te laat` : n < 60 ? `${Math.round(n / 7)} weken te laat` : `${Math.round(n / 30)} maanden te laat`; }
+function tekenNotion(){
+  const el = $('notionChip'); if(!el) return;
+  const D = notionData(), taken = D?.taken || [];
+  const laat = taken.filter(t => (ntDagen(t.datum) ?? 1) <= 0);
+  if(!laat.length){ el.innerHTML = ''; if(ntOpen) tekenNotionPaneel(); return; }
+  const rood = laat.some(t => ntDagen(t.datum) < -CONFIG.notion.rood);
+  const lijsten = [...new Set(laat.map(t => t.lijst))].join(' · ');
+  el.innerHTML = `<button class="rdw-chip ${rood ? 'rood' : ''}" data-notion="1" aria-label="${laat.length} taken over datum">${ic('check')}<span class="pk-chip-tekst"><span>${laat.length === 1 ? '1 taak' : laat.length + ' taken'} over datum</span><small>${esc(lijsten)}</small></span></button>`;
+  if(ntOpen) tekenNotionPaneel();
+}
+function tekenNotionPaneel(){
+  const D = notionData(), taken = D?.taken || [];
+  const t = Date.parse(D?.t || ''), oud = !isNaN(t) && Date.now() - t > CONFIG.notion.oudNa * 3600e3;
+  $('ntSub').innerHTML = isNaN(t) ? 'Nog niet opgehaald' : `${oud ? '<span style="color:var(--amber)">⚠ ' : ''}Bijgewerkt ${new Date(t).toLocaleString('nl-NL', { weekday:'short', hour:'2-digit', minute:'2-digit' })}${oud ? ' – ouder dan ' + CONFIG.notion.oudNa + ' uur, controleer de flow</span>' : ''}`;
+  const rij = x => { const dg = ntDagen(x.datum) ?? 0, kl = dg < -CONFIG.notion.rood ? 'rood' : dg <= 0 ? 'laat' : '';
+    const dt = rdwDatum(x.datum), sub = [dt ? dt.toLocaleDateString('nl-NL', { day:'numeric', month:'short' }) : '', x.status, x.cat, x.wie].filter(Boolean).join(' · ');
+    return `<a class="nt-taak ${kl}" href="${esc(x.url || '#')}" target="_blank" rel="noopener"><b>${esc(x.naam)}</b><span class="nt-wanneer">${ntTe(dg)}</span><small>${esc(sub)}</small></a>`; };
+  const groepen = [...new Set(taken.map(x => x.lijst))];
+  let h = '';
+  for(const g of groepen){
+    const tg = taken.filter(x => x.lijst === g).sort((a, b) => a.datum < b.datum ? -1 : 1);
+    const laat = tg.filter(x => (ntDagen(x.datum) ?? 1) <= 0), straks = tg.filter(x => (ntDagen(x.datum) ?? 0) > 0);
+    h += `<div class="nt-groep"><h3>${esc(g)}<small>${esc(CONFIG.notion.paginas?.[g] || g)}</small></h3>
+      ${laat.length ? `<div class="nt-kop">Over datum (${laat.length})</div>${laat.map(rij).join('')}` : ''}
+      ${straks.length ? `<div class="nt-kop">Binnenkort (${straks.length})</div>${straks.map(rij).join('')}` : ''}</div>`;
+  }
+  if(!taken.length) h = '<span class="leeg">Geen taken over datum. 🎉</span>';
+  if(D?.fouten?.length) h += `<p class="pk-melding fout">Fout bij ophalen: ${esc(D.fouten.join('; '))}</p>`;
+  h += '<p class="bel-klein">Tik op een taak om hem in Notion te openen. Afvinken doe je in Notion; het dashboard ziet dat binnen een half uur.</p>';
+  $('ntInhoud').innerHTML = h;
+}
+function openNotion(){ ntOpen = true; $('notionPaneel').classList.add('on'); tekenNotionPaneel(); }
+function sluitNotion(){ ntOpen = false; $('notionPaneel').classList.remove('on'); }
 </script>
 </body>
 </html>
