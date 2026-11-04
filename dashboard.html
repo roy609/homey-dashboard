@@ -1109,7 +1109,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <div class="top-eind"><span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div></div>
       <div class="top-meldingen"><button class="bel-chip" id="belChip" data-slot="beleg" aria-label="Beleggingen"></button>
         <div class="pakje-blok" id="pakjeBlok"><button class="pakje-chip" id="pakjeChip" hidden data-pakjes="1"></button><button class="pakje-plus" data-pakje-plus="1" aria-label="Pakje toevoegen" title="Pakje toevoegen"><span data-icon="pakket"></span><b>+</b></button></div>
-        <span class="rdw-chips" id="rdwChips"></span><span class="rdw-chips" id="notionChip"></span></div>
+        <span class="rdw-chips" id="rdwChips"></span><span class="rdw-chips" id="notionChip"></span><span class="rdw-chips" id="bandChip"></span></div>
     </div>
     <div class="board">
       <!-- Links: huiskaart (energie, klok, weer) en variabelen -->
@@ -1293,6 +1293,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     <div class="lp-lijst" id="belInhoud"></div>
   </div>
 </div>
+<div class="overlay" id="bandPaneel">
+  <div class="modal lp" role="dialog" aria-label="Bandenwissel">
+    <div class="lp-kop">
+      <div class="ico amber" data-icon="car"></div>
+      <div class="grow"><h2 id="bwTitel">Bandenwissel</h2><div class="card-sub" id="bwSub"></div></div>
+      <button class="lp-knop" data-bw-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div id="bwInhoud" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
 <div class="overlay" id="notionPaneel">
   <div class="modal lp" role="dialog" aria-label="Taken uit Notion">
     <div class="lp-kop">
@@ -1647,9 +1658,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '114';
+const DASHBOARD_VERSIE = '115';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'115', datum:'04-11-2026', punten:[ 'Banden: melding op het hoofddashboard vanaf een maand voor de wissel (winterbanden ca. 15 oktober, zomerbanden ca. 15 april; rood als de wissel al nodig is). Met "Afspraak gemaakt" en een datum verdwijnt hij tot die dag; dan vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.' ] },
   { v:'114', datum:'02-11-2026', punten:[ 'Na 1 minuut zonder aanraking gaat het dashboard vanzelf terug naar het hoofddashboard. Niet als je op dat moment iets invult (bijvoorbeeld banden of beleggingen).' ] },
   { v:'113', datum:'02-11-2026', punten:[ 'Persoonlijke onderdelen (beleggingen en de takenlijst uit Notion) zijn beter afgeschermd voor meekijkers. Het takenlabel toont alleen nog het aantal.' ] },
   { v:'112', datum:'02-11-2026', punten:[ 'Notion: label in de bovenbalk met het aantal taken waarvan de deadline geweest is (oranje, rood als er een meer dan een week te laat is). Tik erop voor de lijst per Notion-pagina, met wat binnenkort verloopt; tik op een taak om hem in Notion te openen. Bijgewerkt elk half uur via HomeyScript.' ] },
@@ -4387,7 +4399,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenNotion(); tekenKerst(); tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenBandChip(); tekenNotion(); tekenKerst(); tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -4953,7 +4965,7 @@ async function bandBewaar(d){
   try { localStorage.setItem(BAND_KEY, tekst); } catch(e){}
   const id = AUTO_CFG.banden.var;
   if(id && VARS[id]){ VARS[id].value = tekst; if(!DEMO()) try { await zetVar(id, tekst); } catch(e){ status('fout', 'Banden niet opgeslagen in Homey'); } }
-  tekenAuto();
+  tekenAuto(); tekenBandChip();
 }
 /* Welke set hoort er op deze datum onder (volgens de vuistregel in AUTO_CFG.banden.winter) */
 function bandSeizoen(d){
@@ -5093,7 +5105,7 @@ function bandActie(w){
   if(w === 'annuleer'){ bandBewerk = null; return tekenBanden(); }
   if(d.demo){ d.metingen = []; d.wissels = []; delete d.demo; }                 // eerste echte invoer: voorbeeld weg
   const kmv = parseInt(String($('bdKm')?.value || '').replace(/\D/g, ''), 10) || cap(autoDev(),'meter_odometer') || 0;
-  if(w === 'wisselok'){ const naar = $('bdNaar').value; d.actief = naar; d.wissels.push({ datum:new Date().toISOString().slice(0, 10), km:kmv, naar }); bandBewerk = 'meting'; bandBewaar(d); return; }
+  if(w === 'wisselok'){ const naar = $('bdNaar').value; d.actief = naar; delete d.afspraak; d.wissels.push({ datum:new Date().toISOString().slice(0, 10), km:kmv, naar }); bandBewerk = 'meting'; bandBewaar(d); return; }
   if(w === 'opslaan'){
     const mm = [0, 1, 2, 3].map(i => parseFloat(String($('bdMm' + i).value).replace(',', '.')));
     if(mm.some(isNaN)) return status('fout', 'Vul bij alle vier de banden het profiel in');
@@ -5316,6 +5328,8 @@ document.addEventListener('click', e => {
   if(e.target.closest('[data-rdw-ok]')) return rdwAfvinken(e.target.closest('[data-rdw-ok]').dataset.rdwOk);
   if(e.target.closest('[data-rdw-terug]')) return rdwTerug();
   if(e.target.closest('[data-rdw]')) return openRdw();
+  if(bnwOpen && (e.target === $('bandPaneel') || e.target.closest('[data-bw-sluit]'))) return sluitBandPaneel();
+  const bwk = e.target.closest('[data-bw]'); if(bwk) return bandWisselActie(bwk.dataset.bw);
   if(ntOpen && (e.target === $('notionPaneel') || e.target.closest('[data-nt-sluit]'))) return sluitNotion();
   if(pkOpen && (e.target === $('pakjePaneel') || e.target.closest('[data-pk-sluit]'))) return sluitPakjes();
   if(e.target.closest('[data-pakjes]')) return openPakjes();
@@ -5393,6 +5407,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && rdwOpen) return sluitRdw();
+  if(e.key === 'Escape' && bnwOpen) return sluitBandPaneel();
   if(e.key === 'Escape' && ntOpen) return sluitNotion();
   if(e.key === 'Escape' && bgOpen) return sluitBeelden();
   if(e.key === 'Escape' && nwOpen) return sluitNieuw();
@@ -5826,7 +5841,7 @@ async function verversApparaten(){
 }
 async function verversVariabelen(){
   if(DEMO()){ VARS = DEMO_VARS; tekenVariabelen(); if(energieGeladen) tekenEnergie(); return; }
-  try { VARS = await homey('/api/manager/logic/variable') || {}; tekenVariabelen(); if(energieGeladen) tekenEnergie(); belMigreer(); tekenBeleg(); tekenRdw(); tekenNotion(); tekenKerst(); tekenTegels(); }
+  try { VARS = await homey('/api/manager/logic/variable') || {}; tekenVariabelen(); if(energieGeladen) tekenEnergie(); belMigreer(); tekenBeleg(); tekenRdw(); tekenNotion(); tekenBandChip(); tekenKerst(); tekenTegels(); }
   catch(e){ /* variabelen zijn bijzaak: oude waarden blijven staan */ }
 }
 
@@ -6149,6 +6164,70 @@ setInterval(() => {
   if(op.querySelector('.band-form, .bel-form')){ laatsteAanraking = Date.now(); return; }         // formulier open
   if(Date.now() - laatsteAanraking >= TERUG_MS){ laatsteAanraking = Date.now(); goPage('home', document.querySelector('.nav-item[data-page="home"]')); document.querySelector('main')?.scrollTo?.(0, 0); }
 }, 2000);
+
+/* ═════════════════════════════════════════════
+   BANDENWISSEL — melding op het hoofddashboard vanaf een maand voor de wisseldatum (vuistregel AUTO_CFG.banden.winter).
+   "Afspraak gemaakt" + datum: melding weg tot die datum; daarna vraagt hij of de wissel gedaan is (set + profiel).
+═════════════════════════════════════════════ */
+var bnwOpen = false;
+const bwDag = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+function bandWisselInfo(){
+  const d = bandData(); if(!d || d.demo) return null;
+  const vandaag = bwDag(new Date()), j = vandaag.getFullYear();
+  const [vm, vd] = AUTO_CFG.banden.winter.van, [tm, td] = AUTO_CFG.banden.winter.tot;
+  const grenzen = [-1, 0, 1].flatMap(dj => [{ t:new Date(j + dj, vm - 1, vd), naar:'winter' }, { t:new Date(j + dj, tm - 1, td), naar:'zomer' }]).sort((a, b) => a.t - b.t);
+  const nodigNu = bandSeizoen(vandaag);
+  let doel;
+  if(nodigNu !== d.actief) doel = [...grenzen].reverse().find(g => g.t <= vandaag && g.naar === nodigNu);    // al te laat
+  else doel = grenzen.find(g => g.t > vandaag && g.naar !== d.actief);                                       // eerstvolgende wissel
+  if(!doel) return null;
+  const dagen = Math.round((doel.t - vandaag) / 864e5);
+  const af = d.afspraak && d.afspraak.naar === doel.naar ? d.afspraak : null;
+  const afDagen = af ? Math.round((bwDag(af.datum) - vandaag) / 864e5) : null;
+  return { d, naar:doel.naar, doel:doel.t, dagen, af, afDagen };
+}
+function tekenBandChip(){
+  const el = $('bandChip'); if(!el) return;
+  const I = bandWisselInfo(); let html = '';
+  if(I){
+    const set = I.naar === 'winter' ? 'Winterbanden' : 'Zomerbanden';
+    if(I.af && I.afDagen <= 0) html = `<button class="rdw-chip" data-bw="open">${ic('car')}<span class="pk-chip-tekst"><span>Banden gewisseld?</span><small>afspraak ${bwDag(I.af.datum).toLocaleDateString('nl-NL', { day:'numeric', month:'short' })}</small></span></button>`;
+    else if(!I.af && I.dagen <= 30) html = `<button class="rdw-chip ${I.dagen < 0 ? 'rood' : ''}" data-bw="open">${ic('car')}<span class="pk-chip-tekst"><span>${set}: ${I.dagen < 0 ? 'wissel nodig' : I.dagen === 0 ? 'wissel vandaag' : 'wissel over ' + I.dagen + ' dagen'}</span><small>afspraak maken</small></span></button>`;
+  }
+  el.innerHTML = html;
+  if(bnwOpen) tekenBandPaneel();
+}
+function tekenBandPaneel(){
+  const I = bandWisselInfo();
+  if(!I){ $('bwInhoud').innerHTML = '<span class="leeg">Geen wissel nodig.</span>'; return; }
+  const set = I.naar === 'winter' ? 'winterbanden' : 'zomerbanden', naam = I.d.sets?.[I.naar]?.naam;
+  const dt = x => bwDag(x).toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'long' });
+  $('bwTitel').textContent = 'Wissel naar ' + set;
+  $('bwSub').textContent = naam || '';
+  const adv = wisselAdvies(I.d.actief);
+  const morgen = new Date(Date.now() + 864e5).toISOString().slice(0, 10), waarde = $('bwDatum')?.value || I.af?.datum || morgen;
+  if(I.af && I.afDagen <= 0){
+    $('bwInhoud').innerHTML = `<div class="rdw-melding oranje"><b>Je afspraak was ${dt(I.af.datum)}</b><p>Zijn de ${set} eronder gezet? Leg de wissel vast en vul meteen het profiel per band in.</p>
+      <div class="rdw-knoppen"><button class="btn primary" data-bw="gewisseld">${ic('check')} Gewisseld: profiel invullen</button></div></div>
+      <div class="rdw-melding"><b>Afspraak verzet?</b><div class="rdw-knoppen" style="align-items:center"><input type="date" id="bwDatum" value="${esc(waarde)}" style="padding:10px;border-radius:10px;border:1px solid var(--border2);background:var(--bg-nav);color:var(--text-primary);font:inherit;color-scheme:dark">
+      <button class="btn" data-bw="afspraak">Nieuwe datum opslaan</button></div></div>`;
+  } else {
+    $('bwInhoud').innerHTML = `<div class="rdw-melding ${I.dagen < 0 ? 'rood' : 'oranje'}"><b>${I.dagen < 0 ? 'Sinds ' + dt(I.doel) + ' horen er ' + set + ' onder' : 'Vanaf ' + dt(I.doel) + ' ' + set}</b>
+      <p>Vuistregel: winterbanden van ${AUTO_CFG.banden.winter.van[1]} oktober tot ${AUTO_CFG.banden.winter.tot[1]} april. ${esc(adv.tekst)}</p></div>
+      <div class="rdw-melding"><b>Afspraak gemaakt?</b><p>Vul de datum in; de melding verdwijnt tot die dag. Op de dag zelf vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.</p>
+      <div class="rdw-knoppen" style="align-items:center"><input type="date" id="bwDatum" value="${esc(waarde)}" style="padding:10px;border-radius:10px;border:1px solid var(--border2);background:var(--bg-nav);color:var(--text-primary);font:inherit;color-scheme:dark">
+      <button class="btn primary" data-bw="afspraak">${ic('check')} Afspraak gemaakt</button></div></div>`;
+  }
+}
+function openBandPaneel(){ bnwOpen = true; $('bandPaneel').classList.add('on'); tekenBandPaneel(); }
+function sluitBandPaneel(){ bnwOpen = false; $('bandPaneel').classList.remove('on'); }
+function bandWisselActie(w){
+  if(w === 'open') return openBandPaneel();
+  const I = bandWisselInfo(); if(!I) return sluitBandPaneel();
+  if(w === 'afspraak'){ const v = $('bwDatum')?.value; if(!v) return; const d = I.d; d.afspraak = { naar:I.naar, datum:v }; bandBewaar(d); sluitBandPaneel(); tekenBandChip(); return; }
+  if(w === 'gewisseld'){ sluitBandPaneel(); goPage('auto', document.querySelector('.nav-item[data-page="auto"]')); bandBewerk = 'wissel'; tekenBanden();
+    setTimeout(() => { const s = $('bdNaar'); if(s) s.value = I.naar; document.querySelector('#autoBanden')?.scrollIntoView({ block:'center' }); }, 50); }
+}
 </script>
 </body>
 </html>
