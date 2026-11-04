@@ -6213,7 +6213,7 @@ function tekenBandPaneel(){
       <button class="btn" data-bw="afspraak">Nieuwe datum opslaan</button></div></div>`;
   } else {
     $('bwInhoud').innerHTML = `<div class="rdw-melding ${I.dagen < 0 ? 'rood' : 'oranje'}"><b>${I.dagen < 0 ? 'Sinds ' + dt(I.doel) + ' horen er ' + set + ' onder' : 'Vanaf ' + dt(I.doel) + ' ' + set}</b>
-      <p>Vuistregel: winterbanden van ${AUTO_CFG.banden.winter.van[1]} oktober tot ${AUTO_CFG.banden.winter.tot[1]} april. ${esc(adv.tekst)}</p></div>
+      <p>${esc(adv.tekst)}</p></div>
       <div class="rdw-melding"><b>Afspraak gemaakt?</b><p>Vul de datum in; de melding verdwijnt tot die dag. Op de dag zelf vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.</p>
       <div class="rdw-knoppen" style="align-items:center"><input type="date" id="bwDatum" value="${esc(waarde)}" style="padding:10px;border-radius:10px;border:1px solid var(--border2);background:var(--bg-nav);color:var(--text-primary);font:inherit;color-scheme:dark">
       <button class="btn primary" data-bw="afspraak">${ic('check')} Afspraak gemaakt</button></div></div>`;
