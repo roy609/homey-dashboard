@@ -1661,7 +1661,8 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '115';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'115', datum:'04-11-2026', punten:[ 'Banden: melding op het hoofddashboard vanaf een maand voor de wissel (winterbanden ca. 15 oktober, zomerbanden ca. 15 april; rood als de wissel al nodig is). Met "Afspraak gemaakt" en een datum verdwijnt hij tot die dag; dan vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.' ] },
+  { v:'115', datum:'04-11-2026', punten:[ 'Banden: melding op het hoofddashboard vanaf een maand voor de wissel (winterbanden ca. 15 oktober, zomerbanden ca. 15 april; rood als de wissel al nodig is). Met "Afspraak gemaakt" en een datum verdwijnt hij tot die dag; dan vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.' ,
+    'Nieuw auto-icoon: het silhouet van onze eigen auto, gemaakt uit de autofoto.'] },
   { v:'114', datum:'02-11-2026', punten:[ 'Na 1 minuut zonder aanraking gaat het dashboard vanzelf terug naar het hoofddashboard. Niet als je op dat moment iets invult (bijvoorbeeld banden of beleggingen).' ] },
   { v:'113', datum:'02-11-2026', punten:[ 'Persoonlijke onderdelen (beleggingen en de takenlijst uit Notion) zijn beter afgeschermd voor meekijkers. Het takenlabel toont alleen nog het aantal.' ] },
   { v:'112', datum:'02-11-2026', punten:[ 'Notion: label in de bovenbalk met het aantal taken waarvan de deadline geweest is (oranje, rood als er een meer dan een week te laat is). Tik erop voor de lijst per Notion-pagina, met wat binnenkort verloopt; tik op een taak om hem in Notion te openen. Bijgewerkt elk half uur via HomeyScript.' ] },
@@ -1814,7 +1815,7 @@ const ICONS = {
   music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   run:'<circle cx="14" cy="4" r="2"/><path d="m6 22 4-7 3 3v6M10 15l1-6 4 3 4-1M7 10l4-1"/>',
   bulb:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/>',
-  car:'<path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M9.5 17h5M3 12h18"/>',
+  car:'<path d="M22.98 9.99 21.16 7.67 18.26 6.45 10.8 6.69 5.92 9.47 2.42 10.43 1 12.53 1 15.27 3.32 16.81 4.94 16.83 5.62 16.07 8.66 16.27 8.76 16.85 10.34 16.61 11.92 17.53 13.22 17.43 14.56 16.25 17.36 15.91 16.92 15.29 18.36 15.03 21.54 15.93 22.98 13.53ZM7.62 9.63 17.16 9.67 15.18 9.63 16.48 7.77 17.6 7.77 18.38 9.53 18.04 7.19 19.48 7.37 19.98 9.27 21.5 8.51 18.02 6.45 9.78 7.19 11.26 7.45 10.02 9.51ZM10.96 14.95a2 2.56 0 1 0 4 0a2 2.56 0 1 0 -4 0ZM11.86 14.95a1.1 1.41 0 1 0 2.2 0a1.1 1.41 0 1 0 -2.2 0ZM19.72 13.89a1.48 2.12 0 1 0 2.96 0a1.48 2.12 0 1 0 -2.96 0ZM20.39 13.89a0.81 1.17 0 1 0 1.63 0a0.81 1.17 0 1 0 -1.63 0Z" fill="currentColor" stroke="none" fill-rule="evenodd"/>',   // silhouet uit de eigen autofoto
   power:'<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/>',
   food:'<path d="M3 2v7a3 3 0 0 0 6 0V2M6 2v20M21 15V2a5 5 0 0 0-5 5v6h5zm0 0v7"/>',
   door:'<path d="M13 4h3a2 2 0 0 1 2 2v14M2 20h20M13 20V3.5a1 1 0 0 0-1.2-1L6 4v16"/><path d="M10 12v.01"/>',
