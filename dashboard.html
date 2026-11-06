@@ -388,6 +388,16 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .klim.uit .klim-modus { color:var(--text-muted); }
 .klim.uit .klim-val .doel { color:var(--text-muted); }
 .klim-modi { display:flex; gap:6px; margin-top:8px; }
+/* tado stuurt pas 7 s na de laatste wijziging door: rand loopt in 6 s vol, daarna 1 s bevestiging */
+.card.klim { position:relative; }
+.klim-ring { position:absolute; inset:-3px; width:calc(100% + 6px) !important; height:calc(100% + 6px) !important; pointer-events:none; overflow:visible; z-index:3; }
+.klim-ring rect { fill:none; stroke:var(--blue); stroke-width:3; stroke-linecap:round; stroke-dasharray:100 100; stroke-dashoffset:100;
+  animation:klimRing var(--duur,6s) linear forwards; filter:drop-shadow(0 0 4px rgba(84,191,240,.5)); }
+@keyframes klimRing { from { stroke-dashoffset:100; } to { stroke-dashoffset:0; } }
+.klim-ring.ok rect { stroke:var(--green); stroke-dashoffset:0; animation:none; filter:drop-shadow(0 0 5px rgba(61,214,140,.6)); }
+.klim-status { position:absolute; top:-11px; left:50%; transform:translateX(-50%); white-space:nowrap; z-index:4; font-size:var(--fs-micro);
+  font-weight:700; padding:3px 10px; border-radius:999px; background:var(--blue); color:#fff; pointer-events:none; }
+.klim-status.ok { background:var(--green); }
 .klim-modi button { flex:1; min-height:40px; border-radius:10px; border:1px solid var(--border2); background:var(--bg-inset);
   color:var(--text-secondary); font:inherit; font-size:var(--fs-micro); font-weight:700; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:2px; cursor:pointer; padding:4px 2px; }
@@ -1576,6 +1586,8 @@ const CONFIG = {
     },
   },
   // Klimaatpaneel (tik op "Klimaat" linksboven): alle apparaten voor verwarmen en koelen, per ruimte
+  // tado-airco's: tado wacht na de laatste wijziging nog ca. 7 s voordat hij doorstuurt (zodat je meerdere dingen kunt instellen)
+  klimVertraging: ['89bd8240-0bcd-41ce-a021-05a589436030', '61e4912b-8c24-4f88-8d46-c789313efdc2'],
   klimaatPaneel: [
     { id:'e2f02bdd-56ae-4d56-808b-ca8cca2e02cf', naam:'Thermostaat (Honeywell)', ruimte:'Woonkamer', icoon:'thermo' },
     { id:'89bd8240-0bcd-41ce-a021-05a589436030', naam:'Airco Woonkamer',         ruimte:'Woonkamer' },
@@ -1658,9 +1670,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '115';
+const DASHBOARD_VERSIE = '116';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'116', datum:'06-11-2026', punten:[ 'Airco (tado): na elke wijziging loopt er een blauwe rand rond de kaart. tado wacht na de laatste wijziging nog even, zodat je meerdere dingen kunt instellen. Elke nieuwe wijziging start de rand opnieuw. Na 6 seconden is de rand vol en zie je 1 seconde "Doorgestuurd".' ] },
   { v:'115', datum:'04-11-2026', punten:[ 'Banden: melding op het hoofddashboard vanaf een maand voor de wissel (winterbanden ca. 15 oktober, zomerbanden ca. 15 april; rood als de wissel al nodig is). Met "Afspraak gemaakt" en een datum verdwijnt hij tot die dag; dan vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.' ,
     'Nieuw auto-icoon: het silhouet van onze eigen auto, gemaakt uit de autofoto.'] },
   { v:'114', datum:'02-11-2026', punten:[ 'Na 1 minuut zonder aanraking gaat het dashboard vanzelf terug naar het hoofddashboard. Niet als je op dat moment iets invult (bijvoorbeeld banden of beleggingen).' ] },
@@ -2461,6 +2474,22 @@ const isUit = d => (heeft(d,'thermostat_cmode') && isOffWaarde(cap(d,'thermostat
                 || isOffWaarde(cap(d,'ac_mode')) || cap(d,'onoff') === false;
 const huidigeModus = d => isUit(d) ? '__uit' : String(cap(d,'ac_mode') ?? cap(d,'thermostat_cmode') ?? '');
 
+const KLIM_WACHT_MS = 6000, KLIM_OK_MS = 1000;
+var klimWacht = {};                               // id → { start, ok, t }
+function klimStart(id){
+  if(!CONFIG.klimVertraging?.includes(id)) return;
+  const w = klimWacht[id] || (klimWacht[id] = {});
+  clearTimeout(w.t); w.start = Date.now(); w.ok = false;
+  w.t = setTimeout(() => { w.ok = true; tekenKlimaat();
+    w.t = setTimeout(() => { delete klimWacht[id]; tekenKlimaat(); }, KLIM_OK_MS); }, KLIM_WACHT_MS);
+}
+function klimRing(id){
+  const w = klimWacht[id]; if(!w) return '';
+  const rest = Math.max(0, KLIM_WACHT_MS - (Date.now() - w.start));
+  return `<svg class="klim-ring ${w.ok ? 'ok' : ''}" aria-hidden="true" style="--duur:${KLIM_WACHT_MS}ms"><rect x="1.5" y="1.5" rx="16" pathLength="100"
+      style="width:calc(100% - 3px);height:calc(100% - 3px);animation-delay:-${KLIM_WACHT_MS - rest}ms"/></svg>
+    <span class="klim-status ${w.ok ? 'ok' : ''}" role="status">${w.ok ? '✓ Doorgestuurd' : 'Even wachten…'}</span>`;
+}
 function tekenKlimaat(){
   $('klimaat').innerHTML = CONFIG.klimaat.map(klimaatKaart).join('');
   if(klOpen) tekenKlimaatPaneel();
@@ -2474,7 +2503,7 @@ function klimaatKaart(k){
     const metDoel = typeof doel === 'number' && doel >= 5;
     const lijst = modi(d), uit = lijst.length && isUit(d);
     const huidig = lijst.find(m => String(m.id).toLowerCase() === huidigeModus(d).toLowerCase());
-    return `<div class="card klim ${uit ? 'uit' : ''}"><div class="row">
+    return `<div class="card klim ${uit ? 'uit' : ''}">${klimRing(k.id)}<div class="row">
       <div class="ico ${offline ? 'red' : uit || cap(d,'onoff') === false ? '' : k.icoon === 'thermo' ? 'amber' : 'blue'}">${ic(k.icoon || (k.naam.includes('spiegel') ? 'mirror' : 'ac'))}</div>
       <div class="grow"><div style="font-weight:700">${esc(k.naam)}${lijst.length && !offline ? ` <span class="klim-modus">${uit ? 'staat uit' : esc(huidig?.label || '')}</span>`
           : !offline && cap(d,'custom_thermostat_mode') ? ` <span class="klim-modus">${esc(({ heat:'Verwarmen', cool:'Koelen', off:'Uit', auto:'Auto' })[String(cap(d,'custom_thermostat_mode')).toLowerCase()] || cap(d,'custom_thermostat_mode'))}</span>`
@@ -3108,7 +3137,7 @@ async function zetModus(id, modus){
     }
     if(c.onoff && c.onoff.value === false) stappen.push(['onoff', true]);
   }
-  stappen.forEach(([k, v]) => c[k].value = v); tekenKlimaat();   // meteen tonen
+  stappen.forEach(([k, v]) => c[k].value = v); klimStart(id); tekenKlimaat();   // meteen tonen
   const ok = await opdracht(async () => { for(const [k, v] of stappen) await zetCap(id, k, v); });
   if(!ok){ if(c.thermostat_cmode) c.thermostat_cmode.value = oud.cmode; if(c.ac_mode) c.ac_mode.value = oud.mode;
            if(c.onoff) c.onoff.value = oud.onoff; tekenKlimaat(); }
@@ -4454,7 +4483,7 @@ async function temperatuur(id, stap){
   const d = dev(id), nu = cap(d,'target_temperature');
   if(typeof nu !== 'number') return;
   const nieuw = Math.round((nu + stap) * 2) / 2;
-  d.capabilitiesObj.target_temperature.value = nieuw; tekenKlimaat();
+  d.capabilitiesObj.target_temperature.value = nieuw; klimStart(id); tekenKlimaat();
   await opdracht(() => zetCap(id, 'target_temperature', nieuw));
 }
 async function mood(id, knop){
