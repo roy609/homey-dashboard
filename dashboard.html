@@ -807,6 +807,10 @@ body.christmas-theme .kerst-kaart { background:linear-gradient(135deg, rgba(214,
 body.christmas-theme .tile, body.christmas-theme .card.klikbaar, body.christmas-theme .segment button, body.christmas-theme .klim-modi button { transition:box-shadow .25s, border-color .25s, transform .12s; }
 @media (hover:hover){ body.christmas-theme .tile:hover, body.christmas-theme .card.klikbaar:hover { border-color:rgba(214,164,73,.55); box-shadow:var(--shadow), 0 0 20px rgba(214,164,73,.18); } }
 .xmas-laag { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+/* Eigen achtergrondafbeelding (img/kerst_achtergrond.*): vervangt de getekende boom, cadeautjes, ballen en guirlande */
+.xmas-foto-bg { position:absolute; inset:0; background-size:cover; background-position:center; }
+body.xmas-foto .xmas-boom, body.xmas-foto .xmas-cadeau, body.xmas-foto .xmas-hang, body.xmas-foto .xmas-bokeh, body.xmas-foto .kerst-slinger { display:none !important; }
+body.xmas-foto.christmas-theme { --bg-card:rgba(22,17,13,.70); --bg-inset:rgba(40,31,24,.66); }
 .xmas-laag * { pointer-events:none; }
 .xmas-laag canvas { position:absolute; inset:0; width:100%; height:100%; }
 .xmas-boom { position:absolute; left:-18px; bottom:-6px; width:170px; height:255px; }
@@ -2350,9 +2354,9 @@ function kerstBal(x, y, r, kl){
 function xmasLaag(aan){
   document.body.classList.toggle('christmas-theme', aan);
   let L = $('xmasLaag');
-  if(!aan){ if(L){ xmasSneeuwStop(); L.remove(); } return; }
+  if(!aan){ document.body.classList.remove('xmas-foto'); if(L){ xmasSneeuwStop(); L.remove(); } return; }
   if(!L){
-    document.body.insertAdjacentHTML('afterbegin', `<div class="xmas-laag" id="xmasLaag" aria-hidden="true">
+    document.body.insertAdjacentHTML('afterbegin', `<div class="xmas-laag" id="xmasLaag" aria-hidden="true"><div class="xmas-foto-bg" id="xmasFoto"></div>
       <div class="xmas-bokeh">${[[7,30,46],[15,62,30],[34,88,40],[58,18,26],[73,52,34],[88,82,44],[46,44,22],[96,36,28]].map(([x, y, r]) =>
         `<i style="left:${x}%;top:${y}%;width:${r}px;height:${r}px;opacity:${(.25 + (x % 7) / 20).toFixed(2)}"></i>`).join('')}</div>
       <canvas id="xmasSneeuw"></canvas>
@@ -2360,6 +2364,7 @@ function xmasLaag(aan){
       <div class="xmas-cadeau" id="xmasCadeau"><img alt="" src="${xmasSvgUrl(xmasCadeauSvg())}"></div>
       <div class="xmas-hang"><img alt="" src="${xmasSvgUrl(xmasHangSvg())}">${xmasHangLichtjes()}</div></div>`);
     L = $('xmasLaag');
+    xmasFotoZoek();
   }
   const nav = document.querySelector('.sidebar');
   const c = $('xmasCadeau'); if(c) c.style.left = ((nav?.getBoundingClientRect().width || 76) + 28) + 'px';
@@ -2430,6 +2435,15 @@ function xmasHangLichtjes(){
   const rnd = kerstRnd(77); let o = '';
   for(let i = 0; i < 12; i++) o += `<circle class="tw" cx="${(60 + rnd() * 128).toFixed(1)}" cy="${(6 + rnd() * 34).toFixed(1)}" r="1.8" fill="#FFF3D6" style="animation-delay:${(rnd() * 3.2).toFixed(2)}s;filter:drop-shadow(0 0 3px #FFD98E)"/>`;
   return `<svg viewBox="0 0 190 190" aria-hidden="true">${o}</svg>`;
+}
+/* Kijkt of er een eigen kerstachtergrond op de Homey staat; zo ja, dan die gebruiken i.p.v. de tekeningen */
+const XMAS_FOTO = ['img/kerst_achtergrond.webp', 'img/kerst_achtergrond.jpg', 'img/kerst_achtergrond.png'];
+function xmasFotoZoek(i = 0){
+  if(i >= XMAS_FOTO.length) return;
+  const im = new Image();
+  im.onload = () => { const f = $('xmasFoto'); if(!f) return; f.style.backgroundImage = `url("${XMAS_FOTO[i]}")`; document.body.classList.add('xmas-foto'); };
+  im.onerror = () => xmasFotoZoek(i + 1);
+  im.src = XMAS_FOTO[i];
 }
 /* Sneeuw: klein canvas, ~60 vlokjes, max ~30 fps, stopt vanzelf bij een verborgen tabblad (rAF) */
 var xmasSn = null;
