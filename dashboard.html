@@ -606,6 +606,9 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .gv-rij .row { justify-content:space-between; }
 .gv-naam { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .gv-w { font-weight:700; color:var(--amber); white-space:nowrap; }
+.gv-w small { margin-left:8px; font-weight:600; color:var(--text-muted); font-size:var(--fs-micro); }
+.e-nu-eur { font-size:var(--fs-sm); color:var(--text-muted); white-space:nowrap; } .e-nu-eur b { color:var(--text-primary); }
+.e-stat .card-sub b { color:var(--text-primary); font-weight:700; }
 .gv-bar { height:5px; border-radius:100px; background:rgba(128,128,128,.2); margin-top:5px; overflow:hidden; }
 .gv-bar i { display:block; height:100%; background:var(--amber); border-radius:100px; }
 .var-keuze { grid-column:1 / -1; }
@@ -1161,7 +1164,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     <div class="e-stats" id="eStats"></div>
     <div class="e-grid">
       <div class="card">
-        <div class="e-head"><div class="card-title">Energiestroom · nu</div></div>
+        <div class="e-head"><div class="card-title">Energiestroom · nu</div><span class="e-nu-eur" id="eNuEur"></span></div>
         <div id="flow"></div>
       </div>
       <div class="card">
@@ -1172,7 +1175,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     </div>
     <div class="e-grid3">
       <div class="card">
-        <div class="e-head"><div class="card-title">Zonne-energie</div></div>
+        <div class="e-head"><div class="card-title">Zonne-energie</div><span class="chip" id="zonKost"></span></div>
         <div class="e-tot" id="zonTot"></div>
         <div id="zonChart" class="chart"></div>
       </div>
@@ -1670,9 +1673,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '117';
+const DASHBOARD_VERSIE = '118';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'118', datum:'06-11-2026', punten:[ 'Energie: overal bedragen erbij. Stroomnet, huis en gas laten zien wat het vandaag kost. Bij teruglevering zie je wat je terugkrijgt. Bij de zonnepanelen zie je wat de zon waard is: zelf gebruikt (bespaard) plus de vergoeding voor teruglevering.', 'Energiestroom: wat het nú per uur kost of oplevert. Grootverbruikers: per apparaat wat het per uur kost bij het huidige vermogen.' ] },
   { v:'117', datum:'06-11-2026', punten:[ 'Kleine aanpassing in de bediening.' ] },
   { v:'116', datum:'06-11-2026', punten:[ 'Airco (tado): na elke wijziging loopt er een blauwe rand rond de kaart. tado wacht na de laatste wijziging nog even, zodat je meerdere dingen kunt instellen. Elke nieuwe wijziging start de rand opnieuw. Na 6 seconden is de rand vol en zie je 1 seconde "Doorgestuurd".', 'Airco Slaapkamer stond als onbereikbaar: de kaart was gekoppeld aan een oud airco-apparaat dat al een maand geen gegevens meer geeft. Hij gebruikt nu de tado-airco van de slaapkamer, ook voor de gemiddelde binnentemperatuur.' ] },
   { v:'115', datum:'04-11-2026', punten:[ 'Banden: melding op het hoofddashboard vanaf een maand voor de wissel (winterbanden ca. 15 oktober, zomerbanden ca. 15 april; rood als de wissel al nodig is). Met "Afspraak gemaakt" en een datum verdwijnt hij tot die dag; dan vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.' ,
@@ -3232,6 +3236,12 @@ function tekenTuin(){
 let REEKS = { p1:[], zon:[], gas:[], imp:[], exp:[] };   // Insights van vandaag
 const kWh = n => typeof n === 'number' ? nl(n, n < 10 ? 2 : 1) : '–';
 const euro = n => typeof n === 'number' ? '€ ' + nl(n, 2) : '';
+const euroPlusMin = n => typeof n !== 'number' ? '' : (n < 0 ? '− ' : '') + '€ ' + nl(Math.abs(n), 2);   // kosten; negatief = je krijgt geld terug
+/* Bedragen bij hoeveelheden (tarieven uit CONFIG.energie.tarieven) */
+const eStroomEur = k => typeof k === 'number' ? k * CONFIG.energie.tarieven.stroom : null;   // afgenomen of zelf gebruikt (bespaard)
+const eTerugEur  = k => typeof k === 'number' ? k * CONFIG.energie.tarieven.terug  : null;   // teruggeleverd
+const eGasEur    = m => typeof m === 'number' ? m * CONFIG.energie.tarieven.gas    : null;
+const eUurEur = w => w > 0 ? w / 1000 * CONFIG.energie.tarieven.stroom : -w / 1000 * CONFIG.energie.tarieven.terug;   // per uur bij dit vermogen
 const verschil = r => r.length > 1 ? r[r.length - 1].v - r[0].v : null;
 const varWaarde = id => typeof VARS[id]?.value === 'number' ? VARS[id].value : null;
 const wTekst = w => Math.abs(w) >= 1000 ? nl(w / 1000, 2) + ' kW' : Math.round(w) + ' W';
@@ -3312,30 +3322,34 @@ function tekenEnergie(){
   if(!$('page-energie')) return;
   const T = totalen();
   const TR = CONFIG.energie.tarieven;
+  // kosten = afname × stroomtarief − teruglevering × terugleververgoeding (geen salderen, zoals in de HomeWizard-app)
+  const sKost = T.imp != null && T.exp != null ? T.imp * TR.stroom - T.exp * TR.terug : T.netto != null ? T.netto * TR.stroom : null;
+  // waarde van de zon = wat je niet van het net hoeft te halen (zelf gebruikt × stroomtarief) + vergoeding voor teruglevering
+  const zonWaarde = T.zelf != null ? eStroomEur(T.zelf) + (eTerugEur(T.exp) || 0) : null;
   const stat = (titel, val, eenh, sub, kleur) => `<div class="card e-stat"><div class="card-title">${titel}</div>
     <div class="card-val" style="${kleur ? 'color:' + kleur : ''}">${val}<span class="u">${eenh}</span></div><div class="card-sub">${sub}</div></div>`;
   $('eStats').innerHTML =
-    stat('Stroomnet', kWh(T.netto), 'kWh', T.netto != null && T.netto < 0 ? 'Netto teruggeleverd' : 'Netto afgenomen', T.netto < 0 ? 'var(--green)' : '') +
-    stat('Zonnepanelen', kWh(T.zon), 'kWh', T.zelf != null ? `${kWh(T.zelf)} kWh zelf gebruikt` : 'Opgewekt vandaag', 'var(--amber)') +
-    stat('Huis', kWh(T.huis), 'kWh', 'Totaal verbruikt') +
-    stat('Gas', typeof T.gas === 'number' ? nl(T.gas, 2) : '–', 'm³', 'Verbruikt vandaag', 'var(--red)');
+    stat('Stroomnet', kWh(T.netto), 'kWh', (T.netto != null && T.netto < 0 ? 'Netto teruggeleverd' : 'Netto afgenomen') + (sKost != null ? ` · <b>${sKost < 0 ? euro(-sKost) + ' terug' : euro(sKost)}</b>` : ''), T.netto < 0 ? 'var(--green)' : '') +
+    stat('Zonnepanelen', kWh(T.zon), 'kWh', T.zelf != null ? `${kWh(T.zelf)} kWh zelf gebruikt · <b>${euro(zonWaarde)}</b> waard` : 'Opgewekt vandaag', 'var(--amber)') +
+    stat('Huis', kWh(T.huis), 'kWh', 'Totaal verbruikt' + (T.huis != null ? ` · <b>${euro(eStroomEur(T.huis))}</b> waard` : '')) +
+    stat('Gas', typeof T.gas === 'number' ? nl(T.gas, 2) : '–', 'm³', 'Verbruikt vandaag' + (typeof T.gas === 'number' ? ` · <b>${euro(eGasEur(T.gas))}</b>` : ''), 'var(--red)');
 
   // Stroom
-  $('stroomTot').innerHTML = `<div><b style="color:var(--blue)">${kWh(T.imp)}</b> kWh<small>Geïmporteerd</small></div>
-    <div><b style="color:var(--green)">${kWh(T.exp)}</b> kWh<small>Geëxporteerd</small></div>`;
-  // kosten = afname × stroomtarief − teruglevering × terugleververgoeding (geen salderen, zoals in de HomeWizard-app)
-  const sKost = T.imp != null && T.exp != null ? T.imp * TR.stroom - T.exp * TR.terug : T.netto != null ? T.netto * TR.stroom : null;
-  $('stroomKost').textContent = sKost != null ? euro(sKost) : '';
+  $('stroomTot').innerHTML = `<div><b style="color:var(--blue)">${kWh(T.imp)}</b> kWh<small>Geïmporteerd${T.imp != null ? ' · ' + euro(eStroomEur(T.imp)) : ''}</small></div>
+    <div><b style="color:var(--green)">${kWh(T.exp)}</b> kWh<small>Geëxporteerd${T.exp != null ? ' · + ' + euro(eTerugEur(T.exp)) : ''}</small></div>`;
+  $('stroomKost').textContent = sKost != null ? (sKost < 0 ? euro(-sKost) + ' terug' : euro(sKost)) : '';
   $('stroomKost').title = sKost != null && T.imp != null ? `${kWh(T.imp)} kWh × € ${nl(TR.stroom, 5)} − ${kWh(T.exp)} kWh × € ${nl(TR.terug, 2)}` : '';
   $('stroomChart').innerHTML = lijnGrafiek(REEKS.p1, { pos:'var(--blue)', neg:'var(--green)' });
 
   // Zon
-  $('zonTot').innerHTML = `<div><b style="color:var(--amber)">${kWh(T.zon)}</b> kWh<small>Opgewekt</small></div>
-    <div><b>${kWh(T.zelf)}</b> kWh<small>Zelf gebruikt</small></div>`;
+  $('zonTot').innerHTML = `<div><b style="color:var(--amber)">${kWh(T.zon)}</b> kWh<small>Opgewekt${zonWaarde != null ? ' · ' + euro(zonWaarde) + ' waard' : ''}</small></div>
+    <div><b>${kWh(T.zelf)}</b> kWh<small>Zelf gebruikt${T.zelf != null ? ' · ' + euro(eStroomEur(T.zelf)) + ' bespaard' : ''}</small></div>`;
+  $('zonKost').textContent = zonWaarde != null ? euro(zonWaarde) : '';
+  $('zonKost').title = zonWaarde != null ? `${kWh(T.zelf)} kWh zelf gebruikt × € ${nl(TR.stroom, 5)} + ${kWh(T.exp)} kWh terug × € ${nl(TR.terug, 2)}` : '';
   $('zonChart').innerHTML = lijnGrafiek(zonReeks(REEKS.zon), { pos:'var(--amber)', neg:'var(--amber)' });
 
   // Gas
-  $('gasTot').innerHTML = `<div><b style="color:var(--red)">${typeof T.gas === 'number' ? nl(T.gas, 2) : '–'}</b> m³<small>Verbruikt</small></div>`;
+  $('gasTot').innerHTML = `<div><b style="color:var(--red)">${typeof T.gas === 'number' ? nl(T.gas, 2) : '–'}</b> m³<small>Verbruikt${typeof T.gas === 'number' ? ' · ' + euro(eGasEur(T.gas)) : ''}</small></div>`;
   $('gasKost').textContent = typeof T.gas === 'number' ? euro(T.gas * TR.gas) : '';
   $('gasKost').title = typeof T.gas === 'number' ? `${nl(T.gas, 3)} m³ × € ${nl(TR.gas, 5)}` : '';
   // contract verlopen: herinnering om tarieven bij te werken (hier én in de HomeWizard-app)
@@ -3392,6 +3406,7 @@ function tekenEnergieLive(){
   const zet = (id, t) => { const el = $(id); if(el) el.textContent = t; const h = $('h_' + id); if(h) h.textContent = t; };
   zet('fNetW', net < -20 ? '← ' + wTekst(-net) : net > 20 ? '→ ' + wTekst(net) : '0 W');
   zet('fNetSub', T.imp != null ? `↓ ${kWh(T.imp)} · ↑ ${kWh(T.exp)} kWh` : '');
+  { const e = $('eNuEur'); if(e) e.innerHTML = Math.abs(net) > 20 ? (net > 0 ? `Nu <b>${euro(eUurEur(net))}</b> per uur van het net` : `Nu <b>+ ${euro(eUurEur(net))}</b> per uur terug`) : 'Nu geen afname of teruglevering'; }
   zet('fZonW', wTekst(zon));
   { const n = $('fZonNaam'); if(n) zet('fZonNaam', (n.dataset.naam || 'Zon') + (ZV.rust ? ' · in rust' : '')); }
   zet('fZonSub', typeof T.zon === 'number' ? `${kWh(T.zon)} kWh vandaag` : '');
@@ -3414,7 +3429,7 @@ function tekenEnergieLive(){
   lijst.sort((a,b) => b.w - a.w);
   const top = lijst.slice(0, 6), max = top[0]?.w || 1;
   $('grootverbruikers').innerHTML = top.length ? `<div class="gv">${top.map(x => `<div class="gv-rij">
-      <div class="row"><span class="gv-naam">${esc(x.naam)}</span><span class="gv-w">${wTekst(x.w)}</span></div>
+      <div class="row"><span class="gv-naam">${esc(x.naam)}</span><span class="gv-w">${wTekst(x.w)}<small>${euro(eUurEur(x.w))}/uur</small></span></div>
       <div class="gv-bar"><i style="width:${Math.max(3, x.w / max * 100)}%"></i></div></div>`).join('')}</div>`
     : '<p class="leeg" style="margin-top:8px">Nu geen apparaten met een vermogensmeting actief.</p>';
 }
