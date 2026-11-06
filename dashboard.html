@@ -743,6 +743,40 @@ h1.met-icoon { position:relative; }
 .kk-knoppen button.on { border-color:rgba(251,191,36,.6); color:#FBBF24; background:rgba(251,191,36,.12); }
 .kk-knoppen button:disabled { opacity:.45; cursor:default; }
 @media (prefers-reduced-motion:reduce){ .kerst-slinger .tw { animation:none; } }
+/* Kerststijlen (CONFIG.kerst.stijl): a = warm wit, b = klassiek rood/groen, c = goud & kaarslicht */
+body[data-kerst] #page-home { padding-top:14px; }
+body[data-kerst] .kerst-slinger { left:-22px; right:-22px; top:-34px; height:46px; }
+.kerst-kaart { position:relative; overflow:visible; }
+.kk-tak { position:absolute; pointer-events:none; width:96px !important; height:64px !important; stroke:none; overflow:visible; }
+.kk-tak.l { left:-10px; top:-12px; } .kk-tak.r { right:-8px; top:-18px; transform:scaleX(-1) rotate(-18deg); width:80px !important; height:44px !important; }
+.kerst-hoek { position:fixed; pointer-events:none; z-index:1; width:150px !important; height:110px !important; stroke:none; overflow:visible; }
+.kerst-hoek.lb { left:0; top:0; } .kerst-hoek.rb { right:0; bottom:0; transform:rotate(180deg); }
+:root:not([data-theme="light"]) body[data-kerst="a"] {
+  --bg-main:#15110E; --bg-nav:#18130F; --bg-card:rgba(52,42,34,.58); --bg-inset:rgba(74,60,48,.58);
+  --border:rgba(255,230,200,.08); --border2:rgba(255,230,200,.15); --text-muted:#A39586;
+  --mesh-bg: radial-gradient(900px 650px at 12% 12%, rgba(255,190,110,.20), transparent 60%),
+    radial-gradient(800px 750px at 88% 10%, rgba(255,150,90,.13), transparent 60%),
+    radial-gradient(950px 850px at 82% 95%, rgba(214,120,60,.14), transparent 60%),
+    radial-gradient(800px 700px at 8% 92%, rgba(255,210,150,.10), transparent 60%),
+    linear-gradient(160deg, #1E1813 0%, #120E0B 100%); }
+:root:not([data-theme="light"]) body[data-kerst="b"] {
+  --bg-main:#14100F; --bg-nav:#171110; --bg-card:rgba(50,36,34,.58); --bg-inset:rgba(72,52,48,.58);
+  --border:rgba(255,220,200,.08); --border2:rgba(255,220,200,.15); --text-muted:#A69289;
+  --mesh-bg: radial-gradient(900px 650px at 10% 12%, rgba(200,40,50,.22), transparent 60%),
+    radial-gradient(800px 750px at 90% 10%, rgba(255,190,100,.14), transparent 60%),
+    radial-gradient(950px 850px at 82% 95%, rgba(30,120,70,.24), transparent 60%),
+    radial-gradient(800px 700px at 6% 92%, rgba(170,30,40,.14), transparent 60%),
+    linear-gradient(160deg, #1D1513 0%, #110D0C 100%); }
+:root:not([data-theme="light"]) body[data-kerst="c"] {
+  --bg-main:#16110B; --bg-nav:#19130C; --bg-card:rgba(56,44,30,.58); --bg-inset:rgba(80,62,40,.58);
+  --border:rgba(255,220,160,.09); --border2:rgba(255,220,160,.17); --text-muted:#A99878; --amber:#FFB938;
+  --mesh-bg: radial-gradient(900px 650px at 12% 12%, rgba(255,184,64,.24), transparent 60%),
+    radial-gradient(800px 750px at 88% 10%, rgba(255,140,50,.15), transparent 60%),
+    radial-gradient(950px 850px at 80% 95%, rgba(150,90,30,.22), transparent 60%),
+    radial-gradient(800px 700px at 6% 92%, rgba(40,90,55,.18), transparent 60%),
+    linear-gradient(160deg, #201810 0%, #120D08 100%); }
+body[data-kerst="b"] .kerst-kaart { background:linear-gradient(135deg, rgba(200,40,50,.22), rgba(30,120,70,.16)); border-color:rgba(230,80,80,.35); }
+body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,190,80,.22), rgba(255,190,80,.05)); border-color:rgba(255,200,110,.45); }
 #page-home .top-meldingen { grid-column:1 / -1; display:flex; flex-wrap:wrap; align-items:center; gap:10px; min-width:0; }
 .rdw-chips { display:contents; }
 /* Pakjes: met informatie één blok (label + plusje), zonder informatie alleen het plusje */
@@ -1629,7 +1663,7 @@ const CONFIG = {
   // Pakjes: apparaat "Pakjes" van de app Parcel Tracker (leeg = automatisch het apparaat met parcels_active)
   pakjes: { id:'f6d1803c-bb0a-40b7-aa34-e602d3d9b408', voor:['Roy','Beau'] },
   // Kerst: variabele "Kerst Flows" (aan = 's avonds de kerstbeelden van het huis)
-  kerst: { var:'0ca37567-f5aa-4c86-b307-60479d76a1b9',
+  kerst: { var:'0ca37567-f5aa-4c86-b307-60479d76a1b9', stijl:'b',   // stijl: a = warm wit, b = klassiek rood/groen, c = goud & kaarslicht
     knoppen:[ { id:'781ca335-d31d-4593-8fde-ef6e8b604d0f', naam:'🎄 Boom' },          // Kerstboom
               { id:'2cc78e9c-a95b-4342-b7a9-bc963cced790', naam:'Voor' },             // Kerstverlichting Voortuin
               { id:'2953ad44-a2c2-44f5-930e-a071674e3b27', naam:'Achter' },           // Kerstverlichting Achtertuin
@@ -2211,21 +2245,69 @@ function kerstKaartHtml(){
   const knoppen = (CONFIG.kerst?.knoppen || []).map(k => { const d = dev(k.id); if(!d) return '';
     const aan = cap(d,'onoff') === true, uit = d.available === false;
     return `<button class="${aan ? 'on' : ''}" data-tegel="${esc(k.id)}" data-soort="schakelaar" ${uit ? 'disabled title="Niet bereikbaar"' : ''} aria-pressed="${aan}">${esc(k.naam)}</button>`; }).join('');
-  return `<div class="card kerst-kaart"><span class="boom" aria-hidden="true">🎄</span><div style="min-width:0"><b>${kop}</b><small>${sub}</small></div><div class="kk-knoppen">${knoppen}</div></div>`;
+  const st = kerstStijl();
+  return `<div class="card kerst-kaart">${kerstHoekSvg('kk-tak l', 96, 64, 3, st, 3)}${st !== 'a' ? kerstHoekSvg('kk-tak r', 96, 64, 3, st, 5) : ''}<span class="boom" aria-hidden="true">🎄</span><div style="min-width:0"><b>${kop}</b><small>${sub}</small></div><div class="kk-knoppen">${knoppen}</div></div>`;
 }
 /* Lichtjes en sneeuwkapje aan/uit met de kerstmodus */
 let kerstSlingerW = 0;
 function tekenKerst(){
   const aan = kerstAan(), sl = $('kerstSlinger'), lg = $('logoSneeuw');
   if(lg) lg.hidden = !aan;
+  if(aan) document.body.dataset.kerst = kerstStijl(); else delete document.body.dataset.kerst;
+  document.querySelectorAll('.kerst-hoek').forEach(e => e.remove());
+  if(aan && kerstStijl() === 'c') document.querySelector('.main')?.insertAdjacentHTML('beforeend', kerstHoekSvg('kerst-hoek rb', 150, 110, 5, 'c', 11));
   if(!sl) return;
   sl.hidden = !aan; if(!aan){ kerstSlingerW = 0; return; }
-  const W = Math.round(sl.getBoundingClientRect().width); if(!W || W === kerstSlingerW) return;
-  kerstSlingerW = W;
-  const n = Math.floor(W / 22), pts = [];
-  for(let i = 0; i <= n; i++) pts.push([i * W / n, 4 + 5 * Math.sin(i / n * Math.PI * 6) ** 2]);
-  sl.innerHTML = `<svg viewBox="0 0 ${W} 24"><polyline points="${pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-    ${pts.map(([x, y], i) => `<circle class="tw" cx="${x.toFixed(1)}" cy="${(y + 1).toFixed(1)}" r="2.2" fill="#FFE2A8" style="animation-delay:${((i * .41) % 2.6).toFixed(2)}s;filter:drop-shadow(0 0 4px #FFD27A) drop-shadow(0 0 8px rgba(255,200,110,.6))"/>`).join('')}</svg>`;
+  const stijl = kerstStijl();
+  const W = Math.round(sl.getBoundingClientRect().width); if(!W || (W === kerstSlingerW && sl.dataset.stijl === stijl)) return;
+  kerstSlingerW = W; sl.dataset.stijl = stijl;
+  const H = 46, rnd = kerstRnd(7), n = Math.floor(W / 22), pts = [];
+  const golf = x => 14 + 9 * Math.sin(x / W * Math.PI * 6) ** 2;
+  for(let i = 0; i <= n; i++){ const x = i * W / n; pts.push([x, golf(x) + 4]); }
+  let takken = '';                                            // dennentakken langs de slinger
+  for(let x = -10; x < W + 20; x += 26){
+    const y = golf(x);
+    takken += kerstTak(x, y, 30 + rnd() * 10, (rnd() < .5 ? 0 : Math.PI) + (rnd() - .5) * .5, rnd);
+  }
+  let deco = '';                                              // ballen en bessen
+  if(stijl !== 'a') for(let x = 40, i = 0; x < W - 20; x += 70 + rnd() * 40, i++){
+    const y = golf(x) + 10, kl = stijl === 'b' ? (i % 3 === 1 ? '#E9B949' : '#C8232C') : (i % 3 === 1 ? '#B22A2A' : '#E8B13C');
+    deco += kerstBal(x, y, 5 + rnd() * 2, kl);
+    if(stijl === 'b') deco += [[-9,-3],[-6,1],[-11,2]].map(([dx, dy]) => `<circle cx="${(x + dx).toFixed(1)}" cy="${(y - 6 + dy).toFixed(1)}" r="2" fill="#D4202A"/>`).join('');
+  }
+  sl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="stroke:none">${takken}
+    <polyline points="${pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="rgba(60,40,20,.5)" stroke-width="1"/>${deco}
+    ${pts.map(([x, y], i) => `<circle class="tw" cx="${x.toFixed(1)}" cy="${(y + 1).toFixed(1)}" r="2.3" fill="${stijl === 'b' && i % 4 === 2 ? '#FF8A7A' : '#FFE2A8'}" style="animation-delay:${((i * .41) % 2.6).toFixed(2)}s;filter:drop-shadow(0 0 4px #FFD27A) drop-shadow(0 0 8px rgba(255,200,110,.6))"/>`).join('')}</svg>`;
+}
+const kerstStijl = () => ['a','b','c'].includes(kerstStijlTest || CONFIG.kerst?.stijl) ? (kerstStijlTest || CONFIG.kerst.stijl) : 'b';
+var kerstStijlTest = null;
+function kerstRnd(z){ return () => (z = (z * 16807) % 2147483647) / 2147483647; }
+/* Dennentak: steel met naaldjes aan beide kanten, getekend vanaf (x,y) in richting a */
+function kerstTak(x, y, len, a, rnd){
+  const groen = ['#1E5A3A','#2A7048','#17482E','#357E52','#22603F'];
+  const dx = Math.cos(a), dy = Math.sin(a); let o = `<path d="M${x.toFixed(1)} ${y.toFixed(1)}l${(dx * len).toFixed(1)} ${(dy * len).toFixed(1)}" stroke="#4A3524" stroke-width="1.6" fill="none"/>`;
+  for(let t = 0; t < len; t += 2.2){
+    const px = x + dx * t, py = y + dy * t, l = (8.5 - 3.5 * t / len) * (.85 + rnd() * .3);
+    for(const kant of [-1, 1]){
+      const b = a + kant * (0.95 + rnd() * .3);
+      o += `<path d="M${px.toFixed(1)} ${py.toFixed(1)}l${(Math.cos(b) * l).toFixed(1)} ${(Math.sin(b) * l).toFixed(1)}" stroke="${groen[Math.floor(rnd() * groen.length)]}" stroke-width="1.4" stroke-linecap="round" fill="none"/>`;
+    }
+  }
+  return o;
+}
+function kerstBal(x, y, r, kl){
+  return `<path d="M${x.toFixed(1)} ${(y - r - 5).toFixed(1)}v5" stroke="rgba(230,200,140,.6)" stroke-width=".8" fill="none"/>
+    <rect x="${(x - 1.6).toFixed(1)}" y="${(y - r - 1.5).toFixed(1)}" width="3.2" height="2.2" rx=".5" fill="#C9A45C"/>
+    <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${kl}"/>
+    <circle cx="${(x - r * .35).toFixed(1)}" cy="${(y - r * .35).toFixed(1)}" r="${(r * .3).toFixed(1)}" fill="rgba(255,255,255,.45)"/>`;
+}
+/* Hoekje met dennentakken (kerstkaartje en schermhoeken) */
+function kerstHoekSvg(cls, w, h, aantal, stijl, zaad){
+  const rnd = kerstRnd(zaad); let o = '';
+  for(let i = 0; i < aantal; i++) o += kerstTak(0, 0, w * (.5 + rnd() * .3), .08 + i * (.75 / Math.max(1, aantal - 1)) + (rnd() - .5) * .12, rnd);
+  if(stijl !== 'a'){ o += kerstBal(w * .32, h * .52, 6, stijl === 'b' ? '#C8232C' : '#E8B13C'); o += kerstBal(w * .55, h * .3, 4.5, stijl === 'b' ? '#E9B949' : '#B22A2A'); }
+  if(stijl === 'b') o += [[16,14],[20,18],[13,19]].map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="2.4" fill="#D4202A"/>`).join('');
+  return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${o}</svg>`;
 }
 window.addEventListener('resize', () => { kerstSlingerW = 0; tekenKerst(); });
 
