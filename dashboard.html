@@ -512,6 +512,13 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .chip { font-size:var(--fs-sm); font-weight:700; padding:3px 10px; border-radius:100px; background:var(--blue-dim); color:var(--blue); }
 .chip:empty { display:none; }
 .e-tot { display:flex; gap:18px; margin:6px 0 4px; flex-wrap:wrap; }
+.e-per { display:flex; align-items:center; gap:8px; margin-left:auto; margin-right:12px; }
+.e-per-seg { margin-top:0; padding:3px; } .e-per-seg button { min-height:40px; padding:0 16px; }
+.e-pijl { width:44px; height:44px; border-radius:12px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:1.5rem; line-height:1; cursor:pointer; }
+.e-pijl:disabled { opacity:.3; cursor:default; }
+.e-per-label { min-width:150px; text-align:center; font-weight:700; font-size:var(--fs-md); }
+.e-hist .e-live { opacity:.92; }
+@media (max-width:1000px){ .e-per-label { min-width:0; } }
 .e-tot b { font-size:1.35rem; font-weight:800; letter-spacing:-.02em; }
 .e-tot small { display:block; font-size:var(--fs-micro); color:var(--text-muted); }
 .chart svg { width:100%; height:auto; display:block; }
@@ -1158,6 +1165,12 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <section class="page" id="page-energie">
     <div class="statusbar">
       <h1>Energie</h1>
+      <div class="e-per" id="ePer">
+        <div class="segment e-per-seg"><button data-eper="dag" class="on">Dag</button><button data-eper="week">Week</button></div>
+        <button class="e-pijl" data-eoff="1" aria-label="Eerder">‹</button>
+        <span class="e-per-label" id="ePerLabel">Vandaag</span>
+        <button class="e-pijl" data-eoff="-1" aria-label="Later">›</button>
+      </div>
       <span class="pill" id="eStand"><i></i><span>Vandaag</span></span>
     </div>
     <div class="tarief-let" id="tariefWaarschuwing" hidden></div>
@@ -1673,9 +1686,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '118';
+const DASHBOARD_VERSIE = '119';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'119', datum:'06-11-2026', punten:[ 'Energie: bovenaan kies je Dag of Week. Met de pijltjes ga je terug naar gisteren, eerdere dagen of vorige weken (tot ongeveer een maand terug). Alle standen, grafieken en bedragen gaan mee. In de weekweergave zie je staafjes per dag: afname en teruglevering, zonne-opbrengst en gas.', 'Energiestroom en grootverbruikers blijven altijd "nu". Open je de energiepagina, dan staat hij weer op vandaag.' ] },
   { v:'118', datum:'06-11-2026', punten:[ 'Energie: overal bedragen erbij. Stroomnet, huis en gas laten zien wat het vandaag kost. Bij teruglevering zie je wat je terugkrijgt. Bij de zonnepanelen zie je wat de zon waard is: zelf gebruikt (bespaard) plus de vergoeding voor teruglevering.', 'Energiestroom: wat het nú per uur kost of oplevert. Grootverbruikers: per apparaat wat het per uur kost bij het huidige vermogen.' ] },
   { v:'117', datum:'06-11-2026', punten:[ 'Kleine aanpassing in de bediening.' ] },
   { v:'116', datum:'06-11-2026', punten:[ 'Airco (tado): na elke wijziging loopt er een blauwe rand rond de kaart. tado wacht na de laatste wijziging nog even, zodat je meerdere dingen kunt instellen. Elke nieuwe wijziging start de rand opnieuw. Na 6 seconden is de rand vol en zie je 1 seconde "Doorgestuurd".', 'Airco Slaapkamer stond als onbereikbaar: de kaart was gekoppeld aan een oud airco-apparaat dat al een maand geen gegevens meer geeft. Hij gebruikt nu de tado-airco van de slaapkamer, ook voor de gemiddelde binnentemperatuur.' ] },
@@ -2018,6 +2032,20 @@ DEMO_DEVICES['rdw-demo'] = { id:'rdw-demo', name:'RDW (demo)', class:'other', zo
 DEMO_DEVICES['p3'] = { id:'p3', name:'Koelkast', class:'socket', zone:Z.keuken, available:true, capabilitiesObj:{ onoff:{value:true}, measure_power:{value:85} } };
 
 /* Demo-reeksen voor vandaag (5 minuten per punt), lijken op een herfstdag */
+function demoHistorie(){                                   // demo: nepgegevens voor een eerdere dag/week
+  const [t0, t1] = eBereik(), uit = { p1:[], zon:[], gas:[], imp:[], exp:[], zonM:[] };
+  let imp = 12000, exp = 10000, gas = 1500, zm = 15000;
+  for(let t = t0 - 36e5; t <= Math.min(t1, Date.now()); t += 36e5){
+    const u = new Date(t).getHours(), dag = Math.floor((t - t0) / 864e5), f = .6 + .4 * Math.abs(Math.sin(dag * 1.7 + 1));
+    const zon = Math.max(0, Math.sin((u - 8) / 9.5 * Math.PI)) * 1700 * f, huis = 330 + (u > 17 && u < 22 ? 850 : 0);
+    const p1 = huis - zon; imp += Math.max(0, p1) / 1000; exp += Math.max(0, -p1) / 1000; zm += zon / 1000;
+    gas += (u > 6 && u < 9) || (u > 17 && u < 21) ? .14 * f : .02;
+    uit.p1.push({ t, v:Math.round(p1) }); uit.zon.push({ t, v:Math.round(zon) }); uit.imp.push({ t, v:imp }); uit.exp.push({ t, v:exp });
+    uit.gas.push({ t, v:gas }); uit.zonM.push({ t, v:zm });
+  }
+  ['p1','zon'].forEach(k => uit[k] = uit[k].filter(p => p.t >= t0));
+  return uit;
+}
 function demoReeksen(){
   const start = new Date(); start.setHours(0,0,0,0);
   const nu = Date.now(), uit = { p1:[], zon:[], gas:[], imp:[], exp:[] };
@@ -3233,7 +3261,45 @@ function tekenTuin(){
 /* ═════════════════════════════════════════════
    ENERGIE
 ═════════════════════════════════════════════ */
-let REEKS = { p1:[], zon:[], gas:[], imp:[], exp:[] };   // Insights van vandaag
+let REEKS = { p1:[], zon:[], gas:[], imp:[], exp:[] };   // Insights van de gekozen periode (standaard vandaag)
+/* Periode op de energiepagina: dag of week, off = hoeveel dagen/weken terug. Standaard vandaag. */
+var ePer = { soort:'dag', off:0 };
+const E_MAX = { dag:30, week:3 };                            // Insights bewaart fijne gegevens ca. 31 dagen
+const eVandaag = () => ePer.soort === 'dag' && ePer.off === 0;
+function eBereik(){
+  const s = new Date(); s.setHours(0,0,0,0);
+  if(ePer.soort === 'dag'){ s.setDate(s.getDate() - ePer.off); const e = new Date(s); e.setDate(e.getDate() + 1); return [s.getTime(), e.getTime()]; }
+  s.setDate(s.getDate() - ((s.getDay() + 6) % 7) - 7 * ePer.off);          // maandag
+  const e = new Date(s); e.setDate(e.getDate() + 7); return [s.getTime(), e.getTime()];
+}
+function eResolutie(){
+  const dagenTerug = Math.ceil((Date.now() - eBereik()[0]) / 864e5);
+  if(eVandaag()) return 'today';
+  if(ePer.soort === 'dag' && ePer.off === 1) return 'yesterday';
+  return dagenTerug <= 7 ? 'last7Days' : dagenTerug <= 14 ? 'last14Days' : 'last31Days';
+}
+const E_MND = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const eDatum = t => { const d = new Date(t); return `${d.getDate()} ${E_MND[d.getMonth()]}`; };
+function eLabel(){
+  const [t0, t1] = eBereik();
+  if(ePer.soort === 'dag') return ePer.off === 0 ? 'Vandaag' : ePer.off === 1 ? 'Gisteren'
+    : new Date(t0).toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' });
+  return ePer.off === 0 ? 'Deze week' : ePer.off === 1 ? 'Vorige week' : `${eDatum(t0)} – ${eDatum(t1 - 1)}`;
+}
+const eWoord = () => { const l = eLabel(); return /^(Vandaag|Gisteren|Deze week|Vorige week)$/.test(l) ? l.toLowerCase() : (ePer.soort === 'dag' ? 'op ' : 'in ') + l; };
+/* Tellerstand op tijdstip t (laatste meting op of vóór t; anders de eerste erna) */
+function stand(r, t){
+  if(!r?.length) return null;
+  let v = null; for(const p of r){ if(p.t <= t) v = p.v; else { if(v == null) v = p.v; break; } }
+  return v;
+}
+const deltaIn = (r, t0, t1) => { const a = stand(r, t0), b = stand(r, Math.min(t1, Date.now())); return a != null && b != null ? Math.max(0, b - a) : null; };
+/* Opbrengstmeter van de omvormer geeft soms losse nul-/tussenwaarden; alleen oplopende standen gebruiken */
+const schoonTeller = r => { let m = -Infinity; return (r || []).filter(p => { if(p.v >= m * .995 && p.v > 0){ m = Math.max(m, p.v); return true; } return false; }); };
+function ePerDag(r){                                        // week: verbruik per dag (ma … zo) uit een tellerstand
+  const [t0] = eBereik();
+  return [...Array(7)].map((_, i) => { const a = t0 + i * 864e5; return a > Date.now() ? null : deltaIn(r, a, a + 864e5); });
+}
 const kWh = n => typeof n === 'number' ? nl(n, n < 10 ? 2 : 1) : '–';
 const euro = n => typeof n === 'number' ? '€ ' + nl(n, 2) : '';
 const euroPlusMin = n => typeof n !== 'number' ? '' : (n < 0 ? '− ' : '') + '€ ' + nl(Math.abs(n), 2);   // kosten; negatief = je krijgt geld terug
@@ -3255,11 +3321,11 @@ const INSIGHT_VORMEN = [
   (d, c) => `/api/manager/insights/log/homey:device:${d}/${c}/entry`,
   (d, c) => `/api/manager/insights/log/${encodeURIComponent('homey:device:' + d + ':' + c)}/entry`,
 ];
-async function insight(devId, capId){
+async function insight(devId, capId, res = 'today'){
   const vormen = insightVorm != null ? [insightVorm, ...INSIGHT_VORMEN.keys()].filter((v, i, a) => a.indexOf(v) === i) : [...INSIGHT_VORMEN.keys()];
   let r, laatsteFout;
   for(const i of vormen){
-    try { r = await homey(INSIGHT_VORMEN[i](devId, capId) + '?resolution=today'); insightVorm = i; laatsteFout = null; break; }
+    try { r = await homey(INSIGHT_VORMEN[i](devId, capId) + '?resolution=' + res); insightVorm = i; laatsteFout = null; break; }
     catch(e){ laatsteFout = e; if(!/HTTP 404|HTTP 400/.test(e.message)) break; }
   }
   if(laatsteFout) throw laatsteFout;
@@ -3282,7 +3348,8 @@ let energieGeladen = 0;
 async function laadEnergie(forceer){
   if(!forceer && Date.now() - energieGeladen < 4 * 60000) return;
   energieGeladen = Date.now();
-  if(DEMO()){ REEKS = demoReeksen(); tekenEnergie(); return; }
+  if(DEMO()){ REEKS = eVandaag() ? demoReeksen() : demoHistorie(); $('eStand').className = 'pill'; $('eStand').lastElementChild.textContent = eVandaag() ? 'Live' : 'Insights'; tekenEnergie(); return; }
+  if(!eVandaag()) return laadEnergieHist();
   const P1 = CONFIG.apparaten.p1, ZON = CONFIG.apparaten.zon;
   const vraag = [[P1,'measure_power','p1'],[ZON,'measure_power','zon'],[P1,'meter_gas','gas'],
                  [P1,'meter_power.consumed','imp'],[P1,'meter_power.returned','exp']];
@@ -3303,11 +3370,56 @@ async function laadEnergie(forceer){
   const fout = res.find(r => r.status === 'rejected');
   $('eStand').className = 'pill ' + (fout ? 'fout' : '');
   $('eStand').lastElementChild.textContent = fout
-    ? (/40[13]/.test(fout.reason?.message) ? 'Geen rechten voor Insights' : 'Grafieken niet geladen') : 'Vandaag';
+    ? (/40[13]/.test(fout.reason?.message) ? 'Geen rechten voor Insights' : 'Grafieken niet geladen') : 'Live';
   tekenEnergie();
 }
 
+/* Gekozen dag of week ophalen: tellerstanden (stroom in/uit, gas, opbrengst zon) en voor een dag ook het vermogen */
+let eHistSleutel = '';
+async function laadEnergieHist(){
+  const sleutel = ePer.soort + ePer.off, [t0, t1] = eBereik(), res = eResolutie();
+  eHistSleutel = sleutel;
+  $('eStand').className = 'pill'; $('eStand').lastElementChild.textContent = 'Laden…';
+  const P1 = CONFIG.apparaten.p1, ZON = CONFIG.apparaten.zon;
+  const vraag = [[P1,['meter_power.consumed'],'imp'],[P1,['meter_power.returned'],'exp'],[P1,['meter_gas'],'gas'],[ZON,['meter_power'],'zonM']];
+  if(ePer.soort === 'dag') vraag.push([P1,['energy_power','measure_power'],'p1'], [ZON,['measure_solar_power','energy_power','measure_power'],'zon']);
+  const eerst = async (d, caps) => { let fout; for(const c of caps){ try { const r = await insight(d, c, res); if(r.length) return r; } catch(e){ fout = e; } } if(fout) throw fout; return []; };
+  const res2 = await Promise.allSettled(vraag.map(([d, c]) => eerst(d, c)));
+  if(eHistSleutel !== sleutel) return;                     // intussen een andere periode gekozen
+  const marge = 6 * 36e5, nieuw = { p1:[], zon:[], gas:[], imp:[], exp:[], zonM:[] };
+  res2.forEach((r, i) => { if(r.status === 'fulfilled') nieuw[vraag[i][2]] = r.value.filter(p => p.t >= t0 - marge && p.t <= t1 + marge); });
+  nieuw.zonM = schoonTeller(nieuw.zonM);
+  ['p1','zon'].forEach(k => nieuw[k] = nieuw[k].filter(p => p.t >= t0 && p.t <= t1));
+  REEKS = nieuw;
+  const fout = res2.find(r => r.status === 'rejected');
+  $('eStand').className = 'pill ' + (fout ? 'fout' : '');
+  $('eStand').lastElementChild.textContent = fout ? 'Niet alles geladen' : res === 'last31Days' ? 'Per 6 uur' : 'Insights';
+  tekenEnergie();
+}
+function ePeriode(soort, stap){
+  if(soort) ePer = { soort, off:0 };
+  if(stap) ePer.off = Math.max(0, Math.min(E_MAX[ePer.soort], ePer.off + stap));
+  energieGeladen = 0; REEKS = { p1:[], zon:[], gas:[], imp:[], exp:[], zonM:[] };
+  tekenEPer(); tekenEnergie(); laadEnergie(true);
+}
+function tekenEPer(){
+  document.querySelectorAll('[data-eper]').forEach(b => b.classList.toggle('on', b.dataset.eper === ePer.soort));
+  const l = $('ePerLabel'); if(l) l.textContent = eLabel();
+  const [terug, vooruit] = document.querySelectorAll('[data-eoff]');
+  if(terug) terug.disabled = ePer.off >= E_MAX[ePer.soort];
+  if(vooruit) vooruit.disabled = ePer.off === 0;
+  $('page-energie')?.classList.toggle('e-hist', !eVandaag());
+}
 function totalen(){
+  if(!eVandaag()){                                         // gekozen dag of week: alles uit de tellerstanden in Insights
+    const [t0, t1] = eBereik();
+    const imp = deltaIn(REEKS.imp, t0, t1), exp = deltaIn(REEKS.exp, t0, t1), gas = deltaIn(REEKS.gas, t0, t1);
+    const zon = deltaIn(REEKS.zonM, t0, t1);
+    const netto = imp != null && exp != null ? imp - exp : null;
+    const huis = netto != null && zon != null ? netto + zon : null;
+    const zelf = zon != null && exp != null ? Math.max(0, zon - exp) : null;
+    return { imp, exp, zon, gas, netto, huis, zelf };
+  }
   const P1 = dev(CONFIG.apparaten.p1), ZON = dev(CONFIG.apparaten.zon);
   const imp = verschil(REEKS.imp), exp = verschil(REEKS.exp);
   const zon = cap(ZON,'measure_generation_today') ?? verschil(REEKS.zon);
@@ -3332,21 +3444,24 @@ function tekenEnergie(){
     stat('Stroomnet', kWh(T.netto), 'kWh', (T.netto != null && T.netto < 0 ? 'Netto teruggeleverd' : 'Netto afgenomen') + (sKost != null ? ` · <b>${sKost < 0 ? euro(-sKost) + ' terug' : euro(sKost)}</b>` : ''), T.netto < 0 ? 'var(--green)' : '') +
     stat('Zonnepanelen', kWh(T.zon), 'kWh', T.zelf != null ? `${kWh(T.zelf)} kWh zelf gebruikt · <b>${euro(zonWaarde)}</b> waard` : 'Opgewekt vandaag', 'var(--amber)') +
     stat('Huis', kWh(T.huis), 'kWh', 'Totaal verbruikt' + (T.huis != null ? ` · <b>${euro(eStroomEur(T.huis))}</b> waard` : '')) +
-    stat('Gas', typeof T.gas === 'number' ? nl(T.gas, 2) : '–', 'm³', 'Verbruikt vandaag' + (typeof T.gas === 'number' ? ` · <b>${euro(eGasEur(T.gas))}</b>` : ''), 'var(--red)');
+    stat('Gas', typeof T.gas === 'number' ? nl(T.gas, 2) : '–', 'm³', 'Verbruikt ' + eWoord() + (typeof T.gas === 'number' ? ` · <b>${euro(eGasEur(T.gas))}</b>` : ''), 'var(--red)');
 
   // Stroom
   $('stroomTot').innerHTML = `<div><b style="color:var(--blue)">${kWh(T.imp)}</b> kWh<small>Geïmporteerd${T.imp != null ? ' · ' + euro(eStroomEur(T.imp)) : ''}</small></div>
     <div><b style="color:var(--green)">${kWh(T.exp)}</b> kWh<small>Geëxporteerd${T.exp != null ? ' · + ' + euro(eTerugEur(T.exp)) : ''}</small></div>`;
   $('stroomKost').textContent = sKost != null ? (sKost < 0 ? euro(-sKost) + ' terug' : euro(sKost)) : '';
   $('stroomKost').title = sKost != null && T.imp != null ? `${kWh(T.imp)} kWh × € ${nl(TR.stroom, 5)} − ${kWh(T.exp)} kWh × € ${nl(TR.terug, 2)}` : '';
-  $('stroomChart').innerHTML = lijnGrafiek(REEKS.p1, { pos:'var(--blue)', neg:'var(--green)' });
+  $('stroomChart').innerHTML = ePer.soort === 'week'
+    ? weekStaaf(ePerDag(REEKS.imp), { kleur:'var(--blue)', eenheid:'kWh', neer:ePerDag(REEKS.exp), kleurNeer:'var(--green)' })
+    : lijnGrafiek(REEKS.p1, { pos:'var(--blue)', neg:'var(--green)' });
 
   // Zon
   $('zonTot').innerHTML = `<div><b style="color:var(--amber)">${kWh(T.zon)}</b> kWh<small>Opgewekt${zonWaarde != null ? ' · ' + euro(zonWaarde) + ' waard' : ''}</small></div>
     <div><b>${kWh(T.zelf)}</b> kWh<small>Zelf gebruikt${T.zelf != null ? ' · ' + euro(eStroomEur(T.zelf)) + ' bespaard' : ''}</small></div>`;
   $('zonKost').textContent = zonWaarde != null ? euro(zonWaarde) : '';
   $('zonKost').title = zonWaarde != null ? `${kWh(T.zelf)} kWh zelf gebruikt × € ${nl(TR.stroom, 5)} + ${kWh(T.exp)} kWh terug × € ${nl(TR.terug, 2)}` : '';
-  $('zonChart').innerHTML = lijnGrafiek(zonReeks(REEKS.zon), { pos:'var(--amber)', neg:'var(--amber)' });
+  $('zonChart').innerHTML = ePer.soort === 'week' ? weekStaaf(ePerDag(REEKS.zonM), { kleur:'var(--amber)', eenheid:'kWh' })
+    : lijnGrafiek(zonReeks(REEKS.zon), { pos:'var(--amber)', neg:'var(--amber)' });
 
   // Gas
   $('gasTot').innerHTML = `<div><b style="color:var(--red)">${typeof T.gas === 'number' ? nl(T.gas, 2) : '–'}</b> m³<small>Verbruikt${typeof T.gas === 'number' ? ' · ' + euro(eGasEur(T.gas)) : ''}</small></div>`;
@@ -3356,7 +3471,9 @@ function tekenEnergie(){
   const verlopen = TR.contractEinde && Date.now() > Date.parse(TR.contractEinde + 'T00:00:00');
   $('tariefWaarschuwing').hidden = !verlopen;
   if(verlopen) $('tariefWaarschuwing').innerHTML = `${ic('klok')}<span>Het contract bij ${esc(TR.leverancier)} is afgelopen. Pas de tarieven aan in het dashboard én in de HomeWizard-app; de bedragen kloppen nu mogelijk niet.</span>`;
-  $('gasChart').innerHTML = staafGrafiek(perUur(REEKS.gas), { kleur:'var(--red)', eenheid:'m³' });
+  $('gasChart').innerHTML = ePer.soort === 'week' ? weekStaaf(ePerDag(REEKS.gas), { kleur:'var(--red)', eenheid:'m³' })
+    : staafGrafiek(perUur(REEKS.gas), { kleur:'var(--red)', eenheid:'m³' });
+  tekenEPer();
 
   tekenEnergieLive();
 }
@@ -4041,20 +4158,20 @@ function flowSvg(net, zon, auto, gasAan){
 }
 
 /* Grafieken (eigen SVG, werkt zonder internet) */
-function dagBereik(){ const s = new Date(); s.setHours(0,0,0,0); return [s.getTime(), s.getTime() + 864e5]; }
+function dagBereik(){ return ePer.soort === 'dag' ? eBereik() : (() => { const s = new Date(); s.setHours(0,0,0,0); return [s.getTime(), s.getTime() + 864e5]; })(); }
 function asLabels(W, H, x){
   return [0,6,12,18,24].map(u => `<text x="${x(dagBereik()[0] + u * 36e5)}" y="${H - 4}" text-anchor="${u === 0 ? 'start' : u === 24 ? 'end' : 'middle'}">${u}:00</text>`).join('');
 }
 function lijnGrafiek(pts, { pos, neg }){
   const W = 600, H = 190, L = 54, R = 6, Tp = 10, B = 22;
-  if(!pts || pts.length < 2) return `<p class="leeg" style="padding:30px 0">Nog geen gegevens voor vandaag.</p>`;
+  if(!pts || pts.length < 2) return `<p class="leeg" style="padding:30px 0">Geen gegevens ${eWoord()}.</p>`;
   const [t0, t1] = dagBereik();
   const max = Math.max(100, ...pts.map(p => p.v)), min = Math.min(0, ...pts.map(p => p.v));
   const x = t => L + (t - t0) / (t1 - t0) * (W - L - R);
   const y = v => Tp + (max - v) / (max - min) * (H - Tp - B);
   const vlak = f => `M ${x(pts[0].t)} ${y(0)} ` + pts.map(p => `L ${x(p.t).toFixed(1)} ${y(f(p.v)).toFixed(1)}`).join(' ') + ` L ${x(pts[pts.length-1].t)} ${y(0)} Z`;
   const lijn = f => pts.map((p, i) => `${i ? 'L' : 'M'} ${x(p.t).toFixed(1)} ${y(f(p.v)).toFixed(1)}`).join(' ');
-  const nu = x(Date.now());
+  const nu = Date.now() < t1 ? x(Date.now()) : -99;
   const fmt = v => Math.abs(v) >= 1000 ? nl(v / 1000, 1) + 'k' : Math.round(v);
   return `<svg viewBox="0 0 ${W} ${H}">
     <line class="grid-l" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>
@@ -4067,8 +4184,28 @@ function lijnGrafiek(pts, { pos, neg }){
     <path d="${vlak(v => Math.min(0, v))}" fill="${neg}" fill-opacity=".22"/>
     <path d="${lijn(v => Math.max(0, v))}" fill="none" stroke="${pos}" stroke-width="1.8" stroke-linejoin="round"/>
     ${min < 0 ? `<path d="${lijn(v => Math.min(0, v))}" fill="none" stroke="${neg}" stroke-width="1.8" stroke-linejoin="round"/>` : ''}
-    <line class="nu-l" x1="${nu}" x2="${nu}" y1="${Tp}" y2="${H - B}"/>
+    ${nu > 0 ? `<line class="nu-l" x1="${nu}" x2="${nu}" y1="${Tp}" y2="${H - B}"/>` : ''}
     ${asLabels(W, H, x)}
+  </svg>`;
+}
+/* Week: staven per dag (ma … zo). neer = optionele tweede reeks onder de nullijn (teruglevering). */
+function weekStaaf(op, { kleur, eenheid, neer, kleurNeer }){
+  const W = 600, H = 190, L = 66, R = 6, Tp = 14, B = 22;
+  const n = v => typeof v === 'number' ? v : 0;
+  const max = Math.max(0, ...op.map(n)), min = neer ? Math.max(0, ...neer.map(n)) : 0;
+  if(!(max > 0) && !(min > 0)) return `<p class="leeg" style="padding:30px 0">Geen gegevens ${eWoord()}.</p>`;
+  const tot = max + min, y = v => Tp + (max - v) / tot * (H - Tp - B), bw = (W - L - R) / 7;
+  const dagen = ['ma','di','wo','do','vr','za','zo'], [t0] = eBereik(), vandaag = Math.floor((Date.now() - t0) / 864e5);
+  const lab = v => nl(v, v < 10 ? 1 : 0);
+  return `<svg viewBox="0 0 ${W} ${H}">
+    <line class="grid-l" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>
+    <text x="${L - 6}" y="${y(max) + 4}" text-anchor="end">${lab(max)} ${eenheid}</text>
+    ${min > 0 ? `<text x="${L - 6}" y="${y(-min) + 4}" text-anchor="end">−${lab(min)}</text>` : ''}
+    ${op.map((v, i) => { const x = L + i * bw + bw * .18, w = bw * .64;
+      let o = typeof v === 'number' && v > 0 ? `<rect x="${x.toFixed(1)}" y="${y(v).toFixed(1)}" width="${w.toFixed(1)}" height="${(y(0) - y(v)).toFixed(1)}" rx="3" fill="${kleur}"/>
+        <text x="${(x + w / 2).toFixed(1)}" y="${(y(v) - 4).toFixed(1)}" text-anchor="middle">${lab(v)}</text>` : '';
+      const d = neer?.[i]; if(typeof d === 'number' && d > 0) o += `<rect x="${x.toFixed(1)}" y="${y(0).toFixed(1)}" width="${w.toFixed(1)}" height="${(y(-d) - y(0)).toFixed(1)}" rx="3" fill="${kleurNeer}"/>`;
+      return o + `<text x="${(x + w / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" style="${i === vandaag ? 'font-weight:700;fill:var(--text-primary)' : ''}">${dagen[i]}</text>`; }).join('')}
   </svg>`;
 }
 function perUur(pts){   // tellerstand → verbruik per uur
@@ -4082,7 +4219,7 @@ function perUur(pts){   // tellerstand → verbruik per uur
 function staafGrafiek(uren, { kleur, eenheid }){
   const W = 600, H = 190, L = 54, R = 6, Tp = 10, B = 22;
   const max = Math.max(...uren);
-  if(!(max > 0)) return `<p class="leeg" style="padding:30px 0">Nog geen verbruik vandaag.</p>`;
+  if(!(max > 0)) return `<p class="leeg" style="padding:30px 0">Geen verbruik ${eWoord()}.</p>`;
   const [t0, t1] = dagBereik();
   const x = t => L + (t - t0) / (t1 - t0) * (W - L - R);
   const y = v => Tp + (max - v) / max * (H - Tp - B);
@@ -4093,7 +4230,7 @@ function staafGrafiek(uren, { kleur, eenheid }){
     <text x="${L - 6}" y="${y(max) + 4}" text-anchor="end">${nl(max, max < .1 ? 3 : 2)}</text>
     <text x="${L - 6}" y="${y(0) + 4}" text-anchor="end">0 ${eenheid}</text>
     ${uren.map((v, i) => v > 0 ? `<rect x="${(L + i * bw + bw * .2).toFixed(1)}" y="${y(v).toFixed(1)}" width="${(bw * .6).toFixed(1)}" height="${(y(0) - y(v)).toFixed(1)}" rx="2" fill="${kleur}"/>` : '').join('')}
-    <line class="nu-l" x1="${x(Date.now())}" x2="${x(Date.now())}" y1="${Tp}" y2="${H - B}"/>
+    ${Date.now() < t1 ? `<line class="nu-l" x1="${x(Date.now())}" x2="${x(Date.now())}" y1="${Tp}" y2="${H - B}"/>` : ''}
     ${asLabels(W, H, x)}
   </svg>`;
 }
@@ -5356,6 +5493,8 @@ function rdwTerug(){ const st = rdwStaat(); delete st.apk; rdwBewaar(st); }
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
   if(e.target.closest('[data-slot]')){ e.preventDefault(); return; }
+  const ep = e.target.closest('[data-eper]'); if(ep){ if(ep.dataset.eper !== ePer.soort || ePer.off) ePeriode(ep.dataset.eper); return; }
+  const eo = e.target.closest('[data-eoff]'); if(eo){ if(!eo.disabled) ePeriode(null, +eo.dataset.eoff); return; }
   const bd = e.target.closest('[data-band]'); if(bd) return bandActie(bd.dataset.band);
   if(belOpen && (e.target === $('belPaneel') || e.target.closest('[data-bel-sluit]'))) return sluitBeleg();
   if(e.target.closest('[data-beleg]')) return goPage('beleg', document.querySelector('.nav-item[data-page="beleg"]'));
@@ -5905,7 +6044,7 @@ function goPage(id, el){
   if(id !== 'beleg' && $('page-beleg')?.classList.contains('on')){ belZichtTot = 0; belBewerk = null; }
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + id));
   document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.toggle('active', n === el));
-  if(id === 'energie') laadEnergie();
+  if(id === 'energie'){ if(!eVandaag()){ ePer = { soort:'dag', off:0 }; REEKS = { p1:[], zon:[], gas:[], imp:[], exp:[] }; energieGeladen = 0; } tekenEPer(); laadEnergie(); }
   if(id === 'systeem') laadSysteem();
   if(id === 'auto') tekenAuto();
   if(id === 'beleg' && !belZicht()) return goPage('home', document.querySelector('.nav-item[data-page="home"]'));
