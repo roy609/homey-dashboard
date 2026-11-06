@@ -505,6 +505,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 /* Energie */
 .e-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
 .e-stat .card-val { font-size:1.7rem; }
+.e-stat .card-sub { white-space:normal; }
 .e-grid { display:grid; grid-template-columns:1fr 1.25fr; gap:14px; margin-bottom:14px; align-items:stretch; }
 .e-grid3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
 @media (max-width:1000px){ .e-grid, .e-grid3 { grid-template-columns:1fr; } .e-stats { grid-template-columns:1fr 1fr; } }
@@ -513,7 +514,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .chip:empty { display:none; }
 .e-tot { display:flex; gap:18px; margin:6px 0 4px; flex-wrap:wrap; }
 .e-per { display:flex; align-items:center; gap:8px; margin-left:auto; margin-right:12px; }
-.e-per-seg { margin-top:0; padding:3px; } .e-per-seg button { min-height:40px; padding:0 16px; }
+.e-per-seg { margin-top:0; padding:3px; } .e-per-seg button { min-height:40px; padding:0 13px; }
 .e-pijl { width:44px; height:44px; border-radius:12px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:1.5rem; line-height:1; cursor:pointer; }
 .e-pijl:disabled { opacity:.3; cursor:default; }
 .e-per-label { min-width:150px; text-align:center; font-weight:700; font-size:var(--fs-md); }
@@ -1166,7 +1167,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     <div class="statusbar">
       <h1>Energie</h1>
       <div class="e-per" id="ePer">
-        <div class="segment e-per-seg"><button data-eper="dag" class="on">Dag</button><button data-eper="week">Week</button></div>
+        <div class="segment e-per-seg"><button data-eper="dag" class="on">Dag</button><button data-eper="week">Week</button><button data-eper="maand">Maand</button><button data-eper="jaar">Jaar</button></div>
         <button class="e-pijl" data-eoff="1" aria-label="Eerder">‹</button>
         <span class="e-per-label" id="ePerLabel">Vandaag</span>
         <button class="e-pijl" data-eoff="-1" aria-label="Later">›</button>
@@ -1689,7 +1690,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '119';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'119', datum:'06-11-2026', punten:[ 'Energie: bovenaan kies je Dag of Week. Met de pijltjes ga je terug naar gisteren, eerdere dagen of vorige weken (tot ongeveer een maand terug). Alle standen, grafieken en bedragen gaan mee. In de weekweergave zie je staafjes per dag: afname en teruglevering, zonne-opbrengst en gas.', 'Energiestroom en grootverbruikers blijven altijd "nu". Open je de energiepagina, dan staat hij weer op vandaag.' ] },
+  { v:'119', datum:'06-11-2026', punten:[ 'Energie: bovenaan kies je Dag, Week, Maand of Jaar. Met de pijltjes ga je terug in de tijd. Dagen en weken gaan tot ongeveer een maand terug, maanden en jaren tot en met vorig jaar. Alle standen, grafieken en bedragen gaan mee. Bij week en maand zie je staafjes per dag, bij jaar per maand: afname en teruglevering, zonne-opbrengst en gas.', 'Energiestroom en grootverbruikers blijven altijd "nu". Open je de energiepagina, dan staat hij weer op vandaag.' ] },
   { v:'118', datum:'06-11-2026', punten:[ 'Energie: overal bedragen erbij. Stroomnet, huis en gas laten zien wat het vandaag kost. Bij teruglevering zie je wat je terugkrijgt. Bij de zonnepanelen zie je wat de zon waard is: zelf gebruikt (bespaard) plus de vergoeding voor teruglevering.', 'Energiestroom: wat het nú per uur kost of oplevert. Grootverbruikers: per apparaat wat het per uur kost bij het huidige vermogen.' ] },
   { v:'117', datum:'06-11-2026', punten:[ 'Kleine aanpassing in de bediening.' ] },
   { v:'116', datum:'06-11-2026', punten:[ 'Airco (tado): na elke wijziging loopt er een blauwe rand rond de kaart. tado wacht na de laatste wijziging nog even, zodat je meerdere dingen kunt instellen. Elke nieuwe wijziging start de rand opnieuw. Na 6 seconden is de rand vol en zie je 1 seconde "Doorgestuurd".', 'Airco Slaapkamer stond als onbereikbaar: de kaart was gekoppeld aan een oud airco-apparaat dat al een maand geen gegevens meer geeft. Hij gebruikt nu de tado-airco van de slaapkamer, ook voor de gemiddelde binnentemperatuur.' ] },
@@ -2035,11 +2036,13 @@ DEMO_DEVICES['p3'] = { id:'p3', name:'Koelkast', class:'socket', zone:Z.keuken, 
 function demoHistorie(){                                   // demo: nepgegevens voor een eerdere dag/week
   const [t0, t1] = eBereik(), uit = { p1:[], zon:[], gas:[], imp:[], exp:[], zonM:[] };
   let imp = 12000, exp = 10000, gas = 1500, zm = 15000;
-  for(let t = t0 - 36e5; t <= Math.min(t1, Date.now()); t += 36e5){
+  const stap = ePer.soort === 'jaar' ? 6 * 36e5 : 36e5;
+  for(let t = t0 - stap; t <= Math.min(t1, Date.now()); t += stap){
     const u = new Date(t).getHours(), dag = Math.floor((t - t0) / 864e5), f = .6 + .4 * Math.abs(Math.sin(dag * 1.7 + 1));
     const zon = Math.max(0, Math.sin((u - 8) / 9.5 * Math.PI)) * 1700 * f, huis = 330 + (u > 17 && u < 22 ? 850 : 0);
-    const p1 = huis - zon; imp += Math.max(0, p1) / 1000; exp += Math.max(0, -p1) / 1000; zm += zon / 1000;
-    gas += (u > 6 && u < 9) || (u > 17 && u < 21) ? .14 * f : .02;
+    const k = stap / 36e5, wint = 1 + Math.cos((new Date(t).getMonth()) / 12 * 2 * Math.PI) * .8;
+    const p1 = huis - zon / wint; imp += Math.max(0, p1) / 1000 * k; exp += Math.max(0, -p1) / 1000 * k; zm += zon / wint / 1000 * k;
+    gas += ((u > 6 && u < 9) || (u > 17 && u < 21) ? .14 * f : .02) * k * wint;
     uit.p1.push({ t, v:Math.round(p1) }); uit.zon.push({ t, v:Math.round(zon) }); uit.imp.push({ t, v:imp }); uit.exp.push({ t, v:exp });
     uit.gas.push({ t, v:gas }); uit.zonM.push({ t, v:zm });
   }
@@ -3264,18 +3267,31 @@ function tekenTuin(){
 let REEKS = { p1:[], zon:[], gas:[], imp:[], exp:[] };   // Insights van de gekozen periode (standaard vandaag)
 /* Periode op de energiepagina: dag of week, off = hoeveel dagen/weken terug. Standaard vandaag. */
 var ePer = { soort:'dag', off:0 };
-const E_MAX = { dag:30, week:3 };                            // Insights bewaart fijne gegevens ca. 31 dagen
+const E_MAX = { dag:30, week:3, maand:12, jaar:1 };          // dag/week: fijne gegevens ca. 31 dagen; maand/jaar: dit en vorig jaar
 const eVandaag = () => ePer.soort === 'dag' && ePer.off === 0;
 function eBereik(){
   const s = new Date(); s.setHours(0,0,0,0);
   if(ePer.soort === 'dag'){ s.setDate(s.getDate() - ePer.off); const e = new Date(s); e.setDate(e.getDate() + 1); return [s.getTime(), e.getTime()]; }
+  if(ePer.soort === 'maand'){ s.setDate(1); s.setMonth(s.getMonth() - ePer.off); const e = new Date(s); e.setMonth(e.getMonth() + 1); return [s.getTime(), e.getTime()]; }
+  if(ePer.soort === 'jaar'){ s.setMonth(0, 1); s.setFullYear(s.getFullYear() - ePer.off); const e = new Date(s); e.setFullYear(e.getFullYear() + 1); return [s.getTime(), e.getTime()]; }
   s.setDate(s.getDate() - ((s.getDay() + 6) % 7) - 7 * ePer.off);          // maandag
   const e = new Date(s); e.setDate(e.getDate() + 7); return [s.getTime(), e.getTime()];
+}
+/* Vakken voor de staafgrafiek: week = 7 dagen, maand = dagen van de maand, jaar = 12 maanden */
+function eVakken(){
+  const [t0, t1] = eBereik(), v = [];
+  if(ePer.soort === 'jaar'){ for(let m = 0; m < 12; m++){ const a = new Date(t0); a.setMonth(m); const b = new Date(a); b.setMonth(m + 1); v.push([a.getTime(), b.getTime(), E_MND[m]]); } return v; }
+  for(let a = new Date(t0); a.getTime() < t1; a.setDate(a.getDate() + 1)){ const b = new Date(a); b.setDate(b.getDate() + 1);
+    v.push([a.getTime(), b.getTime(), ePer.soort === 'week' ? ['zo','ma','di','wo','do','vr','za'][a.getDay()] : String(a.getDate())]); }
+  return v;
 }
 function eResolutie(){
   const dagenTerug = Math.ceil((Date.now() - eBereik()[0]) / 864e5);
   if(eVandaag()) return 'today';
   if(ePer.soort === 'dag' && ePer.off === 1) return 'yesterday';
+  const ditJaar = new Date().getFullYear(), jaarVan = new Date(eBereik()[0]).getFullYear();
+  if(ePer.soort === 'jaar') return ePer.off === 0 ? 'thisYear' : 'lastYear';
+  if(ePer.soort === 'maand') return ePer.off === 0 ? 'thisMonth' : ePer.off === 1 && jaarVan === ditJaar ? 'lastMonth' : jaarVan === ditJaar ? 'thisYear' : jaarVan === ditJaar - 1 ? 'lastYear' : 'last2Years';
   return dagenTerug <= 7 ? 'last7Days' : dagenTerug <= 14 ? 'last14Days' : 'last31Days';
 }
 const E_MND = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
@@ -3284,9 +3300,11 @@ function eLabel(){
   const [t0, t1] = eBereik();
   if(ePer.soort === 'dag') return ePer.off === 0 ? 'Vandaag' : ePer.off === 1 ? 'Gisteren'
     : new Date(t0).toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' });
+  if(ePer.soort === 'maand'){ const d = new Date(t0); return ePer.off === 0 ? 'Deze maand' : `${['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'][d.getMonth()]} ${d.getFullYear()}`; }
+  if(ePer.soort === 'jaar') return ePer.off === 0 ? 'Dit jaar' : String(new Date(t0).getFullYear());
   return ePer.off === 0 ? 'Deze week' : ePer.off === 1 ? 'Vorige week' : `${eDatum(t0)} – ${eDatum(t1 - 1)}`;
 }
-const eWoord = () => { const l = eLabel(); return /^(Vandaag|Gisteren|Deze week|Vorige week)$/.test(l) ? l.toLowerCase() : (ePer.soort === 'dag' ? 'op ' : 'in ') + l; };
+const eWoord = () => { const l = eLabel(); return /^(Vandaag|Gisteren|Deze week|Vorige week|Deze maand|Dit jaar)$/.test(l) ? l.toLowerCase() : (ePer.soort === 'dag' ? 'op ' : ePer.soort === 'week' ? 'in de week van ' : 'in ') + l; };
 /* Tellerstand op tijdstip t (laatste meting op of vóór t; anders de eerste erna) */
 function stand(r, t){
   if(!r?.length) return null;
@@ -3296,11 +3314,10 @@ function stand(r, t){
 const deltaIn = (r, t0, t1) => { const a = stand(r, t0), b = stand(r, Math.min(t1, Date.now())); return a != null && b != null ? Math.max(0, b - a) : null; };
 /* Opbrengstmeter van de omvormer geeft soms losse nul-/tussenwaarden; alleen oplopende standen gebruiken */
 const schoonTeller = r => { let m = -Infinity; return (r || []).filter(p => { if(p.v >= m * .995 && p.v > 0){ m = Math.max(m, p.v); return true; } return false; }); };
-function ePerDag(r){                                        // week: verbruik per dag (ma … zo) uit een tellerstand
-  const [t0] = eBereik();
-  return [...Array(7)].map((_, i) => { const a = t0 + i * 864e5; return a > Date.now() ? null : deltaIn(r, a, a + 864e5); });
+function ePerDag(r){                                        // verbruik per vak (dag of maand) uit een tellerstand
+  return eVakken().map(([a, b]) => a > Date.now() ? null : deltaIn(r, a, b));
 }
-const kWh = n => typeof n === 'number' ? nl(n, n < 10 ? 2 : 1) : '–';
+const kWh = n => typeof n === 'number' ? nl(n, Math.abs(n) < 10 ? 2 : Math.abs(n) >= 1000 ? 0 : 1) : '–';
 const euro = n => typeof n === 'number' ? '€ ' + nl(n, 2) : '';
 const euroPlusMin = n => typeof n !== 'number' ? '' : (n < 0 ? '− ' : '') + '€ ' + nl(Math.abs(n), 2);   // kosten; negatief = je krijgt geld terug
 /* Bedragen bij hoeveelheden (tarieven uit CONFIG.energie.tarieven) */
@@ -3393,7 +3410,7 @@ async function laadEnergieHist(){
   REEKS = nieuw;
   const fout = res2.find(r => r.status === 'rejected');
   $('eStand').className = 'pill ' + (fout ? 'fout' : '');
-  $('eStand').lastElementChild.textContent = fout ? 'Niet alles geladen' : res === 'last31Days' ? 'Per 6 uur' : 'Insights';
+  $('eStand').lastElementChild.textContent = fout ? 'Niet alles geladen' : /last31Days|thisYear/.test(res) && ePer.soort !== 'jaar' ? 'Per 6 uur' : 'Insights';
   tekenEnergie();
 }
 function ePeriode(soort, stap){
@@ -3451,8 +3468,8 @@ function tekenEnergie(){
     <div><b style="color:var(--green)">${kWh(T.exp)}</b> kWh<small>Geëxporteerd${T.exp != null ? ' · + ' + euro(eTerugEur(T.exp)) : ''}</small></div>`;
   $('stroomKost').textContent = sKost != null ? (sKost < 0 ? euro(-sKost) + ' terug' : euro(sKost)) : '';
   $('stroomKost').title = sKost != null && T.imp != null ? `${kWh(T.imp)} kWh × € ${nl(TR.stroom, 5)} − ${kWh(T.exp)} kWh × € ${nl(TR.terug, 2)}` : '';
-  $('stroomChart').innerHTML = ePer.soort === 'week'
-    ? weekStaaf(ePerDag(REEKS.imp), { kleur:'var(--blue)', eenheid:'kWh', neer:ePerDag(REEKS.exp), kleurNeer:'var(--green)' })
+  $('stroomChart').innerHTML = ePer.soort !== 'dag'
+    ? periodeStaaf(ePerDag(REEKS.imp), { kleur:'var(--blue)', eenheid:'kWh', neer:ePerDag(REEKS.exp), kleurNeer:'var(--green)' })
     : lijnGrafiek(REEKS.p1, { pos:'var(--blue)', neg:'var(--green)' });
 
   // Zon
@@ -3460,7 +3477,7 @@ function tekenEnergie(){
     <div><b>${kWh(T.zelf)}</b> kWh<small>Zelf gebruikt${T.zelf != null ? ' · ' + euro(eStroomEur(T.zelf)) + ' bespaard' : ''}</small></div>`;
   $('zonKost').textContent = zonWaarde != null ? euro(zonWaarde) : '';
   $('zonKost').title = zonWaarde != null ? `${kWh(T.zelf)} kWh zelf gebruikt × € ${nl(TR.stroom, 5)} + ${kWh(T.exp)} kWh terug × € ${nl(TR.terug, 2)}` : '';
-  $('zonChart').innerHTML = ePer.soort === 'week' ? weekStaaf(ePerDag(REEKS.zonM), { kleur:'var(--amber)', eenheid:'kWh' })
+  $('zonChart').innerHTML = ePer.soort !== 'dag' ? periodeStaaf(ePerDag(REEKS.zonM), { kleur:'var(--amber)', eenheid:'kWh' })
     : lijnGrafiek(zonReeks(REEKS.zon), { pos:'var(--amber)', neg:'var(--amber)' });
 
   // Gas
@@ -3471,7 +3488,7 @@ function tekenEnergie(){
   const verlopen = TR.contractEinde && Date.now() > Date.parse(TR.contractEinde + 'T00:00:00');
   $('tariefWaarschuwing').hidden = !verlopen;
   if(verlopen) $('tariefWaarschuwing').innerHTML = `${ic('klok')}<span>Het contract bij ${esc(TR.leverancier)} is afgelopen. Pas de tarieven aan in het dashboard én in de HomeWizard-app; de bedragen kloppen nu mogelijk niet.</span>`;
-  $('gasChart').innerHTML = ePer.soort === 'week' ? weekStaaf(ePerDag(REEKS.gas), { kleur:'var(--red)', eenheid:'m³' })
+  $('gasChart').innerHTML = ePer.soort !== 'dag' ? periodeStaaf(ePerDag(REEKS.gas), { kleur:'var(--red)', eenheid:'m³' })
     : staafGrafiek(perUur(REEKS.gas), { kleur:'var(--red)', eenheid:'m³' });
   tekenEPer();
 
@@ -4189,23 +4206,25 @@ function lijnGrafiek(pts, { pos, neg }){
   </svg>`;
 }
 /* Week: staven per dag (ma … zo). neer = optionele tweede reeks onder de nullijn (teruglevering). */
-function weekStaaf(op, { kleur, eenheid, neer, kleurNeer }){
-  const W = 600, H = 190, L = 66, R = 6, Tp = 14, B = 22;
+function periodeStaaf(op, { kleur, eenheid, neer, kleurNeer }){
+  const W = 600, H = 190, R = 6, Tp = 14, B = 22;
   const n = v => typeof v === 'number' ? v : 0;
   const max = Math.max(0, ...op.map(n)), min = neer ? Math.max(0, ...neer.map(n)) : 0;
   if(!(max > 0) && !(min > 0)) return `<p class="leeg" style="padding:30px 0">Geen gegevens ${eWoord()}.</p>`;
-  const tot = max + min, y = v => Tp + (max - v) / tot * (H - Tp - B), bw = (W - L - R) / 7;
-  const dagen = ['ma','di','wo','do','vr','za','zo'], [t0] = eBereik(), vandaag = Math.floor((Date.now() - t0) / 864e5);
+  const L = 16 + 6.6 * Math.max(`${nl(max, max < 10 ? 1 : 0)} ${eenheid}`.length, min > 0 ? `−${nl(min, min < 10 ? 1 : 0)}`.length : 0);
+  const vak = eVakken(), N = vak.length, tot = max + min, y = v => Tp + (max - v) / tot * (H - Tp - B), bw = (W - L - R) / N;
+  const nu = vak.findIndex(([a, b]) => Date.now() >= a && Date.now() < b), metWaarde = N <= 12;
+  const toonLabel = i => N <= 12 || i === 0 || (i + 1) % 5 === 0 || i === N - 1;
   const lab = v => nl(v, v < 10 ? 1 : 0);
   return `<svg viewBox="0 0 ${W} ${H}">
     <line class="grid-l" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>
     <text x="${L - 6}" y="${y(max) + 4}" text-anchor="end">${lab(max)} ${eenheid}</text>
     ${min > 0 ? `<text x="${L - 6}" y="${y(-min) + 4}" text-anchor="end">−${lab(min)}</text>` : ''}
     ${op.map((v, i) => { const x = L + i * bw + bw * .18, w = bw * .64;
-      let o = typeof v === 'number' && v > 0 ? `<rect x="${x.toFixed(1)}" y="${y(v).toFixed(1)}" width="${w.toFixed(1)}" height="${(y(0) - y(v)).toFixed(1)}" rx="3" fill="${kleur}"/>
-        <text x="${(x + w / 2).toFixed(1)}" y="${(y(v) - 4).toFixed(1)}" text-anchor="middle">${lab(v)}</text>` : '';
+      let o = typeof v === 'number' && v > 0 ? `<rect x="${x.toFixed(1)}" y="${y(v).toFixed(1)}" width="${w.toFixed(1)}" height="${(y(0) - y(v)).toFixed(1)}" rx="${N > 12 ? 1.5 : 3}" fill="${kleur}"/>
+        ${metWaarde ? `<text x="${(x + w / 2).toFixed(1)}" y="${(y(v) - 4).toFixed(1)}" text-anchor="middle">${lab(v)}</text>` : ''}` : '';
       const d = neer?.[i]; if(typeof d === 'number' && d > 0) o += `<rect x="${x.toFixed(1)}" y="${y(0).toFixed(1)}" width="${w.toFixed(1)}" height="${(y(-d) - y(0)).toFixed(1)}" rx="3" fill="${kleurNeer}"/>`;
-      return o + `<text x="${(x + w / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" style="${i === vandaag ? 'font-weight:700;fill:var(--text-primary)' : ''}">${dagen[i]}</text>`; }).join('')}
+      return o + (toonLabel(i) ? `<text x="${(x + w / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" style="${i === nu ? 'font-weight:700;fill:var(--text-primary)' : ''}">${vak[i][2]}</text>` : ''); }).join('')}
   </svg>`;
 }
 function perUur(pts){   // tellerstand → verbruik per uur
