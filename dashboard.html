@@ -1481,7 +1481,7 @@ const CONFIG = {
   binnenklimaat: [
     'e2f02bdd-56ae-4d56-808b-ca8cca2e02cf', // Honeywell Home
     '89bd8240-0bcd-41ce-a021-05a589436030', // Airco Woonkamer
-    'bc002a04-2df3-439a-a62c-dfb102835d67', // slaapkamer (airco)
+    '61e4912b-8c24-4f88-8d46-c789313efdc2', // Airco Slaapkamer (tado)
   ],
   // Tegels in het midden, in deze volgorde. soort: schakelaar | knop | gordijn | status
   tegels: [
@@ -1529,7 +1529,7 @@ const CONFIG = {
   ]},
   klimaat: [
     { id:'89bd8240-0bcd-41ce-a021-05a589436030', naam:'Airco Woonkamer' },   // "Airco Woonkamer" (zonder nwe) in Homey
-    { id:'bc002a04-2df3-439a-a62c-dfb102835d67', naam:'Airco Slaapkamer' },  // "slaapkamer" in Homey
+    { id:'61e4912b-8c24-4f88-8d46-c789313efdc2', naam:'Airco Slaapkamer' },  // tado ("slaapkamer" bc002a04 geeft al minstens een maand geen nieuwe data)
     { id:'32b29831-27fd-4b9d-9010-32fd40e6210e', naam:'Infrarood spiegel' },
   ],
   // Radio: zenders (TuneIn, via de Chromecast-app in Homey) en de speakers waarop je kunt afspelen
@@ -1591,7 +1591,7 @@ const CONFIG = {
   klimaatPaneel: [
     { id:'e2f02bdd-56ae-4d56-808b-ca8cca2e02cf', naam:'Thermostaat (Honeywell)', ruimte:'Woonkamer', icoon:'thermo' },
     { id:'89bd8240-0bcd-41ce-a021-05a589436030', naam:'Airco Woonkamer',         ruimte:'Woonkamer' },
-    { id:'bc002a04-2df3-439a-a62c-dfb102835d67', naam:'Airco Slaapkamer',        ruimte:'Slaapkamer' },
+    { id:'61e4912b-8c24-4f88-8d46-c789313efdc2', naam:'Airco Slaapkamer',        ruimte:'Slaapkamer' },
     { id:'32b29831-27fd-4b9d-9010-32fd40e6210e', naam:'Infrarood spiegel',       ruimte:'Badkamer', icoon:'mirror' },
   ],
   // Achtertuin-foto (Tuin-pagina): waar lampen en sensoren op de foto staan (coördinaten 1536 × 1024).
@@ -1673,7 +1673,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '116';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'116', datum:'06-11-2026', punten:[ 'Airco (tado): na elke wijziging loopt er een blauwe rand rond de kaart. tado wacht na de laatste wijziging nog even, zodat je meerdere dingen kunt instellen. Elke nieuwe wijziging start de rand opnieuw. Na 6 seconden is de rand vol en zie je 1 seconde "Doorgestuurd".' ] },
+  { v:'116', datum:'06-11-2026', punten:[ 'Airco (tado): na elke wijziging loopt er een blauwe rand rond de kaart. tado wacht na de laatste wijziging nog even, zodat je meerdere dingen kunt instellen. Elke nieuwe wijziging start de rand opnieuw. Na 6 seconden is de rand vol en zie je 1 seconde "Doorgestuurd".', 'Airco Slaapkamer stond als onbereikbaar: de kaart was gekoppeld aan een oud airco-apparaat dat al een maand geen gegevens meer geeft. Hij gebruikt nu de tado-airco van de slaapkamer, ook voor de gemiddelde binnentemperatuur.' ] },
   { v:'115', datum:'04-11-2026', punten:[ 'Banden: melding op het hoofddashboard vanaf een maand voor de wissel (winterbanden ca. 15 oktober, zomerbanden ca. 15 april; rood als de wissel al nodig is). Met "Afspraak gemaakt" en een datum verdwijnt hij tot die dag; dan vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.' ,
     'Nieuw auto-icoon: het silhouet van onze eigen auto, gemaakt uit de autofoto.'] },
   { v:'114', datum:'02-11-2026', punten:[ 'Na 1 minuut zonder aanraking gaat het dashboard vanzelf terug naar het hoofddashboard. Niet als je op dat moment iets invult (bijvoorbeeld banden of beleggingen).' ] },
@@ -1788,7 +1788,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '05-11-2026 19:28';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '06-11-2026 09:23';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -2001,6 +2001,8 @@ DEMO_DEVICES['61478bcd-411a-4027-8920-74f3e95bed08'].capabilitiesObj.measure_cha
 DEMO_DEVICES['51c4d050-c085-4f94-afd2-9fe91687d94f'].capabilitiesObj['meter_gas.daily'] = { value:1.14 };
 DEMO_DEVICES['89bd8240-0bcd-41ce-a021-05a589436030'].capabilitiesObj.ac_mode = { value:'OFF' };   // zonder lijst: test de reservewaarden
 DEMO_DEVICES['89bd8240-0bcd-41ce-a021-05a589436030'].capabilitiesObj.measure_humidity = { value:57.4 };
+DEMO_DEVICES['61e4912b-8c24-4f88-8d46-c789313efdc2'].capabilitiesObj.ac_mode = { value:'OFF' };
+DEMO_DEVICES['61e4912b-8c24-4f88-8d46-c789313efdc2'].capabilitiesObj.measure_humidity = { value:65.9 };
 [['bc002a04-2df3-439a-a62c-dfb102835d67', 19]].forEach(([id, doel]) => Object.assign(DEMO_DEVICES[id].capabilitiesObj, {
   target_temperature:{ value:doel },
   thermostat_cmode:{ value:'off', values:['off','cool','heat','auto','dry','fan'].map(v => ({ id:v, title:v })) },
