@@ -1670,9 +1670,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '116';
+const DASHBOARD_VERSIE = '117';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'117', datum:'06-11-2026', punten:[ 'Kleine aanpassing in de bediening.' ] },
   { v:'116', datum:'06-11-2026', punten:[ 'Airco (tado): na elke wijziging loopt er een blauwe rand rond de kaart. tado wacht na de laatste wijziging nog even, zodat je meerdere dingen kunt instellen. Elke nieuwe wijziging start de rand opnieuw. Na 6 seconden is de rand vol en zie je 1 seconde "Doorgestuurd".', 'Airco Slaapkamer stond als onbereikbaar: de kaart was gekoppeld aan een oud airco-apparaat dat al een maand geen gegevens meer geeft. Hij gebruikt nu de tado-airco van de slaapkamer, ook voor de gemiddelde binnentemperatuur.' ] },
   { v:'115', datum:'04-11-2026', punten:[ 'Banden: melding op het hoofddashboard vanaf een maand voor de wissel (winterbanden ca. 15 oktober, zomerbanden ca. 15 april; rood als de wissel al nodig is). Met "Afspraak gemaakt" en een datum verdwijnt hij tot die dag; dan vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.' ,
     'Nieuw auto-icoon: het silhouet van onze eigen auto, gemaakt uit de autofoto.'] },
@@ -6170,7 +6171,7 @@ function openNotion(){ ntOpen = true; $('notionPaneel').classList.add('on'); tek
 function sluitNotion(){ ntOpen = false; $('notionPaneel').classList.remove('on'); }
 
 /* ── Afgeschermd openen ── */
-const SLOT_MS = 5000, SLOT_RING_MS = 2000;
+const SLOT_MS = 3000, SLOT_RING_MS = 2000;
 let slotT = null, slotRing = null, slotEl = null, slotXY = null, slotKlaar = 0;
 function slotStop(){ clearTimeout(slotT); clearTimeout(slotRing); slotEl?.classList.remove('slot-bezig'); slotEl = null; }
 function slotOpen(soort){
