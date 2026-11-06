@@ -775,6 +775,48 @@ body[data-kerst] .kerst-slinger { left:-22px; right:-22px; top:-34px; height:46p
     radial-gradient(950px 850px at 80% 95%, rgba(150,90,30,.22), transparent 60%),
     radial-gradient(800px 700px at 6% 92%, rgba(40,90,55,.18), transparent 60%),
     linear-gradient(160deg, #201810 0%, #120D08 100%); }
+/* ═══ Christmas Elegance – Black & Gold (kerststijl 'elegance', klasse christmas-theme) ═══
+   Alleen styling en decoratie; alle decoratielagen hebben pointer-events:none en liggen ACHTER de bediening. */
+body.christmas-theme {
+  --x-bg:#090909; --x-bg2:#15120F; --x-kaart:#211A15; --x-goud:#D6A449; --x-champ:#F1D49A; --x-groen:#183A2B;
+  --bg-main:#090909; --bg-nav:rgba(9,9,9,.78); --bg-card:rgba(33,26,21,.66); --bg-inset:rgba(52,41,32,.62);
+  --border:rgba(214,164,73,.20); --border2:rgba(214,164,73,.34);
+  --text-primary:#F5F1EA; --text-secondary:#D5CEC4; --text-muted:#AAA39A;
+  --amber:#E9B95E; --amber-dim:rgba(214,164,73,.17); --amber-border:rgba(214,164,73,.50);
+  --shadow:0 1px 0 rgba(241,212,154,.06) inset, 0 10px 24px rgba(0,0,0,.55), 0 0 22px rgba(214,164,73,.06);
+  --mesh-bg:
+    radial-gradient(520px 380px at 18% 8%, rgba(214,164,73,.13), transparent 70%),
+    radial-gradient(600px 420px at 92% 6%, rgba(241,212,154,.10), transparent 70%),
+    radial-gradient(700px 520px at 6% 100%, rgba(214,140,60,.16), transparent 70%),
+    radial-gradient(800px 600px at 70% 100%, rgba(24,58,43,.22), transparent 70%),
+    linear-gradient(170deg, #12100D 0%, #090909 55%, #0B0A08 100%);
+  background:var(--mesh-bg); }
+body.christmas-theme .main { background:transparent; position:relative; z-index:1; }
+body.christmas-theme .sidebar { position:relative; z-index:1; border-right-color:rgba(214,164,73,.16); background:linear-gradient(180deg, rgba(9,9,9,.86) 55%, rgba(9,9,9,.30) 100%); }
+body.christmas-theme .nav-item .ic { background:rgba(20,16,12,.78); }
+body.christmas-theme .nav-item.active { background:rgba(214,164,73,.12); color:var(--x-champ); }
+body.christmas-theme .nav-item.active .ic { background:rgba(214,164,73,.22); color:var(--x-champ); box-shadow:0 0 14px rgba(214,164,73,.28); }
+body.christmas-theme #status { background-color:rgba(12,10,8,.92); }
+body.christmas-theme .statusbar h1 { text-shadow:0 0 18px rgba(214,164,73,.28); }
+body.christmas-theme .card { border-color:rgba(214,164,73,.24); box-shadow:var(--shadow); }
+body.christmas-theme .huiskaart { border:1px solid rgba(214,164,73,.55); box-shadow:0 0 0 1px rgba(241,212,154,.10) inset, 0 0 26px rgba(214,164,73,.22), 0 12px 26px rgba(0,0,0,.6); }
+body.christmas-theme .tile { background:linear-gradient(170deg, rgba(58,42,28,.70), rgba(30,23,18,.72)); }
+body.christmas-theme .tile.on { background:linear-gradient(180deg, rgba(214,164,73,.22), rgba(33,26,21,.75)); box-shadow:0 0 18px rgba(214,164,73,.22); }
+body.christmas-theme .segment button.on { color:var(--x-champ); box-shadow:0 0 12px rgba(214,164,73,.25); }
+body.christmas-theme .kerst-kaart { background:linear-gradient(135deg, rgba(214,164,73,.20), rgba(24,58,43,.22)); border-color:rgba(214,164,73,.5); }
+body.christmas-theme .tile, body.christmas-theme .card.klikbaar, body.christmas-theme .segment button, body.christmas-theme .klim-modi button { transition:box-shadow .25s, border-color .25s, transform .12s; }
+@media (hover:hover){ body.christmas-theme .tile:hover, body.christmas-theme .card.klikbaar:hover { border-color:rgba(214,164,73,.55); box-shadow:var(--shadow), 0 0 20px rgba(214,164,73,.18); } }
+.xmas-laag { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.xmas-laag * { pointer-events:none; }
+.xmas-laag canvas { position:absolute; inset:0; width:100%; height:100%; }
+.xmas-boom { position:absolute; left:-18px; bottom:-6px; width:170px; height:255px; }
+.xmas-cadeau { position:absolute; bottom:-4px; width:290px; height:100px; }
+.xmas-hang { position:absolute; right:0; top:0; width:190px; height:190px; }
+.xmas-boom img, .xmas-cadeau img, .xmas-hang img { width:100%; height:100%; display:block; }
+.xmas-boom svg, .xmas-hang svg { position:absolute; inset:0; width:100% !important; height:100% !important; stroke:none; overflow:visible; }
+.xmas-boom .tw, .xmas-hang .tw { animation:twinkel 3.2s ease-in-out infinite; }
+.xmas-bokeh i { position:absolute; border-radius:50%; background:radial-gradient(circle, rgba(241,212,154,.55), rgba(214,164,73,.12) 45%, transparent 70%); filter:blur(1.5px); }
+@media (prefers-reduced-motion:reduce){ .xmas-laag .tw { animation:none; } }
 body[data-kerst="b"] .kerst-kaart { background:linear-gradient(135deg, rgba(200,40,50,.22), rgba(30,120,70,.16)); border-color:rgba(230,80,80,.35); }
 body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,190,80,.22), rgba(255,190,80,.05)); border-color:rgba(255,200,110,.45); }
 #page-home .top-meldingen { grid-column:1 / -1; display:flex; flex-wrap:wrap; align-items:center; gap:10px; min-width:0; }
@@ -1663,7 +1705,7 @@ const CONFIG = {
   // Pakjes: apparaat "Pakjes" van de app Parcel Tracker (leeg = automatisch het apparaat met parcels_active)
   pakjes: { id:'f6d1803c-bb0a-40b7-aa34-e602d3d9b408', voor:['Roy','Beau'] },
   // Kerst: variabele "Kerst Flows" (aan = 's avonds de kerstbeelden van het huis)
-  kerst: { var:'0ca37567-f5aa-4c86-b307-60479d76a1b9', stijl:'b',   // stijl: a = warm wit, b = klassiek rood/groen, c = goud & kaarslicht
+  kerst: { var:'0ca37567-f5aa-4c86-b307-60479d76a1b9', stijl:'elegance',   // stijl: elegance = Christmas Elegance (zwart & goud); a = warm wit, b = rood/groen, c = goud
     knoppen:[ { id:'781ca335-d31d-4593-8fde-ef6e8b604d0f', naam:'🎄 Boom' },          // Kerstboom
               { id:'2cc78e9c-a95b-4342-b7a9-bc963cced790', naam:'Voor' },             // Kerstverlichting Voortuin
               { id:'2953ad44-a2c2-44f5-930e-a071674e3b27', naam:'Achter' },           // Kerstverlichting Achtertuin
@@ -1704,9 +1746,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '117';
+const DASHBOARD_VERSIE = '118';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'118', datum:'06-11-2026', punten:[ 'Kerstmodus in een nieuwe stijl: Christmas Elegance in zwart en goud. Bijna zwarte achtergrond met warme gouden gloed, donkere glazen kaarten met dunne gouden randen en een gouden omlijsting om de huisfoto.', 'Kerstdecoratie op de achtergrond: een dennenguirlande met warmwitte lichtjes en gouden ballen bovenaan, een kerstboom linksonder met cadeautjes en een lantaarn, hangende gouden ballen met een ster rechtsboven, zachte lichtvlekjes en rustig vallende sneeuw. Alles ligt achter de bediening en reageert niet op aanraking.', 'Actieve knoppen en het menu in champagnegoud. Statuskleuren (zoals koelen, waarschuwingen en planten) blijven zoals ze waren.' ] },
   { v:'117', datum:'06-11-2026', punten:[ 'Kleine aanpassing in de bediening.' ] },
   { v:'116', datum:'06-11-2026', punten:[ 'Airco (tado): na elke wijziging loopt er een blauwe rand rond de kaart. tado wacht na de laatste wijziging nog even, zodat je meerdere dingen kunt instellen. Elke nieuwe wijziging start de rand opnieuw. Na 6 seconden is de rand vol en zie je 1 seconde "Doorgestuurd".', 'Airco Slaapkamer stond als onbereikbaar: de kaart was gekoppeld aan een oud airco-apparaat dat al een maand geen gegevens meer geeft. Hij gebruikt nu de tado-airco van de slaapkamer, ook voor de gemiddelde binnentemperatuur.' ] },
   { v:'115', datum:'04-11-2026', punten:[ 'Banden: melding op het hoofddashboard vanaf een maand voor de wissel (winterbanden ca. 15 oktober, zomerbanden ca. 15 april; rood als de wissel al nodig is). Met "Afspraak gemaakt" en een datum verdwijnt hij tot die dag; dan vraagt het dashboard of de banden gewisseld zijn en wat het profiel is.' ,
@@ -2254,6 +2297,7 @@ function tekenKerst(){
   const aan = kerstAan(), sl = $('kerstSlinger'), lg = $('logoSneeuw');
   if(lg) lg.hidden = !aan;
   if(aan) document.body.dataset.kerst = kerstStijl(); else delete document.body.dataset.kerst;
+  xmasLaag(aan && kerstStijl() === 'elegance');
   document.querySelectorAll('.kerst-hoek').forEach(e => e.remove());
   if(aan && kerstStijl() === 'c') document.querySelector('.main')?.insertAdjacentHTML('beforeend', kerstHoekSvg('kerst-hoek rb', 150, 110, 5, 'c', 11));
   if(!sl) return;
@@ -2271,7 +2315,8 @@ function tekenKerst(){
   }
   let deco = '';                                              // ballen en bessen
   if(stijl !== 'a') for(let x = 40, i = 0; x < W - 20; x += 70 + rnd() * 40, i++){
-    const y = golf(x) + 10, kl = stijl === 'b' ? (i % 3 === 1 ? '#E9B949' : '#C8232C') : (i % 3 === 1 ? '#B22A2A' : '#E8B13C');
+    if(stijl === 'elegance' && i % 2) continue;                // elegance: alleen hier en daar een gouden bal
+    const y = golf(x) + 10, kl = stijl === 'elegance' ? (i % 4 === 0 ? '#D6A449' : '#F1D49A') : stijl === 'b' ? (i % 3 === 1 ? '#E9B949' : '#C8232C') : (i % 3 === 1 ? '#B22A2A' : '#E8B13C');
     deco += kerstBal(x, y, 5 + rnd() * 2, kl);
     if(stijl === 'b') deco += [[-9,-3],[-6,1],[-11,2]].map(([dx, dy]) => `<circle cx="${(x + dx).toFixed(1)}" cy="${(y - 6 + dy).toFixed(1)}" r="2" fill="#D4202A"/>`).join('');
   }
@@ -2279,14 +2324,13 @@ function tekenKerst(){
     <polyline points="${pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="rgba(60,40,20,.5)" stroke-width="1"/>${deco}
     ${pts.map(([x, y], i) => `<circle class="tw" cx="${x.toFixed(1)}" cy="${(y + 1).toFixed(1)}" r="2.3" fill="${stijl === 'b' && i % 4 === 2 ? '#FF8A7A' : '#FFE2A8'}" style="animation-delay:${((i * .41) % 2.6).toFixed(2)}s;filter:drop-shadow(0 0 4px #FFD27A) drop-shadow(0 0 8px rgba(255,200,110,.6))"/>`).join('')}</svg>`;
 }
-const kerstStijl = () => ['a','b','c'].includes(kerstStijlTest || CONFIG.kerst?.stijl) ? (kerstStijlTest || CONFIG.kerst.stijl) : 'b';
+const kerstStijl = () => ['a','b','c','elegance'].includes(kerstStijlTest || CONFIG.kerst?.stijl) ? (kerstStijlTest || CONFIG.kerst.stijl) : 'elegance';
 var kerstStijlTest = null;
 function kerstRnd(z){ return () => (z = (z * 16807) % 2147483647) / 2147483647; }
 /* Dennentak: steel met naaldjes aan beide kanten, getekend vanaf (x,y) in richting a */
-function kerstTak(x, y, len, a, rnd){
-  const groen = ['#1E5A3A','#2A7048','#17482E','#357E52','#22603F'];
+function kerstTak(x, y, len, a, rnd, stap = 2.2, groen = ['#1E5A3A','#2A7048','#17482E','#357E52','#22603F']){
   const dx = Math.cos(a), dy = Math.sin(a); let o = `<path d="M${x.toFixed(1)} ${y.toFixed(1)}l${(dx * len).toFixed(1)} ${(dy * len).toFixed(1)}" stroke="#4A3524" stroke-width="1.6" fill="none"/>`;
-  for(let t = 0; t < len; t += 2.2){
+  for(let t = 0; t < len; t += stap){
     const px = x + dx * t, py = y + dy * t, l = (8.5 - 3.5 * t / len) * (.85 + rnd() * .3);
     for(const kant of [-1, 1]){
       const b = a + kant * (0.95 + rnd() * .3);
@@ -2301,6 +2345,117 @@ function kerstBal(x, y, r, kl){
     <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${kl}"/>
     <circle cx="${(x - r * .35).toFixed(1)}" cy="${(y - r * .35).toFixed(1)}" r="${(r * .3).toFixed(1)}" fill="rgba(255,255,255,.45)"/>`;
 }
+/* ── Christmas Elegance: achtergrondlaag met boom, cadeautjes, lantaarn, hangende ballen, bokeh en sneeuw ──
+   Ligt achter de zijbalk en het dashboard (z-index 0); de klasse christmas-theme op <body> zet de kleuren. */
+function xmasLaag(aan){
+  document.body.classList.toggle('christmas-theme', aan);
+  let L = $('xmasLaag');
+  if(!aan){ if(L){ xmasSneeuwStop(); L.remove(); } return; }
+  if(!L){
+    document.body.insertAdjacentHTML('afterbegin', `<div class="xmas-laag" id="xmasLaag" aria-hidden="true">
+      <div class="xmas-bokeh">${[[7,30,46],[15,62,30],[34,88,40],[58,18,26],[73,52,34],[88,82,44],[46,44,22],[96,36,28]].map(([x, y, r]) =>
+        `<i style="left:${x}%;top:${y}%;width:${r}px;height:${r}px;opacity:${(.25 + (x % 7) / 20).toFixed(2)}"></i>`).join('')}</div>
+      <canvas id="xmasSneeuw"></canvas>
+      <div class="xmas-boom"><img alt="" src="${xmasSvgUrl(xmasBoomSvg())}">${xmasBoomLichtjes()}</div>
+      <div class="xmas-cadeau" id="xmasCadeau"><img alt="" src="${xmasSvgUrl(xmasCadeauSvg())}"></div>
+      <div class="xmas-hang"><img alt="" src="${xmasSvgUrl(xmasHangSvg())}">${xmasHangLichtjes()}</div></div>`);
+    L = $('xmasLaag');
+  }
+  const nav = document.querySelector('.sidebar');
+  const c = $('xmasCadeau'); if(c) c.style.left = ((nav?.getBoundingClientRect().width || 76) + 28) + 'px';
+  xmasSneeuwStart();
+}
+const xmasSvgUrl = s => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+function xmasBoomSvg(){
+  const rnd = kerstRnd(23), cx = 85; let t = '';
+  for(let y = 34; y <= 222; y += 8){
+    const hw = 6 + (y - 34) * .42;
+    for(const kant of [-1, 1]){
+      const a = kant > 0 ? .5 + (rnd() - .5) * .25 : Math.PI - .5 + (rnd() - .5) * .25;
+      t += kerstTak(cx + kant * rnd() * 3, y, hw * (.9 + rnd() * .25), a, rnd, 3, ['#123524','#1A4430','#21543B','#0F2C1E','#2A6446']);
+    }
+  }
+  let ballen = '';
+  for(let i = 0; i < 14; i++){
+    const y = 60 + rnd() * 150, hw = 6 + (y - 34) * .42 * .75, x = cx + (rnd() * 2 - 1) * hw;
+    const r = 3.2 + rnd() * 2.6;
+    ballen += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="url(#gb)"/><circle cx="${(x - r * .35).toFixed(1)}" cy="${(y - r * .35).toFixed(1)}" r="${(r * .28).toFixed(1)}" fill="rgba(255,250,235,.7)"/>`;
+  }
+  let slinger = '';
+  for(let k = 0; k < 4; k++){ const y0 = 70 + k * 40; slinger += `<path d="M${(cx - 10 - k * 15).toFixed(0)} ${y0} Q ${cx} ${y0 + 16} ${(cx + 14 + k * 16).toFixed(0)} ${y0 - 6}" stroke="rgba(241,212,154,.55)" stroke-width="1.2" fill="none"/>`; }
+  const ster = [...Array(10)].map((_, i) => { const r = i % 2 ? 5 : 12, a = -Math.PI / 2 + i * Math.PI / 5; return `${(cx + Math.cos(a) * r).toFixed(1)},${(26 + Math.sin(a) * r).toFixed(1)}`; }).join(' ');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 255"><defs>
+    <radialGradient id="gb" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#FFF1C9"/><stop offset=".45" stop-color="#D6A449"/><stop offset="1" stop-color="#7A5420"/></radialGradient>
+    <radialGradient id="gl"><stop offset="0" stop-color="rgba(255,214,140,.55)"/><stop offset="1" stop-color="rgba(255,214,140,0)"/></radialGradient></defs>
+    <ellipse cx="${cx}" cy="140" rx="95" ry="120" fill="url(#gl)" opacity=".45"/>
+    <rect x="${cx - 7}" y="215" width="14" height="30" rx="2" fill="#3B2717"/>${t}${slinger}${ballen}
+    <circle cx="${cx}" cy="26" r="20" fill="url(#gl)"/><polygon points="${ster}" fill="url(#gb)" stroke="#F1D49A" stroke-width=".8"/></svg>`;
+}
+function xmasBoomLichtjes(){                               // warmwitte lampjes, los zodat ze kunnen twinkelen
+  const rnd = kerstRnd(41), cx = 85; let o = '';
+  for(let i = 0; i < 34; i++){
+    const y = 44 + rnd() * 172, hw = (6 + (y - 34) * .42) * .85, x = cx + (rnd() * 2 - 1) * hw;
+    o += `<circle class="tw" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.7" fill="#FFF3D6" style="animation-delay:${(rnd() * 3.2).toFixed(2)}s;filter:drop-shadow(0 0 3px #FFD98E)"/>`;
+  }
+  return `<svg viewBox="0 0 170 255" aria-hidden="true">${o}</svg>`;
+}
+function xmasCadeauSvg(){
+  const doos = (x, y, w, h, kl, lint) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${kl}"/>
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="url(#sh)"/>
+    <rect x="${x + w / 2 - 3}" y="${y}" width="6" height="${h}" fill="${lint}"/><rect x="${x}" y="${y + h * .38}" width="${w}" height="5" fill="${lint}"/>
+    <path d="M${x + w / 2} ${y} c -14 -12 -20 2 -2 1 M${x + w / 2} ${y} c 14 -12 20 2 2 1" stroke="${lint}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 290 100"><defs>
+    <linearGradient id="sh" x1="0" x2="1"><stop offset="0" stop-color="rgba(255,255,255,.10)"/><stop offset=".55" stop-color="rgba(0,0,0,0)"/><stop offset="1" stop-color="rgba(0,0,0,.35)"/></linearGradient>
+    <radialGradient id="vl"><stop offset="0" stop-color="rgba(255,200,110,.85)"/><stop offset=".35" stop-color="rgba(255,170,70,.35)"/><stop offset="1" stop-color="rgba(255,170,70,0)"/></radialGradient></defs>
+    <ellipse cx="140" cy="96" rx="150" ry="10" fill="rgba(0,0,0,.45)"/>
+    ${doos(6, 46, 64, 50, '#6E1A1E', '#D6A449')}${doos(76, 58, 50, 38, '#E9D7AE', '#8C2A22')}${doos(132, 50, 56, 46, '#183A2B', '#F1D49A')}
+    <circle cx="248" cy="62" r="48" fill="url(#vl)"/>
+    <path d="M236 30 h24 l4 8 v52 h-32 v-52z" fill="rgba(255,190,100,.18)" stroke="#1A1714" stroke-width="3"/>
+    <path d="M232 92 h32 M236 38 h24 M248 22 v8 M242 22 q6 -10 12 0" stroke="#1A1714" stroke-width="3" fill="none"/>
+    <rect x="243" y="62" width="10" height="24" rx="2" fill="#F5EBD6"/><path d="M248 50 q5 7 0 12 q-5 -5 0 -12z" fill="#FFC861"/></svg>`;
+}
+function xmasHangSvg(){
+  const rnd = kerstRnd(57); let t = '';
+  for(let i = 0; i < 9; i++) t += kerstTak(190, 4 + rnd() * 26, 60 + rnd() * 70, Math.PI - .1 + (rnd() - .3) * .5, rnd, 2.6, ['#123524','#1A4430','#21543B','#0F2C1E']);
+  const bal = (x, l, r) => `<path d="M${x} 18 v${l}" stroke="rgba(241,212,154,.6)" stroke-width="1"/><rect x="${x - 2.5}" y="${18 + l - 2}" width="5" height="4" rx="1" fill="#C9A45C"/>
+    <circle cx="${x}" cy="${18 + l + r}" r="${r}" fill="url(#hb)"/><circle cx="${x - r * .35}" cy="${18 + l + r * .65}" r="${r * .28}" fill="rgba(255,250,235,.65)"/>`;
+  const sx = 174, sy = 88, ster = [...Array(10)].map((_, i) => { const r = i % 2 ? 5 : 12, a = -Math.PI / 2 + i * Math.PI / 5; return `${(sx + Math.cos(a) * r).toFixed(1)},${(sy + Math.sin(a) * r).toFixed(1)}`; }).join(' ');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 190"><defs>
+    <radialGradient id="hb" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#FFF1C9"/><stop offset=".45" stop-color="#D6A449"/><stop offset="1" stop-color="#6E4B1C"/></radialGradient>
+    <radialGradient id="hg"><stop offset="0" stop-color="rgba(255,214,140,.5)"/><stop offset="1" stop-color="rgba(255,214,140,0)"/></radialGradient></defs>
+    ${bal(64, 52, 9)}${bal(112, 60, 12)}${bal(146, 46, 8)}<path d="M${sx} 18 v${sy - 35}" stroke="rgba(241,212,154,.6)" stroke-width="1"/>
+    <circle cx="${sx}" cy="${sy}" r="22" fill="url(#hg)"/><polygon points="${ster}" fill="url(#hb)" stroke="#F1D49A" stroke-width=".8"/>${t}</svg>`;
+}
+function xmasHangLichtjes(){
+  const rnd = kerstRnd(77); let o = '';
+  for(let i = 0; i < 12; i++) o += `<circle class="tw" cx="${(60 + rnd() * 128).toFixed(1)}" cy="${(6 + rnd() * 34).toFixed(1)}" r="1.8" fill="#FFF3D6" style="animation-delay:${(rnd() * 3.2).toFixed(2)}s;filter:drop-shadow(0 0 3px #FFD98E)"/>`;
+  return `<svg viewBox="0 0 190 190" aria-hidden="true">${o}</svg>`;
+}
+/* Sneeuw: klein canvas, ~60 vlokjes, max ~30 fps, stopt vanzelf bij een verborgen tabblad (rAF) */
+var xmasSn = null;
+function xmasSneeuwStart(){
+  const c = $('xmasSneeuw'); if(!c || xmasSn) return;
+  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  const ctx = c.getContext('2d'), rnd = Math.random, vl = [];
+  let W = 0, H = 0, laatst = 0;
+  const maat = () => { const d = Math.min(2, window.devicePixelRatio || 1); W = c.clientWidth; H = c.clientHeight; c.width = W * d; c.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0); };
+  maat();
+  for(let i = 0; i < 60; i++){ const r = .6 + rnd() ** 2 * 1.9; vl.push({ x:rnd() * W, y:rnd() * H, r, v:.25 + r * .22 + rnd() * .15, f:rnd() * 6.3, a:.35 + rnd() * .45 }); }
+  const stap = t => {
+    xmasSn.raf = requestAnimationFrame(stap);
+    if(t - laatst < 33) return;
+    const dt = laatst ? Math.min(3, (t - laatst) / 16.7) : 1; laatst = t;
+    ctx.clearRect(0, 0, W, H);
+    for(const v of vl){
+      v.y += v.v * dt; v.x += Math.sin(t / 1600 + v.f) * .25 * dt;
+      if(v.y > H + 4){ v.y = -4; v.x = rnd() * W; }
+      ctx.globalAlpha = v.a; ctx.beginPath(); ctx.arc(v.x, v.y, v.r, 0, 6.283); ctx.fillStyle = '#FFF8EC'; ctx.fill();
+    }
+  };
+  xmasSn = { raf:requestAnimationFrame(stap), maat };
+}
+function xmasSneeuwStop(){ if(xmasSn){ cancelAnimationFrame(xmasSn.raf); xmasSn = null; } }
+window.addEventListener('resize', () => { xmasSn?.maat(); });
 /* Hoekje met dennentakken (kerstkaartje en schermhoeken) */
 function kerstHoekSvg(cls, w, h, aantal, stijl, zaad){
   const rnd = kerstRnd(zaad); let o = '';
