@@ -822,6 +822,11 @@ body.christmas-theme .tile, body.christmas-theme .card.klikbaar, body.christmas-
 .xmas-foto-bg { position:absolute; inset:0; background-size:cover; background-position:center; }
 body.xmas-foto .xmas-boom, body.xmas-foto .xmas-cadeau, body.xmas-foto .xmas-hang, body.xmas-foto .xmas-bokeh, body.xmas-foto .kerst-slinger { display:none !important; }
 body.xmas-foto.christmas-theme { --bg-card:rgba(22,17,13,.70); --bg-inset:rgba(40,31,24,.66); }
+/* Rustige zone achter de titelbalk, zodat titel, foto's en meldingen goed leesbaar blijven */
+.xmas-foto-bg::after { content:''; position:absolute; inset:0; background:
+  linear-gradient(180deg, rgba(9,9,9,.62) 0, rgba(9,9,9,.38) 110px, rgba(9,9,9,0) 210px),
+  linear-gradient(90deg, rgba(9,9,9,.35) 0, rgba(9,9,9,0) 30%); }
+body.xmas-foto .statusbar h1, body.xmas-foto .sec-label { text-shadow:0 1px 3px rgba(0,0,0,.9), 0 0 14px rgba(0,0,0,.8); }
 .xmas-laag * { pointer-events:none; }
 .xmas-laag canvas { position:absolute; inset:0; width:100%; height:100%; }
 .xmas-boom { position:absolute; left:-18px; bottom:-6px; width:170px; height:255px; }
