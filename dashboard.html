@@ -1593,7 +1593,6 @@ const CONFIG = {
     { id:'db1057e0-0d95-4c63-ac55-626ad61779bd', naam:'Thuiswerken Roy', soort:'schakelaar', icoon:'laptop' },
     { id:'75d83bdd-6e22-4e11-8d12-51328495fd64', naam:'Visite',          soort:'schakelaar', icoon:'users' },
     { id:'4e5db254-7e95-4884-ba36-537fe6029ff3', naam:'Stofzuiger',      soort:'stofzuiger', icoon:'vacuum' },   // "Robotstofzuiger" (eufy)
-    { id:'reserveren-jasper',                    naam:'Reserveren Jasper', soort:'leeg',     icoon:'kalender' },  // knop zonder actie (nog niet gekoppeld)
     { id:'radio',                                naam:'Muziek',          soort:'radio',      icoon:'music' },     // volle breedte onderaan
   ],
   // Gordijnen woonkamer: één kaart voor links en rechts samen
@@ -1773,9 +1772,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '121';
+const DASHBOARD_VERSIE = '122';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'122', datum:'07-11-2026', punten:[ 'De knop "Reserveren Jasper" is weer weg.' ] },
   { v:'121', datum:'07-11-2026', punten:[ 'Nieuwe knop "Reserveren Jasper" bij de scènes. Hij doet nog niets.' ] },
   { v:'120', datum:'06-11-2026', punten:[ 'Kerstmodus in een nieuwe stijl: Christmas Elegance in zwart en goud, met een eigen kerstachtergrond (kerst_achtergrond.jpg). Bijna zwarte achtergrond met warme gouden gloed, donkere glazen kaarten met dunne gouden randen en een gouden omlijsting om de huisfoto.', 'Kerstdecoratie op de achtergrond: een dennenguirlande met warmwitte lichtjes en gouden ballen bovenaan, een kerstboom linksonder met cadeautjes en een lantaarn, hangende gouden ballen met een ster rechtsboven, zachte lichtvlekjes en rustig vallende sneeuw. Alles ligt achter de bediening en reageert niet op aanraking.', 'Actieve knoppen en het menu in champagnegoud. Statuskleuren (zoals koelen, waarschuwingen en planten) blijven zoals ze waren.' ] },
   { v:'119', datum:'06-11-2026', punten:[ 'Energie: bovenaan kies je Dag, Week, Maand of Jaar. Met de pijltjes ga je terug in de tijd. Dagen en weken gaan tot ongeveer een maand terug, maanden en jaren tot en met vorig jaar. Alle standen, grafieken en bedragen gaan mee. Bij week en maand zie je staafjes per dag, bij jaar per maand: afname en teruglevering, zonne-opbrengst en gas.', 'Energiestroom en grootverbruikers blijven altijd "nu". Open je de energiepagina, dan staat hij weer op vandaag.' ] },
