@@ -1896,7 +1896,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '07-11-2026 17:58';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '07-11-2026 20:17';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -1962,7 +1962,6 @@ const ICONS = {
   flow:'<circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v3a3 3 0 0 0 3 3h6"/>',
   pakket:'<path d="M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/>',
   klok:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-  kalender:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17.5h2"/>',
   batterij:'<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11v2"/>',
   sneeuw:'<path d="M12 2v20M4.9 4.9l14.2 14.2M2 12h20M4.9 19.1 19.1 4.9M9 3l3 3 3-3M9 21l3-3 3 3M3 9l3 3-3 3M21 9l-3 3 3 3"/>',
   druppel:'<path d="M12 2.7 6.3 9a7 7 0 1 0 11.4 0z"/>',
@@ -2292,9 +2291,6 @@ function tekenVariabelen(){
 
 function tegelHtml(t){
   if(t.soort === 'radio') return radioTegelHtml(t);
-  if(t.soort === 'leeg') return `<div class="card tile tile-leeg" role="button" tabindex="0">
-    <div class="t-top"><div class="ico">${ic(t.icoon)}</div></div>
-    <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">&nbsp;</div></div></div>`;   // doet (nog) niets
   const d = dev(t.id);
   if(!d) return '';
   const offline = d.available === false;
