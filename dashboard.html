@@ -1593,6 +1593,7 @@ const CONFIG = {
     { id:'db1057e0-0d95-4c63-ac55-626ad61779bd', naam:'Thuiswerken Roy', soort:'schakelaar', icoon:'laptop' },
     { id:'75d83bdd-6e22-4e11-8d12-51328495fd64', naam:'Visite',          soort:'schakelaar', icoon:'users' },
     { id:'4e5db254-7e95-4884-ba36-537fe6029ff3', naam:'Stofzuiger',      soort:'stofzuiger', icoon:'vacuum' },   // "Robotstofzuiger" (eufy)
+    { id:'reserveren-jasper',                    naam:'Reserveren Jasper', soort:'leeg',     icoon:'kalender' },  // knop zonder actie (nog niet gekoppeld)
     { id:'radio',                                naam:'Muziek',          soort:'radio',      icoon:'music' },     // volle breedte onderaan
   ],
   // Gordijnen woonkamer: één kaart voor links en rechts samen
@@ -1772,9 +1773,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '120';
+const DASHBOARD_VERSIE = '121';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'121', datum:'07-11-2026', punten:[ 'Nieuwe knop "Reserveren Jasper" bij de scènes. Hij doet nog niets.' ] },
   { v:'120', datum:'06-11-2026', punten:[ 'Kerstmodus in een nieuwe stijl: Christmas Elegance in zwart en goud, met een eigen kerstachtergrond (kerst_achtergrond.jpg). Bijna zwarte achtergrond met warme gouden gloed, donkere glazen kaarten met dunne gouden randen en een gouden omlijsting om de huisfoto.', 'Kerstdecoratie op de achtergrond: een dennenguirlande met warmwitte lichtjes en gouden ballen bovenaan, een kerstboom linksonder met cadeautjes en een lantaarn, hangende gouden ballen met een ster rechtsboven, zachte lichtvlekjes en rustig vallende sneeuw. Alles ligt achter de bediening en reageert niet op aanraking.', 'Actieve knoppen en het menu in champagnegoud. Statuskleuren (zoals koelen, waarschuwingen en planten) blijven zoals ze waren.' ] },
   { v:'119', datum:'06-11-2026', punten:[ 'Energie: bovenaan kies je Dag, Week, Maand of Jaar. Met de pijltjes ga je terug in de tijd. Dagen en weken gaan tot ongeveer een maand terug, maanden en jaren tot en met vorig jaar. Alle standen, grafieken en bedragen gaan mee. Bij week en maand zie je staafjes per dag, bij jaar per maand: afname en teruglevering, zonne-opbrengst en gas.', 'Energiestroom en grootverbruikers blijven altijd "nu". Open je de energiepagina, dan staat hij weer op vandaag.' ] },
   { v:'118', datum:'06-11-2026', punten:[ 'Energie: overal bedragen erbij. Stroomnet, huis en gas laten zien wat het vandaag kost. Bij teruglevering zie je wat je terugkrijgt. Bij de zonnepanelen zie je wat de zon waard is: zelf gebruikt (bespaard) plus de vergoeding voor teruglevering.', 'Energiestroom: wat het nú per uur kost of oplevert. Grootverbruikers: per apparaat wat het per uur kost bij het huidige vermogen.' ] },
@@ -1960,6 +1962,7 @@ const ICONS = {
   flow:'<circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v3a3 3 0 0 0 3 3h6"/>',
   pakket:'<path d="M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/>',
   klok:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  kalender:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17.5h2"/>',
   batterij:'<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11v2"/>',
   sneeuw:'<path d="M12 2v20M4.9 4.9l14.2 14.2M2 12h20M4.9 19.1 19.1 4.9M9 3l3 3 3-3M9 21l3-3 3 3M3 9l3 3-3 3M21 9l-3 3 3 3"/>',
   druppel:'<path d="M12 2.7 6.3 9a7 7 0 1 0 11.4 0z"/>',
@@ -2289,6 +2292,9 @@ function tekenVariabelen(){
 
 function tegelHtml(t){
   if(t.soort === 'radio') return radioTegelHtml(t);
+  if(t.soort === 'leeg') return `<div class="card tile tile-leeg" role="button" tabindex="0">
+    <div class="t-top"><div class="ico">${ic(t.icoon)}</div></div>
+    <div><div class="t-name">${esc(t.naam)}</div><div class="t-state">&nbsp;</div></div></div>`;   // doet (nog) niets
   const d = dev(t.id);
   if(!d) return '';
   const offline = d.available === false;
