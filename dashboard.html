@@ -16,7 +16,7 @@
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
      - Apparaat-id's, variabelen en moods staan in het blok CONFIG hieronder. -->
 <link rel="stylesheet" media="print" onload="this.media='all'"
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600&family=Shippori+Mincho:wght@500;600&display=swap">
 <style>
 :root {
   --bg-main:#0F1319; --bg-nav:#131822;
@@ -54,6 +54,57 @@
   --amber:#E8940C; --green:#0EB98D; --blue:#2FA3DE; --red:#CD1919; --purple:#7C3AED; --geel:#CA8A04; --oranje:#EA580C;
   --shadow:0 1px 2px rgba(17,24,39,.05), 0 6px 16px rgba(17,24,39,.05);
 }
+/* ═══ Vormgeving (body[data-stijl]) — alleen kleuren, lettertypen en randen; indeling en werking blijven gelijk ═══ */
+body[data-stijl] { --glass-blur:0px; }
+body[data-stijl] .card { backdrop-filter:none; -webkit-backdrop-filter:none; }
+body[data-stijl] .statusbar h1, body[data-stijl] h2, body[data-stijl] .card-val, body[data-stijl] .huiskaart .hk-klok b,
+body[data-stijl] .huiskaart .hk-weer b, body[data-stijl] .tile .t-name { font-family:var(--serif); font-weight:600; letter-spacing:0; font-variant-numeric:lining-nums tabular-nums; }
+body[data-stijl] .huiskaart { --amber:#F5A524; --blue:#54BFF0; --green:#22C55E; }   /* teksten op de foto blijven goed leesbaar */
+body[data-stijl] .statusbar h1 { font-size:1.65rem; }
+body[data-stijl] .sec-label, body[data-stijl] .card-title { letter-spacing:2px; font-weight:600; }
+body[data-stijl] .tile .t-name { font-size:1.02rem; }
+body[data-stijl] .huiskaart .hk-klok b, body[data-stijl] .huiskaart .hk-weer b { font-size:2.3rem; }
+body[data-stijl] .nav-item.active .ic { background:transparent; }
+body[data-stijl] .nav-item.active { box-shadow:inset 3px 0 0 var(--amber); }
+/* A · Japandi licht: linnen, licht eiken, klei en salie */
+body[data-stijl="japandi-licht"] {
+  --serif:"Shippori Mincho","Noto Serif JP",Georgia,serif;
+  --bg-main:#ECE7DF; --bg-nav:#E5DFD5; --bg-card:#F7F3ED; --bg-inset:#EDE7DD;
+  --mesh-bg: radial-gradient(1000px 700px at 85% 0%, rgba(255,255,255,.55), transparent 60%), linear-gradient(170deg, #EEE9E1 0%, #E6E0D6 100%);
+  --border:#DED6C9; --border2:#CFC5B6; --text-primary:#2B2722; --text-secondary:#5C554C; --text-muted:#8C8377;
+  --amber:#A8693A; --amber-dim:rgba(168,105,58,.12); --amber-border:rgba(168,105,58,.45);
+  --green:#6B8160; --green-dim:rgba(107,129,96,.15); --blue:#567A89; --blue-dim:rgba(86,122,137,.14); --red:#A9503E; --red-dim:rgba(169,80,62,.12);
+  --purple:#7D6E8F; --geel:#B08A3A; --oranje:#B0703F;
+  --shadow:0 1px 2px rgba(60,45,30,.05), 0 6px 18px rgba(60,45,30,.06); --r:10px; }
+body[data-stijl="japandi-licht"] .ico, body[data-stijl="japandi-licht"] .tile .pwr, body[data-stijl="japandi-licht"] .nav-item .ic { background:#EAE3D8; }
+body[data-stijl="japandi-licht"] .tile.on { background:#EFE3D3; }
+/* B · Japandi donker (ryokan): houtskool, donker eiken, mos */
+body[data-stijl="japandi-donker"] {
+  --serif:"Shippori Mincho","Noto Serif JP",Georgia,serif;
+  --bg-main:#1B1A18; --bg-nav:#161513; --bg-card:#24221F; --bg-inset:#2D2A26;
+  --mesh-bg: radial-gradient(900px 650px at 10% 0%, rgba(199,154,99,.07), transparent 60%), linear-gradient(170deg, #1E1C19 0%, #171614 100%);
+  --border:rgba(232,222,206,.08); --border2:rgba(232,222,206,.15); --text-primary:#EDE6DA; --text-secondary:#C3B9AA; --text-muted:#8E8579;
+  --amber:#C79A63; --amber-dim:rgba(199,154,99,.14); --amber-border:rgba(199,154,99,.45);
+  --green:#8FA07A; --green-dim:rgba(143,160,122,.15); --blue:#7FA0AE; --blue-dim:rgba(127,160,174,.14); --red:#C9705E; --red-dim:rgba(201,112,94,.14);
+  --purple:#A595B5; --geel:#C9A85A; --oranje:#C98A5A;
+  --shadow:0 1px 0 rgba(255,255,255,.02), 0 8px 20px rgba(0,0,0,.30); --r:10px; }
+body[data-stijl="japandi-donker"] .ico, body[data-stijl="japandi-donker"] .tile .pwr, body[data-stijl="japandi-donker"] .nav-item .ic { background:#2F2C28; }
+/* C · Hotel chique: diep antraciet, messing haarlijnen, klassieke serif */
+body[data-stijl="hotel"] {
+  --serif:"Cormorant Garamond",Garamond,Georgia,serif;
+  --bg-main:#121311; --bg-nav:#0D0E0C; --bg-card:#1B1C19; --bg-inset:#24251F;
+  --mesh-bg: radial-gradient(1100px 700px at 50% -10%, rgba(194,162,102,.10), transparent 60%), radial-gradient(900px 600px at 50% 110%, rgba(0,0,0,.5), transparent 70%), linear-gradient(180deg, #151613 0%, #10110F 100%);
+  --border:rgba(194,162,102,.22); --border2:rgba(194,162,102,.38); --text-primary:#EFE9DD; --text-secondary:#C9C1B1; --text-muted:#958D7E;
+  --amber:#C6A66A; --amber-dim:rgba(198,166,106,.13); --amber-border:rgba(198,166,106,.55);
+  --green:#8DA683; --green-dim:rgba(141,166,131,.14); --blue:#8FB1C4; --blue-dim:rgba(143,177,196,.13); --red:#C8665A; --red-dim:rgba(200,102,90,.14);
+  --purple:#A99BC0; --geel:#D2B26A; --oranje:#C98F5E;
+  --shadow:0 12px 26px rgba(0,0,0,.40); --r:6px; }
+body[data-stijl="hotel"] .ico, body[data-stijl="hotel"] .tile .pwr, body[data-stijl="hotel"] .nav-item .ic { background:transparent; border:1px solid rgba(194,162,102,.25); }
+body[data-stijl="hotel"] .statusbar h1 { font-size:1.9rem; font-weight:500; }
+body[data-stijl="hotel"] .card-val, body[data-stijl="hotel"] .tile .t-name { font-weight:600; }
+body[data-stijl="hotel"] .tile .t-name { font-size:1.15rem; }
+body[data-stijl="hotel"] .huiskaart { border:1px solid rgba(194,162,102,.55); }
+body[data-stijl="hotel"] .sec-label { color:var(--amber); letter-spacing:3px; }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 html,body { height:100%; }
 body { display:flex; overflow:hidden; font-family:var(--sans); font-size:1rem; font-feature-settings:"tnum";
