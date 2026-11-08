@@ -16,7 +16,7 @@
      - Homey-adres en API-sleutel vul je in via het tandwiel; ze blijven alleen in deze browser.
      - Apparaat-id's, variabelen en moods staan in het blok CONFIG hieronder. -->
 <link rel="stylesheet" media="print" onload="this.media='all'"
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600&family=Shippori+Mincho:wght@500;600&display=swap">
 <style>
 :root {
   --bg-main:#0F1319; --bg-nav:#131822;
@@ -57,7 +57,7 @@
 /* ═══ Stijl "Mokka" (body[data-stijl="mokka"]): warm bruin glas met brons/goud, naar ontwerp van 08-11-2026 ═══
    Alleen kleuren, randen, hoeken en achtergrond; indeling en werking blijven gelijk. Alleen in het donkere thema; kerst gaat voor. */
 :root:not([data-theme="light"]) body[data-stijl="mokka"] {
-  --bg-main:#1D1610; --bg-nav:transparent;
+  --bg-main:#1D1610; --bg-nav:#251C15;
   --bg-card:rgba(48,37,28,.62); --bg-inset:rgba(255,238,215,.06);
   --mesh-bg:transparent;
   --border:rgba(255,226,190,.13); --border2:rgba(255,226,190,.22);
@@ -90,6 +90,65 @@
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.tile-radio.on .pwr { background:rgba(167,139,250,.24); color:#C9B6FF; }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.tile-radio.on .t-state { color:var(--text-muted); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .huiskaart { border:1px solid rgba(255,226,190,.35); box-shadow:0 0 26px rgba(242,172,61,.12), 0 12px 26px rgba(0,0,0,.45); }
+/* ═══ Vormgeving (body[data-stijl]) — alleen kleuren, lettertypen en randen; indeling en werking blijven gelijk ═══ */
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) { --glass-blur:0px; }
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .card { backdrop-filter:none; -webkit-backdrop-filter:none; }
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .statusbar h1, body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) h2, body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .card-val, body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .huiskaart .hk-klok b,
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .huiskaart .hk-weer b, body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .tile .t-name { font-family:var(--serif); font-weight:600; letter-spacing:0; font-variant-numeric:lining-nums tabular-nums; }
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .huiskaart { --amber:#F5A524; --blue:#54BFF0; --green:#22C55E; }   /* teksten op de foto blijven goed leesbaar */
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .statusbar h1 { font-size:1.65rem; }
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .sec-label, body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .card-title { letter-spacing:2px; font-weight:600; }
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .tile .t-name { font-size:1.02rem; }
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .huiskaart .hk-klok b, body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .huiskaart .hk-weer b { font-size:2.3rem; }
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .nav-item.active .ic { background:transparent; }
+body:is([data-stijl="japandi-licht"],[data-stijl="japandi-donker"],[data-stijl="hotel"]) .nav-item.active { box-shadow:inset 3px 0 0 var(--amber); }
+/* A · Japandi licht: linnen, licht eiken, klei en salie */
+body[data-stijl="japandi-licht"] {
+  --serif:"Shippori Mincho","Noto Serif JP",Georgia,serif;
+  --bg-main:#ECE7DF; --bg-nav:#E5DFD5; --bg-card:#F7F3ED; --bg-inset:#EDE7DD;
+  --mesh-bg: radial-gradient(1000px 700px at 85% 0%, rgba(255,255,255,.55), transparent 60%), linear-gradient(170deg, #EEE9E1 0%, #E6E0D6 100%);
+  --border:#DED6C9; --border2:#CFC5B6; --text-primary:#2B2722; --text-secondary:#5C554C; --text-muted:#8C8377;
+  --amber:#A8693A; --amber-dim:rgba(168,105,58,.12); --amber-border:rgba(168,105,58,.45);
+  --green:#6B8160; --green-dim:rgba(107,129,96,.15); --blue:#567A89; --blue-dim:rgba(86,122,137,.14); --red:#A9503E; --red-dim:rgba(169,80,62,.12);
+  --purple:#7D6E8F; --geel:#B08A3A; --oranje:#B0703F;
+  --shadow:0 1px 2px rgba(60,45,30,.05), 0 6px 18px rgba(60,45,30,.06); --r:10px; }
+body[data-stijl="japandi-licht"] .ico, body[data-stijl="japandi-licht"] .tile .pwr, body[data-stijl="japandi-licht"] .nav-item .ic { background:#EAE3D8; }
+body[data-stijl="japandi-licht"] .tile.on { background:#EFE3D3; }
+/* B · Japandi donker (ryokan): houtskool, donker eiken, mos */
+body[data-stijl="japandi-donker"] {
+  --serif:"Shippori Mincho","Noto Serif JP",Georgia,serif;
+  --bg-main:#1B1A18; --bg-nav:#161513; --bg-card:#24221F; --bg-inset:#2D2A26;
+  --mesh-bg: radial-gradient(900px 650px at 10% 0%, rgba(199,154,99,.07), transparent 60%), linear-gradient(170deg, #1E1C19 0%, #171614 100%);
+  --border:rgba(232,222,206,.08); --border2:rgba(232,222,206,.15); --text-primary:#EDE6DA; --text-secondary:#C3B9AA; --text-muted:#8E8579;
+  --amber:#C79A63; --amber-dim:rgba(199,154,99,.14); --amber-border:rgba(199,154,99,.45);
+  --green:#8FA07A; --green-dim:rgba(143,160,122,.15); --blue:#7FA0AE; --blue-dim:rgba(127,160,174,.14); --red:#C9705E; --red-dim:rgba(201,112,94,.14);
+  --purple:#A595B5; --geel:#C9A85A; --oranje:#C98A5A;
+  --shadow:0 1px 0 rgba(255,255,255,.02), 0 8px 20px rgba(0,0,0,.30); --r:10px; }
+body[data-stijl="japandi-donker"] .ico, body[data-stijl="japandi-donker"] .tile .pwr, body[data-stijl="japandi-donker"] .nav-item .ic { background:#2F2C28; }
+/* C · Hotel chique: diep antraciet, messing haarlijnen, klassieke serif */
+body[data-stijl="hotel"] {
+  --serif:"Cormorant Garamond",Garamond,Georgia,serif;
+  --bg-main:#121311; --bg-nav:#0D0E0C; --bg-card:#1B1C19; --bg-inset:#24251F;
+  --mesh-bg: radial-gradient(1100px 700px at 50% -10%, rgba(194,162,102,.10), transparent 60%), radial-gradient(900px 600px at 50% 110%, rgba(0,0,0,.5), transparent 70%), linear-gradient(180deg, #151613 0%, #10110F 100%);
+  --border:rgba(194,162,102,.22); --border2:rgba(194,162,102,.38); --text-primary:#EFE9DD; --text-secondary:#C9C1B1; --text-muted:#958D7E;
+  --amber:#C6A66A; --amber-dim:rgba(198,166,106,.13); --amber-border:rgba(198,166,106,.55);
+  --green:#8DA683; --green-dim:rgba(141,166,131,.14); --blue:#8FB1C4; --blue-dim:rgba(143,177,196,.13); --red:#C8665A; --red-dim:rgba(200,102,90,.14);
+  --purple:#A99BC0; --geel:#D2B26A; --oranje:#C98F5E;
+  --shadow:0 12px 26px rgba(0,0,0,.40); --r:6px; }
+body[data-stijl="hotel"] .ico, body[data-stijl="hotel"] .tile .pwr, body[data-stijl="hotel"] .nav-item .ic { background:transparent; border:1px solid rgba(194,162,102,.25); }
+body[data-stijl="hotel"] .statusbar h1 { font-size:1.9rem; font-weight:500; }
+body[data-stijl="hotel"] .card-val, body[data-stijl="hotel"] .tile .t-name { font-weight:600; }
+body[data-stijl="hotel"] .tile .t-name { font-size:1.15rem; }
+body[data-stijl="hotel"] .huiskaart { border:1px solid rgba(194,162,102,.55); }
+body[data-stijl="hotel"] .sec-label { color:var(--amber); letter-spacing:3px; }
+/* Keuzevenster voor het uiterlijk */
+.modal .st-lijst, .st-lijst { display:grid; overflow-y:auto; overscroll-behavior:contain; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:4px 2px 2px; }
+.st-optie { display:flex; flex-direction:column; gap:8px; padding:10px; border-radius:14px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-primary); cursor:pointer; text-align:left; font:inherit; }
+.st-optie.on { border-color:var(--amber); box-shadow:0 0 0 2px var(--amber-dim); }
+.st-voorbeeld { height:74px; border-radius:10px; position:relative; overflow:hidden; display:flex; gap:5px; padding:8px; align-items:flex-end; }
+.st-voorbeeld i { flex:1; height:58%; border-radius:6px; }
+.st-voorbeeld i:first-child { flex:.5; height:100%; }
+.st-optie b { font-size:var(--fs-md); } .st-optie small { color:var(--text-muted); font-size:var(--fs-sm); line-height:1.3; }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 html,body { height:100%; }
 body { display:flex; overflow:hidden; font-family:var(--sans); font-size:1rem; font-feature-settings:"tnum";
@@ -1254,6 +1313,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   <div class="nav-item" data-page="systeem"><span class="ic" data-icon="hart"></span><span class="nav-label">Systeem</span></div>
   <div class="nav-spacer"></div>
   <div class="nav-item" data-actie="thema"><span class="ic" data-icon="moon"></span><span class="nav-label">Donker / licht</span></div>
+  <div class="nav-item" data-actie="uiterlijk"><span class="ic" data-icon="palet"></span><span class="nav-label">Uiterlijk</span></div>
   <div class="nav-item" data-actie="claude" title="Claude openen om het dashboard aan te passen"><span class="ic" data-icon="chat"></span><span class="nav-label">Vraag Claude</span></div>
   <div class="nav-item" data-actie="instellingen"><span class="ic" data-icon="gear"></span><span class="nav-label">Instellingen</span></div>
   <div class="nav-versie-rij">
@@ -1541,6 +1601,16 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="stijlPaneel">
+  <div class="modal lp" role="dialog" aria-label="Uiterlijk kiezen">
+    <div class="lp-kop">
+      <div class="ico amber" data-icon="palet"></div>
+      <div class="grow"><h2>Uiterlijk</h2><div class="card-sub">Kies hoe het dashboard eruitziet. Alleen kleuren en lettertypen veranderen.</div></div>
+      <button class="lp-knop" data-st-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="st-lijst" id="stLijst"></div>
+  </div>
+</div>
 <div class="overlay" id="nieuwPaneel">
   <div class="modal lp" role="dialog" aria-label="Wat is er nieuw">
     <div class="lp-kop">
@@ -1843,7 +1913,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '124';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'124', datum:'08-11-2026', punten:[ 'Nieuwe vormgeving "Mokka": warm bruin glas met brons en goud, zijdeachtige achtergrond, zijbalk als los paneel met bronzen actieve knop en ronde kaarten met warme randen. Indeling en werking blijven hetzelfde. Staat de kerstmodus aan, dan gaat die voor.' ] },
+  { v:'124', datum:'08-11-2026', punten:[ 'Nieuwe vormgeving "Mokka": warm bruin glas met brons en goud, zijdeachtige achtergrond, zijbalk als los paneel met bronzen actieve knop en ronde kaarten met warme randen. Indeling en werking blijven hetzelfde. Staat de kerstmodus aan, dan gaat die voor.', 'Nieuwe knop "Uiterlijk" in het menu, onder Donker / licht. Daarmee kies je zelf tussen Mokka, Klassiek, Japandi licht, Japandi donker en Hotel chique. De tablet onthoudt je keuze.' ] },
   { v:'123', datum:'08-11-2026', punten:[ 'Auto: nieuwe kaart Laadkosten. Laat zien wat het thuisladen van de ID.4 deze maand kost, hoeveel kWh van de zon (gratis) en van het net kwam, en wat je bespaart t.o.v. publiek laden. Tik op de kaart voor het overzicht per maand; per maand of in één keer markeer je de kosten als verrekend.' ] },
   { v:'122', datum:'07-11-2026', punten:[ 'De knop "Reserveren Jasper" is weer weg.' ] },
   { v:'121', datum:'07-11-2026', punten:[ 'Nieuwe knop "Reserveren Jasper" bij de scènes. Hij doet nog niets.' ] },
@@ -1994,6 +2064,7 @@ const DEMO = () => !CFG.host || !CFG.token;
    ICONEN (inline, werken zonder internet)
 ═════════════════════════════════════════════ */
 const ICONS = {
+  palet:'<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="14.5" cy="7" r="1.2"/>',
   menu:'<path d="M3 6h18M3 12h18M3 18h18"/>',
   home:'<path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-7h6v7"/>',
   tree:'<path d="M12 22v-6"/><path d="M12 2 5 12h4l-3 4h12l-3-4h4z"/>',
@@ -2415,7 +2486,7 @@ function tekenKerst(){
   const aan = kerstAan(), sl = $('kerstSlinger'), lg = $('logoSneeuw');
   if(lg) lg.hidden = !aan;
   if(aan) document.body.dataset.kerst = kerstStijl(); else delete document.body.dataset.kerst;
-  if(!aan && CONFIG.stijl) document.body.dataset.stijl = CONFIG.stijl; else delete document.body.dataset.stijl;   // kerst gaat voor
+  if(!aan && huidigeStijl()) document.body.dataset.stijl = huidigeStijl(); else delete document.body.dataset.stijl;   // kerst gaat voor
   xmasLaag(aan && kerstStijl() === 'elegance');
   document.querySelectorAll('.kerst-hoek').forEach(e => e.remove());
   if(aan && kerstStijl() === 'c') document.querySelector('.main')?.insertAdjacentHTML('beforeend', kerstHoekSvg('kerst-hoek rb', 150, 110, 5, 'c', 11));
@@ -5994,6 +6065,8 @@ document.addEventListener('click', e => {
   const bgc = e.target.closest('[data-bgkeuze]'); if(bgc){ const [v, w] = bgc.dataset.bgkeuze.split(':'); bgKeuze[v] = w; return tekenBeeldPaneel(); }
   const bgt = e.target.closest('[data-bgtest]'); if(bgt) return bgt.dataset.bgtest === 'stop' ? beeldTestUit() : beeldTestAan();
   if(nwOpen && (e.target === $('nieuwPaneel') || e.target.closest('[data-nw-sluit]'))) return sluitNieuw();
+  if(uiOpen){ if(e.target === $('stijlPaneel') || e.target.closest('[data-st-sluit]')) return sluitStijl();
+    const k = e.target.closest('[data-stijl-kies]'); if(k) return kiesStijl(k.dataset.stijlKies); }
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
   const mdp = e.target.closest('[data-mdplay]'); if(mdp) return mediaPlay(mdp.dataset.mdplay);
@@ -6050,7 +6123,7 @@ document.addEventListener('click', e => {
   if(t.dataset.acmode) return zetModus(t.dataset.ac, t.dataset.acmode);
   if(t.dataset.temp)  return temperatuur(t.dataset.temp, parseFloat(t.dataset.stap));
   if(t.dataset.page)  return goPage(t.dataset.page, document.querySelector(`.nav-item[data-page="${t.dataset.page}"]`) || t);
-  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'instellingen':openCfg, 'ververs':verversNu, 'klimaat':openKlimaat, 'beweging':openBeweging, 'claude':openClaude, 'nieuw':openNieuw, 'media':openMedia,
+  ({ 'menu':() => $('sidebar').classList.toggle('collapsed'), 'thema':toggleTheme, 'uiterlijk':openStijl, 'instellingen':openCfg, 'ververs':verversNu, 'klimaat':openKlimaat, 'beweging':openBeweging, 'claude':openClaude, 'nieuw':openNieuw, 'media':openMedia,
      'sluit':closeCfg, 'opslaan':saveCfg, 'lampen':openLampen, 'zone-aanuit':zoneAanUit,
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
@@ -6513,6 +6586,31 @@ function goPage(id, el){
   if(id === 'beleg' && !belZicht()) return goPage('home', document.querySelector('.nav-item[data-page="home"]'));
   if(id === 'beleg'){ tekenBelPagina(); if(!BTC || Date.now() - BTC.t > 60000) laadBtc(); }
   if(id === 'camera') startCamera(); else if(!camGrootId) stopCamera();
+}
+/* Uiterlijk: per tablet onthouden (localStorage), standaard CONFIG.stijl. Kerst gaat voor. */
+const STIJLEN = [
+  { id:'mokka',          naam:'Mokka',          uitleg:'Warm bruin glas met brons en goud',          kl:['#1D1610','#3A2C1F','#F2AC3D','#5A4330'] },
+  { id:'',               naam:'Klassiek',       uitleg:'De oorspronkelijke blauwgrijze stijl',       kl:['#10141C','#222833','#F5A524','#54BFF0'] },
+  { id:'japandi-licht',  naam:'Japandi licht',  uitleg:'Linnen, licht eiken, klei en salie',         kl:['#ECE7DF','#F7F3ED','#A8693A','#6B8160'] },
+  { id:'japandi-donker', naam:'Japandi donker', uitleg:'Houtskool, donker eiken en mos',             kl:['#1B1A18','#24221F','#C79A63','#8FA07A'] },
+  { id:'hotel',          naam:'Hotel chique',   uitleg:'Antraciet met messing en klassieke letters', kl:['#121311','#1B1C19','#C6A66A','#8FB1C4'] },
+];
+var stijlKeuze = (() => { try { return localStorage.getItem('dashboard_stijl'); } catch(e){ return null; } })();
+const huidigeStijl = () => stijlKeuze != null && STIJLEN.some(x => x.id === stijlKeuze) ? stijlKeuze : (CONFIG.stijl || '');
+var uiOpen = false;
+function openStijl(){
+  uiOpen = true;
+  const nu = huidigeStijl();
+  $('stLijst').innerHTML = STIJLEN.map(x => `<button class="st-optie ${x.id === nu ? 'on' : ''}" data-stijl-kies="${x.id}" aria-pressed="${x.id === nu}">
+      <span class="st-voorbeeld" style="background:${x.kl[0]}"><i style="background:${x.kl[1]}"></i><i style="background:${x.kl[1]};border-bottom:3px solid ${x.kl[2]}"></i><i style="background:${x.kl[1]};border-bottom:3px solid ${x.kl[3]}"></i></span>
+      <b>${esc(x.naam)}</b><small>${esc(x.uitleg)}</small></button>`).join('');
+  $('stijlPaneel').classList.add('on');
+}
+function sluitStijl(){ uiOpen = false; $('stijlPaneel').classList.remove('on'); }
+function kiesStijl(id){
+  stijlKeuze = id; try { localStorage.setItem('dashboard_stijl', id); } catch(e){}
+  if(['mokka','japandi-donker','hotel'].includes(id) && document.documentElement.dataset.theme === 'light'){ document.documentElement.dataset.theme = 'dark'; try { localStorage.setItem('dashboard_theme','dark'); } catch(e){} }
+  tekenKerst(); tekenTegels(); openStijl();
 }
 function toggleTheme(){
   const licht = document.documentElement.dataset.theme !== 'light';
