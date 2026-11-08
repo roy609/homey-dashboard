@@ -1922,9 +1922,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '126';
+const DASHBOARD_VERSIE = '127';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'127', datum:'08-11-2026', punten:[ 'Beleggingen: grafiek hersteld. Bitcoin en crypto hebben weer een eigen lijn, en het totaal wordt nu uit de losse beleggingen opgebouwd (het oude Insights-totaal bevatte de handmatige beleggingen nog niet).' ] },
   { v:'126', datum:'08-11-2026', punten:[ 'Beleggingen: de grafiek heeft nu bedragen op de verticale as en datums op de horizontale as.', 'Per belegging een eigen lijn (Totaal, je handmatige belegging, Bitcoin en crypto). Tik op een naam om hem aan of uit te zetten; met € of % kies je bedragen of de procentuele verandering.', 'Zondag bijwerken: naast de waarde kun je het aantal stuks invullen als controle. Elke ingevulde waarde wordt ook als weekstand bewaard voor de grafiek.' ] },
   { v:'125', datum:'08-11-2026', punten:[ 'Beleggingen: de grafiek bij Maand en Alles gaat nu verder terug dan Homey Insights. Een belegging kan in de Logic-variabele een veld "historie" krijgen met weekstanden (datum en waarde); die vullen de grafiek aan tot het eerste Insights-punt. De grafiek gebruikt nu ook een echte tijdas.' ] },
   { v:'124', datum:'08-11-2026', punten:[ 'Nieuwe vormgeving "Mokka": warm bruin glas met brons en goud, zijdeachtige achtergrond, zijbalk als los paneel met bronzen actieve knop en ronde kaarten met warme randen. Indeling en werking blijven hetzelfde. Staat de kerstmodus aan, dan gaat die voor.', 'Nieuwe knop "Uiterlijk" in het menu, onder Donker / licht. Daarmee kies je zelf tussen Mokka, Klassiek, Japandi licht, Japandi donker en Hotel chique. De tablet onthoudt je keuze.' ] },
@@ -5449,19 +5450,30 @@ function belStap(log, t){                                   // laatste waarde op
   return r < 0 ? null : log.pts[r];
 }
 function belReeksen(periode){
-  const d = belData(), H = belHist[periode], P = belPunten(periode); if(!P || P.pts.length < 2 || !P.ts) return [];
+  // Handmatige posten (ING): weekstanden + huidige waarde. Bitcoin: Insights. Crypto: Insights-totaal − bitcoin − handmatig.
+  // Het totaal rekenen we zelf uit de reeksen, want het Insights-totaal bevatte vóór het invullen van ING alleen crypto.
+  const d = belData(), H = belHist[periode]; if(!H) return { reeksen:[], sinds:null };
+  const nu = Date.now(), van = nu - BEL_PER_MS[periode];
   const handNaam = d.posten.length === 1 ? (d.posten[0].naam || 'Handmatig') : 'Handmatig';
-  const tot = P.ts.map((t, i) => ({ t, v:P.pts[i] }));
-  const L = H?.logs || {}, ins = (H?.ts || []).map((t, i) => ({ t, v:H.pts[i] }));
-  const hand = [], btc = [], cr = [], van = Date.now() - BEL_PER_MS[periode], t0 = ins.length ? ins[0].t : Infinity;
-  belHandHist().filter(h => h.t >= van && h.t < t0).forEach(h => hand.push(h));
-  ins.forEach(({ t, v }) => { const b = belStap(L.bitcoin, t), h = belStap(L.hand, t);
-    if(h != null) hand.push({ t, v:h }); if(b != null) btc.push({ t, v:b });
-    if(b != null && h != null) cr.push({ t, v:Math.max(0, v - b - h) }); });
+  const handAll = belHandHist(), hw = d.posten.reduce((n, p) => n + (+p.waarde || 0), 0);
+  if(hw > 0) handAll.push({ t:nu, v:hw });
+  const handLog = { ts:handAll.map(x => x.t), pts:handAll.map(x => x.v) };
+  const hand = handAll.filter(x => x.t >= van), h0 = belStap(handLog, van);
+  if(h0 != null && (!hand.length || hand[0].t > van)) hand.unshift({ t:van, v:h0 });
+  const L = H.logs || {}, B = L.bitcoin || { ts:[], pts:[] };
+  const btc = B.ts.map((t, i) => ({ t, v:B.pts[i] })).filter(x => x.v > 0 && x.t >= van);
+  let cr = (H.ts || []).map((t, i) => { const b = belStap(B, t), h = belStap(L.hand, t) || 0; return b == null ? null : { t, v:H.pts[i] - b - h }; })
+    .filter(x => x && x.v >= 0 && x.t >= van);
+  if(cr.length > 4){ const st = cr.map(x => x.v).sort((a, b) => a - b), med = st[st.length >> 1]; cr = cr.filter(x => x.v <= med * 3 + 10); }
+  const bLog = { ts:btc.map(x => x.t), pts:btc.map(x => x.v) }, cLog = { ts:cr.map(x => x.t), pts:cr.map(x => x.v) };
+  const b0 = btc[0]?.v || 0, c0 = cr[0]?.v || 0;
+  const tijden = [...new Set([...hand.map(x => x.t), ...btc.map(x => x.t)])].sort((a, b) => a - b);
+  const totaal = tijden.map(t => ({ t, v:(belStap(handLog, t) || 0) + (belStap(bLog, t) ?? b0) + (belStap(cLog, t) ?? c0) }));
   const heeftCrypto = Object.keys(MUNTEN).some(k => +muntData(d, k).aantal > 0);
-  return [ { k:'totaal', naam:'Totaal', pts:tot }, { k:'hand', naam:handNaam, pts:hand }, { k:'bitcoin', naam:'Bitcoin', pts:btc },
+  const reeksen = [ { k:'totaal', naam:'Totaal', pts:totaal }, { k:'hand', naam:handNaam, pts:hand }, { k:'bitcoin', naam:'Bitcoin', pts:btc },
            ...(heeftCrypto ? [{ k:'crypto', naam:Object.values(MUNTEN).map(m => m.naam).join(' + '), pts:cr }] : []) ]
     .filter(r => r.pts.length >= 2).map(r => ({ ...r, kleur:BEL_SERIE_KLEUR[r.k] }));
+  return { reeksen, sinds:btc.length && btc[0].t > (tijden[0] || 0) ? btc[0].t : null };
 }
 function belAsStappen(min, max, n){
   const ruw = (max - min) / n || 1, mag = Math.pow(10, Math.floor(Math.log10(ruw))), f = ruw / mag;
@@ -5501,9 +5513,9 @@ function belGrafiekAssen(reeksen, o){
     <div class="bel-series">${chips}</div></div>`;
 }
 function belGrafiekBlok(periode, label, hoog){
-  const R = belReeksen(periode); if(!R.length) return null;
-  const P = belPunten(periode);
-  return belGrafiekAssen(R, { label, zicht:belZicht(), hoog, sinds:P?.sinds }) + belHandNoot(P);
+  const { reeksen, sinds } = belReeksen(periode); if(!reeksen.length) return null;
+  return belGrafiekAssen(reeksen, { label, zicht:belZicht(), hoog, sinds })
+    + (sinds ? `<p class="bel-klein">Bitcoin en crypto worden sinds ${new Date(sinds).toLocaleDateString('nl-NL', { day:'numeric', month:'short' })} bijgehouden; daarvoor telt het totaal ze met hun eerste bekende waarde mee. ${esc(belData().posten.length === 1 ? belData().posten[0].naam : 'Handmatige beleggingen')}: je weekstanden.</p>` : '');
 }
 const belZicht = () => Date.now() < belZichtTot;
 const euroHeel = n => typeof n === 'number' ? '€ ' + Math.round(n).toLocaleString('nl-NL') : '–';
