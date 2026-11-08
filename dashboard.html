@@ -54,6 +54,42 @@
   --amber:#E8940C; --green:#0EB98D; --blue:#2FA3DE; --red:#CD1919; --purple:#7C3AED; --geel:#CA8A04; --oranje:#EA580C;
   --shadow:0 1px 2px rgba(17,24,39,.05), 0 6px 16px rgba(17,24,39,.05);
 }
+/* ═══ Stijl "Mokka" (body[data-stijl="mokka"]): warm bruin glas met brons/goud, naar ontwerp van 08-11-2026 ═══
+   Alleen kleuren, randen, hoeken en achtergrond; indeling en werking blijven gelijk. Alleen in het donkere thema; kerst gaat voor. */
+:root:not([data-theme="light"]) body[data-stijl="mokka"] {
+  --bg-main:#1D1610; --bg-nav:transparent;
+  --bg-card:rgba(48,37,28,.62); --bg-inset:rgba(255,238,215,.06);
+  --mesh-bg:transparent;
+  --border:rgba(255,226,190,.13); --border2:rgba(255,226,190,.22);
+  --text-primary:#F5EDE3; --text-secondary:#D8CCBC; --text-muted:#A99A88;
+  --amber:#F2AC3D; --amber-dim:rgba(242,172,61,.16); --amber-border:rgba(242,172,61,.60);
+  --green:#47C278; --green-dim:rgba(71,194,120,.15); --blue:#5CB9F0; --blue-dim:rgba(92,185,240,.14);
+  --red:#F05C5C; --red-dim:rgba(240,92,92,.15); --purple:#A98BF2;
+  --shadow:inset 0 1px 0 rgba(255,240,220,.07), 0 10px 24px rgba(0,0,0,.35);
+  --r:16px;
+  background:#1D1610 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000' preserveAspectRatio='xMidYMid slice'%3E %3Cdefs%3E %3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%239A7A58'/%3E%3Cstop offset='.5' stop-color='%235A4330'/%3E%3Cstop offset='1' stop-color='%23241A12'/%3E%3C/linearGradient%3E %3ClinearGradient id='b' x1='1' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23B08A62'/%3E%3Cstop offset='.6' stop-color='%234A3626'/%3E%3Cstop offset='1' stop-color='%231E1610'/%3E%3C/linearGradient%3E %3CradialGradient id='g' cx='.45' cy='-.05' r='.7'%3E%3Cstop offset='0' stop-color='%236E5640' stop-opacity='.9'/%3E%3Cstop offset='1' stop-color='%236E5640' stop-opacity='0'/%3E%3C/radialGradient%3E %3Cfilter id='f' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeGaussianBlur stdDeviation='26'/%3E%3C/filter%3E %3Cfilter id='h' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeGaussianBlur stdDeviation='8'/%3E%3C/filter%3E %3C/defs%3E %3Crect width='1600' height='1000' fill='%231D1610'/%3E %3Crect width='1600' height='1000' fill='url(%23g)'/%3E %3Cg filter='url(%23f)' opacity='.85'%3E %3Cpath d='M1050 -40 C1250 120 1380 260 1640 300 L1640 -40 Z' fill='url(%23b)'/%3E %3Cpath d='M1220 260 C1380 420 1460 640 1640 700 L1640 380 C1500 360 1380 300 1220 260 Z' fill='url(%23a)' opacity='.8'/%3E %3Cpath d='M1300 760 C1420 860 1520 900 1640 1040 L1640 820 C1540 800 1420 760 1300 760 Z' fill='url(%23a)' opacity='.6'/%3E %3Cpath d='M-40 820 C140 860 260 960 420 1040 L-40 1040 Z' fill='url(%23a)' opacity='.5'/%3E %3C/g%3E %3Cg filter='url(%23h)' opacity='.35' fill='none' stroke='%23E8C9A0' stroke-width='3'%3E %3Cpath d='M1120 -20 C1290 140 1420 250 1640 280'/%3E %3Cpath d='M1260 300 C1400 440 1480 610 1640 660'/%3E %3C/g%3E %3C/svg%3E") center / cover no-repeat; }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .main { background:transparent; }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .card { background:linear-gradient(150deg, rgba(255,236,210,.075), rgba(255,236,210,.012) 55%), var(--bg-card); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .sidebar { margin:10px 0 10px 10px; border-radius:22px; border:1px solid rgba(255,226,190,.12);
+  background:linear-gradient(180deg, rgba(78,60,44,.78), rgba(40,30,22,.82)); box-shadow:0 10px 30px rgba(0,0,0,.35); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .nav-item { border-radius:14px; }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .nav-item .ic { width:40px; height:40px; border-radius:12px; background:rgba(255,238,215,.05); border:1px solid rgba(255,226,190,.10); color:var(--text-primary); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .nav-item.active { background:rgba(255,238,215,.07); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .nav-item.active .ic { background:linear-gradient(180deg, #93652A, #6B4719); border-color:rgba(242,172,61,.75); color:#FFC15A; box-shadow:0 0 16px rgba(242,172,61,.28); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .ico, :root:not([data-theme="light"]) body[data-stijl="mokka"] .tile .pwr { background:rgba(255,238,215,.08); color:var(--text-primary); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .ico { border-radius:12px; }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.amber { background:var(--amber-dim); color:var(--amber); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.green { background:var(--green-dim); color:var(--green); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.blue { background:var(--blue-dim); color:var(--blue); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.red { background:var(--red-dim); color:var(--red); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.on .ico, :root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.on .pwr { background:var(--amber-dim); color:var(--amber); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .segment button.on { background:linear-gradient(180deg, rgba(242,172,61,.32), rgba(140,92,32,.42)); border-color:rgba(242,172,61,.7); color:#FFD08A; }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .g-lbl { background:rgba(22,16,11,.88); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .main { padding-left:14px; }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.tile-radio.on { border-color:var(--border); background:linear-gradient(150deg, rgba(255,236,210,.075), rgba(255,236,210,.012) 55%), var(--bg-card); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.tile-radio.on .pwr { background:rgba(167,139,250,.24); color:#C9B6FF; }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.tile-radio.on .t-state { color:var(--text-muted); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .huiskaart { border:1px solid rgba(255,226,190,.35); box-shadow:0 0 26px rgba(242,172,61,.12), 0 12px 26px rgba(0,0,0,.45); }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 html,body { height:100%; }
 body { display:flex; overflow:hidden; font-family:var(--sans); font-size:1rem; font-feature-settings:"tnum";
@@ -1762,6 +1798,7 @@ const CONFIG = {
   // Pakjes: apparaat "Pakjes" van de app Parcel Tracker (leeg = automatisch het apparaat met parcels_active)
   pakjes: { id:'f6d1803c-bb0a-40b7-aa34-e602d3d9b408', voor:['Roy','Beau'] },
   // Kerst: variabele "Kerst Flows" (aan = 's avonds de kerstbeelden van het huis)
+  stijl: 'mokka',   // vormgeving: 'mokka' = warm bruin glas met brons/goud; '' = de oorspronkelijke blauwgrijze stijl
   kerst: { var:'0ca37567-f5aa-4c86-b307-60479d76a1b9', stijl:'elegance',   // stijl: elegance = Christmas Elegance (zwart & goud); a = warm wit, b = rood/groen, c = goud
     knoppen:[ { id:'781ca335-d31d-4593-8fde-ef6e8b604d0f', naam:'🎄 Boom' },          // Kerstboom
               { id:'2cc78e9c-a95b-4342-b7a9-bc963cced790', naam:'Voor' },             // Kerstverlichting Voortuin
@@ -1803,9 +1840,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '123';
+const DASHBOARD_VERSIE = '124';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'124', datum:'08-11-2026', punten:[ 'Nieuwe vormgeving "Mokka": warm bruin glas met brons en goud, zijdeachtige achtergrond, zijbalk als los paneel met bronzen actieve knop en ronde kaarten met warme randen. Indeling en werking blijven hetzelfde. Staat de kerstmodus aan, dan gaat die voor.' ] },
   { v:'123', datum:'08-11-2026', punten:[ 'Auto: nieuwe kaart Laadkosten. Laat zien wat het thuisladen van de ID.4 deze maand kost, hoeveel kWh van de zon (gratis) en van het net kwam, en wat je bespaart t.o.v. publiek laden. Tik op de kaart voor het overzicht per maand; per maand of in één keer markeer je de kosten als verrekend.' ] },
   { v:'122', datum:'07-11-2026', punten:[ 'De knop "Reserveren Jasper" is weer weg.' ] },
   { v:'121', datum:'07-11-2026', punten:[ 'Nieuwe knop "Reserveren Jasper" bij de scènes. Hij doet nog niets.' ] },
@@ -2377,6 +2415,7 @@ function tekenKerst(){
   const aan = kerstAan(), sl = $('kerstSlinger'), lg = $('logoSneeuw');
   if(lg) lg.hidden = !aan;
   if(aan) document.body.dataset.kerst = kerstStijl(); else delete document.body.dataset.kerst;
+  if(!aan && CONFIG.stijl) document.body.dataset.stijl = CONFIG.stijl; else delete document.body.dataset.stijl;   // kerst gaat voor
   xmasLaag(aan && kerstStijl() === 'elegance');
   document.querySelectorAll('.kerst-hoek').forEach(e => e.remove());
   if(aan && kerstStijl() === 'c') document.querySelector('.main')?.insertAdjacentHTML('beforeend', kerstHoekSvg('kerst-hoek rb', 150, 110, 5, 'c', 11));
