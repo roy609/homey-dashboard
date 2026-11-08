@@ -1910,9 +1910,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '124';
+const DASHBOARD_VERSIE = '125';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'125', datum:'08-11-2026', punten:[ 'Beleggingen: de grafiek bij Maand en Alles gaat nu verder terug dan Homey Insights. Een belegging kan in de Logic-variabele een veld "historie" krijgen met weekstanden (datum en waarde); die vullen de grafiek aan tot het eerste Insights-punt. De grafiek gebruikt nu ook een echte tijdas.' ] },
   { v:'124', datum:'08-11-2026', punten:[ 'Nieuwe vormgeving "Mokka": warm bruin glas met brons en goud, zijdeachtige achtergrond, zijbalk als los paneel met bronzen actieve knop en ronde kaarten met warme randen. Indeling en werking blijven hetzelfde. Staat de kerstmodus aan, dan gaat die voor.', 'Nieuwe knop "Uiterlijk" in het menu, onder Donker / licht. Daarmee kies je zelf tussen Mokka, Klassiek, Japandi licht, Japandi donker en Hotel chique. De tablet onthoudt je keuze.' ] },
   { v:'123', datum:'08-11-2026', punten:[ 'Auto: nieuwe kaart Laadkosten. Laat zien wat het thuisladen van de ID.4 deze maand kost, hoeveel kWh van de zon (gratis) en van het net kwam, en wat je bespaart t.o.v. publiek laden. Tik op de kaart voor het overzicht per maand; per maand of in één keer markeer je de kosten als verrekend.' ] },
   { v:'122', datum:'07-11-2026', punten:[ 'De knop "Reserveren Jasper" is weer weg.' ] },
@@ -5389,12 +5390,33 @@ async function belLaadHist(periode){
     `/api/manager/insights/log/homey:manager:logic/${id}/entry` ];
   for(const v of vormen){
     try { const r = await homey(v + '?resolution=' + BEL_RES[periode]); const l = Array.isArray(r) ? r : (r?.values || r?.entries || []);
-      belHist[periode] = { t:Date.now(), pts:l.filter(e => e && typeof e.v === 'number' && e.v > 0).map(e => e.v) }; break; }
+      const ok = l.filter(e => e && typeof e.v === 'number' && e.v > 0);
+      belHist[periode] = { t:Date.now(), pts:ok.map(e => e.v), ts:ok.map(e => Date.parse(e.t)) }; break; }
     catch(e){ if(!/40[04]/.test(e.message)) break; }
   }
   if(!belHist[periode]) belHist[periode] = { t:Date.now(), pts:[] };
   if(belOpen) tekenBelPaneel();
 }
+/* Handmatige historie: weekstanden per post (veld "historie" in de Logic-variabele, bv. ING uit afschriften).
+   Vult de grafiek aan vóór het eerste Insights-punt. Aansluiting: het verschil met het eerste Insights-punt
+   (bitcoin/crypto) wordt over die periode constant meegenomen. */
+const BEL_PER_MS = { dag:864e5, week:7 * 864e5, maand:31 * 864e5, alles:730 * 864e5 };
+function belHandHist(){
+  const m = {};
+  belData().posten.forEach(p => (Array.isArray(p.historie) ? p.historie : []).forEach(h => {
+    const t = Date.parse(h.datum); if(!isNaN(t) && +h.waarde > 0) m[t] = (m[t] || 0) + +h.waarde; }));
+  return Object.keys(m).map(Number).sort((a, b) => a - b).map(t => ({ t, v:m[t] }));
+}
+function belPunten(periode){
+  const H = belHist[periode]; if(!H) return null;
+  const ts = H.ts && H.ts.length === H.pts.length && H.ts.every(t => !isNaN(t)) ? H.ts : null;
+  const hand = belHandHist(), t0 = ts && ts.length ? ts[0] : Date.now(), van = Date.now() - BEL_PER_MS[periode];
+  const voor = hand.filter(h => h.t >= van && h.t < t0);
+  if(!voor.length || (H.pts.length && !ts)) return { pts:H.pts, ts, sinds:null };
+  const laatste = hand.filter(h => h.t <= t0).pop(), extra = H.pts.length && laatste ? H.pts[0] - laatste.v : 0;
+  return { pts:[...voor.map(h => h.v + extra), ...H.pts], ts:[...voor.map(h => h.t), ...(ts || [])], sinds:H.pts.length ? t0 : Date.now() };
+}
+const belHandNoot = P => P && P.sinds ? `<p class="bel-klein">Tot ${new Date(P.sinds).toLocaleDateString('nl-NL', { day:'numeric', month:'short' })}: weekstanden uit je afschriften (bitcoin en crypto daar constant gehouden).</p>` : '';
 const belZicht = () => Date.now() < belZichtTot;
 const euroHeel = n => typeof n === 'number' ? '€ ' + Math.round(n).toLocaleString('nl-NL') : '–';
 const pctTekst = p => typeof p === 'number' ? `${p >= 0 ? '▲' : '▼'} ${nl(Math.abs(p), 1)}%` : '–';
@@ -5443,10 +5465,11 @@ function tekenBeleg(){
   if(belOpen) tekenBelPaneel();
   tekenBelPagina();
 }
-function belGrafiek(r, label){
+function belGrafiek(r, label, ts){
   if(!r || r.length < 2) return '';
+  const tijd = ts && ts.length === r.length && ts[ts.length - 1] > ts[0];
   const min = Math.min(...r), max = Math.max(...r), W = 520, H = 90, y = v => H - 6 - (v - min) / ((max - min) || 1) * (H - 12);
-  const pts = r.map((v, i) => `${(i / (r.length - 1) * W).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const pts = r.map((v, i) => `${((tijd ? (ts[i] - ts[0]) / (ts[ts.length - 1] - ts[0]) : i / (r.length - 1)) * W).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
   const kl = r[r.length - 1] >= r[0] ? 'var(--green)' : 'var(--red)';
   const pct = (r[r.length - 1] - r[0]) / r[0] * 100;
   return `<div class="bel-grafiek"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${kl}" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg>
@@ -5469,7 +5492,8 @@ function tekenBelPaneelNu(){
   const pNaam = { dag:'dag', week:'week', maand:'maand', alles:'alles' };
   html += `<div class="segment bel-perioden" role="tablist">${Object.keys(pNaam).map(k => `<button class="${belPeriode === k ? 'on' : ''}" data-bel-periode="${k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}</div>`;
   const pTekst = { dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'sinds de start' }, bTekst = { dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'laatste jaar' };
-  if(H && H.pts.length >= 2) html += belGrafiek(H.pts, 'Totale waarde, ' + pTekst[belPeriode]);
+  const P = belPunten(belPeriode);
+  if(P && P.pts.length >= 2) html += belGrafiek(P.pts, 'Totale waarde, ' + pTekst[belPeriode], P.ts) + belHandNoot(P);
   else {
     const B = btcHist[belPeriode]; if(!B || (!B.pts && !B.bezig)) laadBtcHist(belPeriode);
     html += B && B.pts?.length >= 2 ? belGrafiek(B.pts, 'Bitcoinkoers, ' + bTekst[belPeriode]) : `<p class="bel-klein" style="padding:30px 0;text-align:center">Grafiek laden…</p>`;
@@ -6718,7 +6742,8 @@ function tekenBelPaginaNu(){
   const H = belHist[belPeriode]; if(!H || Date.now() - H.t > 10 * 60000) belLaadHist(belPeriode);
   const pTekst = { dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'sinds de start' }, bTekst = { dag:'laatste 24 uur', week:'laatste 7 dagen', maand:'laatste 31 dagen', alles:'laatste jaar' };
   let grafiek;
-  if(H && H.pts.length >= 2) grafiek = belGrafiek(H.pts, 'Totale waarde, ' + pTekst[belPeriode]);
+  const P = belPunten(belPeriode);
+  if(P && P.pts.length >= 2) grafiek = belGrafiek(P.pts, 'Totale waarde, ' + pTekst[belPeriode], P.ts) + belHandNoot(P);
   else { const B = btcHist[belPeriode]; if(!B || (!B.pts && !B.bezig)) laadBtcHist(belPeriode);
     grafiek = (B && B.pts?.length >= 2 ? belGrafiek(B.pts, 'Bitcoinkoers, ' + bTekst[belPeriode]) : `<p class="bel-klein" style="padding:40px 0;text-align:center">Grafiek laden…</p>`)
       + `<p class="bel-klein">Je eigen totaal wordt nog opgebouwd in Homey Insights; tot die tijd zie je hier de bitcoinkoers.</p>`; }
