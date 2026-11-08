@@ -871,6 +871,26 @@ body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,
 .rdw-melding b { display:block; font-size:var(--fs-md); } .rdw-melding.oranje b { color:var(--amber); } .rdw-melding.rood b { color:var(--red); }
 .rdw-melding p { margin:4px 0 0; font-size:var(--fs-sm); color:var(--text-secondary); }
 .rdw-knoppen { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.auto-kosten { cursor:pointer; }
+.lk-groot { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:8px 0 10px; }
+.lk-groot small { display:block; font-size:var(--fs-sm); color:var(--text-muted); }
+.lk-groot b { font-size:24px; font-weight:800; }
+.lk-balk { display:flex; height:9px; border-radius:99px; overflow:hidden; background:var(--border2); }
+.lk-balk i { display:block; height:100%; }
+.lk-balk .zon { background:var(--amber); } .lk-balk .net { background:var(--blue); }
+.lk-leg { display:flex; justify-content:space-between; gap:8px; font-size:var(--fs-sm); color:var(--text-muted); margin-top:6px; }
+.lk-leg .zon b { color:var(--amber); } .lk-leg .net b { color:var(--blue); }
+.lk-open { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--border2); }
+.lk-open .grow b { color:var(--amber); }
+.lk-open .ok { color:var(--green); font-weight:700; }
+.lk-live { font-size:var(--fs-sm); color:var(--green); font-weight:700; }
+.lk-rij { display:grid; grid-template-columns:1.25fr 1fr 1.1fr 180px; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--border2); }
+.lk-rij:last-child { border-bottom:0; }
+.lk-rij small { display:block; font-size:11.5px; color:var(--text-muted); }
+.lk-rij .st { text-align:right; font-size:var(--fs-sm); }
+.lk-rij .st .open { color:var(--amber); font-weight:700; } .lk-rij .st .ok { color:var(--green); } .lk-rij .st .loopt { color:var(--blue); }
+.lk-link { background:none; border:0; padding:0; color:var(--text-muted); font-size:11.5px; text-decoration:underline; cursor:pointer; }
+.lk-bezig { color:var(--text-muted); font-style:italic; font-size:var(--fs-sm); }
 .rdw-ok { color:var(--green); font-weight:700; font-size:var(--fs-sm); }
 #rdwPaneel .modal { max-width:480px; }
 #rdwPaneel .lp-inhoud, #rdwInhoud { display:flex; flex-direction:column; gap:10px; overflow:auto; }
@@ -1334,6 +1354,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <div class="auto-kolom">
         <div class="card" id="autoLaden"></div>
         <div class="card" id="autoPaal"></div>
+        <div class="card auto-kosten" id="autoKosten" data-lk="1"></div>
         <div class="card" id="autoKlimaat"></div>
         <div class="card" id="autoRdw"></div>
       </div>
@@ -1435,6 +1456,16 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <button class="lp-knop" data-rdw-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
     </div>
     <div id="rdwInhoud"></div>
+  </div>
+</div>
+<div class="overlay" id="lkPaneel">
+  <div class="modal lp" role="dialog" aria-label="Laadkosten">
+    <div class="lp-kop">
+      <div class="ico amber" data-icon="plug"></div>
+      <div class="grow"><h2>Laadkosten ID.4</h2><div class="card-sub" id="lkSub"></div></div>
+      <button class="lp-knop" data-lk-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div id="lkInhoud"></div>
   </div>
 </div>
 <div class="overlay" id="pakjePaneel">
@@ -1772,9 +1803,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '122';
+const DASHBOARD_VERSIE = '123';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'123', datum:'08-11-2026', punten:[ 'Auto: nieuwe kaart Laadkosten. Laat zien wat het thuisladen van de ID.4 deze maand kost, hoeveel kWh van de zon (gratis) en van het net kwam, en wat je bespaart t.o.v. publiek laden. Tik op de kaart voor het overzicht per maand; per maand of in één keer markeer je de kosten als verrekend.' ] },
   { v:'122', datum:'07-11-2026', punten:[ 'De knop "Reserveren Jasper" is weer weg.' ] },
   { v:'121', datum:'07-11-2026', punten:[ 'Nieuwe knop "Reserveren Jasper" bij de scènes. Hij doet nog niets.' ] },
   { v:'120', datum:'06-11-2026', punten:[ 'Kerstmodus in een nieuwe stijl: Christmas Elegance in zwart en goud, met een eigen kerstachtergrond (kerst_achtergrond.jpg). Bijna zwarte achtergrond met warme gouden gloed, donkere glazen kaarten met dunne gouden randen en een gouden omlijsting om de huisfoto.', 'Kerstdecoratie op de achtergrond: een dennenguirlande met warmwitte lichtjes en gouden ballen bovenaan, een kerstboom linksonder met cadeautjes en een lantaarn, hangende gouden ballen met een ster rechtsboven, zachte lichtvlekjes en rustig vallende sneeuw. Alles ligt achter de bediening en reageert niet op aanraking.', 'Actieve knoppen en het menu in champagnegoud. Statuskleuren (zoals koelen, waarschuwingen en planten) blijven zoals ze waren.' ] },
@@ -2104,6 +2136,8 @@ const DEMO_VARS = {
   'da2006d6-9f23-402a-a60c-3be9caaf47d7':{ type:'number', value:0 },
   '90335b5f-1826-48af-9bc4-9a178efe0775':{ type:'number', value:0.164548 },
   '980393ce-0094-45ed-80e9-624d48501da0':{ type:'number', value:0.836134 },
+  'f3ad21fd-45e5-4c19-ad83-d7bd0ef70072':{ type:'string', value:'' },      // Laadkosten (dashboard) → demo via lkDemo()
+  '73874538-1baf-4cb6-9456-001471ea072b':{ type:'string', value:'' },      // Laadkosten verrekenen (dashboard)
 };
 DEMO_DEVICES['61478bcd-411a-4027-8920-74f3e95bed08'].capabilitiesObj.measure_charging_power = { value:0 };
 DEMO_DEVICES['51c4d050-c085-4f94-afd2-9fe91687d94f'].capabilitiesObj['meter_gas.daily'] = { value:1.14 };
@@ -5404,7 +5438,8 @@ function sluitBeleg(){ belOpen = false; belBewerk = null; belZichtTot = 0; $('be
 const AUTO_CFG = { foto:'img/auto.webp', accuKwh:77, kmPerKwh:5.6, kmPerJaar:12500,   // 97.000 km half maart 2026 → 104.890 km op 1 nov 2026       // ID.4 Pro: 77 kWh netto; ~5,6 km/kWh gemiddeld → schatting actieradius
   banden:{ var:'e8f91503-fcb4-4cb9-a464-573b4d98b8fc', winter:{ van:[10, 15], tot:[4, 15] },   // winterbanden ca. 15 oktober t/m 15 april
     nieuwMm:{ zomer:8, winter:8.5 }, grens:{ zomer:3, winter:4 }, wettelijk:1.6 },
-  laadpaal:{ id:'', naam:'go-e Charger Gemini' } };                // id leeg = demo
+  laadpaal:{ id:'', naam:'go-e Charger Gemini' },
+  laadkosten:{ data:'f3ad21fd-45e5-4c19-ad83-d7bd0ef70072', actie:'73874538-1baf-4cb6-9456-001471ea072b', publiek:0.36 } };   // HomeyScript "EV Laadkosten" vult data elke minuut                // id leeg = demo
 const BAND_KEY = 'dashboard_banden';
 let bandGetekend = null, bandBewerk = null, autoWeer = null;
 const autoDev = () => dev(CONFIG.apparaten.auto);
@@ -5639,7 +5674,114 @@ function tekenAuto(){
       ${feit('Laaddoel', `${c('target_soc') ?? '–'}%`)}${feit('Max. stroom', `${c('max_charging_current') ?? '–'} A`)}${feit('Tot laaddoel', `${c('measure_battery.until_target_soc') ?? '–'}%`)}</div>`;
   $('autoKlimaat').innerHTML = `<div class="auto-kop"><span class="ico ${c('climatisation_onoff') ? 'amber' : ''}">${ic('thermo')}</span><b>Klimaat</b><span class="chip">${c('climatisation_onoff') ? 'Aan' : 'Uit'}</span></div>
     <div class="auto-feiten">${feit('Doeltemperatuur', `${c('target_temperature') ?? '–'} °C`)}${feit('Ruitverwarming', c('window_heating_enabled') ? 'Aan' : 'Uit')}${feit('Nog', c('measure_remaining_climatisation_time') ? c('measure_remaining_climatisation_time') + ' min' : '–')}</div>`;
-  tekenBanden(); tekenPaal(); tekenAutoRdw();
+  tekenBanden(); tekenPaal(); tekenLaadkosten(); tekenAutoRdw();
+}
+/* ═════════════════════════════════════════════
+   LAADKOSTEN — verrekenen thuisladen ID.4 met de huishoudpot
+   Bron: HomeyScript "EV Laadkosten" (elke minuut) → variabele "Laadkosten (dashboard)", deel .dashboard.
+   Huis gaat voor; zonnestroom gratis, netstroom tegen "Stroomprijs all-in €/kWh".
+   Verrekenen: het dashboard zet "Laadkosten verrekenen (dashboard)" op "2026-12", "alles" of "-2026-12";
+   het script verwerkt dat binnen een minuut en maakt de variabele weer leeg.
+═════════════════════════════════════════════ */
+let lkOpen = false, lkFout = null, lkBevestig = 0;
+const lkBezig = {};                                                    // maand/"alles" → tijdstip verzoek
+function lkData(){
+  const v = VARS[AUTO_CFG.laadkosten.data];
+  if(v && typeof v.value === 'string' && v.value){ try { const d = JSON.parse(v.value).dashboard; if(d && d.historie) return d; } catch(e){} }
+  return lkDemo();
+}
+function lkDemo(){
+  if(lkDemo.d) return lkDemo.d;
+  const nu = new Date(), mk = (terug, kwh, zonPct, prijs, verrekend) => {
+    const d = new Date(nu.getFullYear(), nu.getMonth() - terug, 1), maand = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const zon = Math.round(kwh * zonPct) / 100, net = Math.round((kwh - zon) * 10) / 10, kosten = Math.round(net * prijs * 100) / 100;
+    return { maand, label:d.toLocaleDateString('nl-NL', { month:'short', year:'numeric' }).replace('.', ''), loopt:terug === 0, kwh, zon, net, kosten,
+      zonPct, besparing:Math.round((kwh * AUTO_CFG.laadkosten.publiek - kosten) * 100) / 100, verrekend, verrekendOp: verrekend ? new Date(d.getFullYear(), d.getMonth() + 1, 3).toISOString() : null };
+  };
+  const historie = [ mk(0, 96.4, 31, .27, false), mk(1, 158.2, 22, .27, false), mk(2, 171.5, 46, .27, true), mk(3, 149.0, 63, .27, true) ];
+  return lkDemo.d = { demo:true, t:nu.toISOString(), prijs:.27, laadpaalGekoppeld:true, live:{ laden:true, kw:6.8, zonPct:72 },
+    dezeMaand:historie[0], openstaand:{ bedrag:historie[1].kosten, maanden:[historie[1].maand] }, historie };
+}
+function lkMaandLang(m){ const [y, mm] = m.split('-'); return new Date(+y, +mm - 1, 1).toLocaleDateString('nl-NL', { month:'long', year:'numeric' }); }
+function lkOpruimen(d){                                                // verzoeken die verwerkt zijn (of te oud) vergeten
+  for(const k of Object.keys(lkBezig)){
+    const t = lkBezig[k], oud = Date.now() - t > 150000;
+    const klaar = d && !d.demo && Date.parse(d.t) > t + 1000;
+    if(oud || klaar) delete lkBezig[k];
+  }
+}
+function tekenLaadkosten(){
+  const el = $('autoKosten'); if(!el) return;
+  const d = lkData(); lkOpruimen(d);
+  const m = d.dezeMaand || { kwh:0, zon:0, net:0, kosten:0, zonPct:0, besparing:0, label:'' };
+  const zonW = m.kwh ? Math.round(m.zon / m.kwh * 100) : 0;
+  const open = d.openstaand || { bedrag:0, maanden:[] };
+  const openTxt = open.maanden.map(x => lkMaandLang(x)).join(', ');
+  const bezigAlles = lkBezig.alles || open.maanden.some(x => lkBezig[x]);
+  el.innerHTML = `<div class="auto-kop"><span class="ico ${d.live?.laden ? 'green' : 'amber'}">${ic('plug')}</span><b>Laadkosten</b>
+      ${d.demo ? '<span class="demo-label">demo</span>' : d.live?.laden ? `<span class="chip" style="background:var(--green-dim);color:var(--green)">Laadt ${nl(d.live.kw, 1)} kW${d.live.zonPct != null ? ` · ${d.live.zonPct}% zon` : ''}</span>` : ''}</div>
+    <div class="card-sub">${esc(lkMaandLang(m.maand || new Date().toISOString().slice(0, 7)))} · zon gratis, net ${euro(d.prijs)} per kWh</div>
+    <div class="lk-groot"><div><small>Kosten deze maand</small><b>${euro(m.kosten) || '€ 0,00'}</b></div><div><small>Geladen</small><b>${nl(m.kwh, 1)}<span class="u"> kWh</span></b></div></div>
+    <div class="lk-balk"><i class="zon" style="width:${zonW}%"></i><i class="net" style="width:${m.kwh ? 100 - zonW : 0}%"></i></div>
+    <div class="lk-leg"><span class="zon">Zon <b>${nl(m.zon, 1)} kWh</b> (${zonW}%)</span><span class="net">Net <b>${nl(m.net, 1)} kWh</b></span></div>
+    <div class="bel-klein" style="margin-top:6px">${m.besparing > 0 ? `${euro(m.besparing)} goedkoper dan publiek laden (${euro(AUTO_CFG.laadkosten.publiek)}/kWh)` : 'Nog niets geladen deze maand'}</div>
+    <div class="lk-open">${open.bedrag > 0
+      ? `<div class="grow"><b>${euro(open.bedrag)} open</b><div class="bel-klein">${esc(openTxt)}</div></div>
+         ${bezigAlles ? '<span class="lk-bezig">wordt verwerkt…</span>' : `<button class="btn primary" data-lk-alles="1">${lkBevestig > Date.now() ? 'Zeker? Tik nogmaals' : `${ic('check')} Alles verrekend`}</button>`}`
+      : '<span class="ok">✓ Alles verrekend</span><span class="grow"></span>'}
+      <button class="btn" data-lk-open="1" style="margin-left:auto">Per maand</button></div>
+    ${!d.demo && !d.laadpaalGekoppeld ? '<p class="bel-klein" style="margin-top:8px">Laadpaal nog niet gekoppeld: geef de go-e in Homey de naam "Laadpaal", dan begint het meten vanzelf.</p>' : ''}
+    ${d.demo ? '<p class="bel-klein" style="margin-top:8px">Voorbeeldgegevens. Met verbinding met Homey zie je hier de echte laadkosten.</p>' : ''}
+    ${lkFout ? `<div class="pk-melding fout">${esc(lkFout)}</div>` : ''}`;
+  if(lkOpen) tekenLkPaneel();
+}
+function openLk(){ lkOpen = true; $('lkPaneel').classList.add('on'); tekenLkPaneel(); }
+function sluitLk(){ lkOpen = false; $('lkPaneel').classList.remove('on'); }
+function tekenLkPaneel(){
+  const d = lkData();
+  $('lkSub').textContent = `Zon gratis · net ${euro(d.prijs)}/kWh · bijgewerkt ${new Date(d.t).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' })}`;
+  const tot = d.historie.reduce((a, m) => ({ kwh:a.kwh + m.kwh, kosten:a.kosten + m.kosten, besp:a.besp + (m.besparing || 0) }), { kwh:0, kosten:0, besp:0 });
+  const rijen = d.historie.map(m => {
+    let st;
+    if(lkBezig[m.maand] || (lkBezig.alles && !m.loopt && !m.verrekend)) st = '<span class="lk-bezig">wordt verwerkt…</span>';
+    else if(m.loopt) st = '<span class="loopt">loopt</span>';
+    else if(m.verrekend) st = `<span class="ok">✓ verrekend ${m.verrekendOp ? new Date(m.verrekendOp).toLocaleDateString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric' }) : ''}</span><br><button class="lk-link" data-lk-zet="-${m.maand}">ongedaan maken</button>`;
+    else if(m.kosten > 0) st = `<button class="btn primary" data-lk-zet="${m.maand}">${ic('check')} Verrekend</button>`;
+    else st = '<span class="ok">niets te verrekenen</span>';
+    return `<div class="lk-rij"><div><b>${esc(lkMaandLang(m.maand))}</b><small>${nl(m.kwh, 1)} kWh · ${m.zonPct}% zon</small></div>
+      <div><b>${euro(m.kosten) || '€ 0,00'}</b><small>${nl(m.net, 1)} kWh van het net</small></div>
+      <div><b style="color:var(--green)">${euro(m.besparing) || '€ 0,00'}</b><small>bespaard t.o.v. publiek</small></div>
+      <div class="st">${st}</div></div>`;
+  }).join('');
+  $('lkInhoud').innerHTML = `<div class="auto-feiten" style="margin-bottom:6px">${feit('Openstaand', euro(d.openstaand?.bedrag || 0), d.openstaand?.bedrag ? 'amber' : 'groen')}${feit('Totaal geladen', `${nl(tot.kwh, 0)} kWh`)}${feit('Totaal bespaard', euro(tot.besp), 'groen')}</div>
+    ${rijen || '<span class="leeg">Nog geen maanden</span>'}
+    ${d.demo ? '<p class="bel-klein">Voorbeeldgegevens.</p>' : ''}
+    <div class="pk-melding fout">${esc(lkFout || '')}</div>`;
+}
+async function lkZet(code){
+  if(Object.keys(lkBezig).length) return;                              // één verzoek tegelijk: het script verwerkt er één per minuut
+  lkFout = null; lkBevestig = 0;
+  const d = lkData();
+  if(d.demo){                                                          // demo: meteen lokaal toepassen
+    const stamp = new Date().toISOString(), zet = (m, aan) => { m.verrekend = aan; m.verrekendOp = aan ? stamp : null; };
+    for(const m of d.historie){
+      if(m.loopt) continue;
+      if(code === 'alles' && !m.verrekend) zet(m, true);
+      else if(code === m.maand) zet(m, true);
+      else if(code === '-' + m.maand) zet(m, false);
+    }
+    const open = d.historie.filter(m => !m.loopt && !m.verrekend && m.kosten > 0);
+    d.openstaand = { bedrag:Math.round(open.reduce((s, m) => s + m.kosten, 0) * 100) / 100, maanden:open.map(m => m.maand) };
+    return tekenLaadkosten();
+  }
+  lkBezig[code.replace(/^-/, '')] = Date.now(); tekenLaadkosten();
+  try { await zetVar(AUTO_CFG.laadkosten.actie, code); }
+  catch(e){ delete lkBezig[code.replace(/^-/, '')]; lkFout = 'Niet doorgegeven aan Homey: ' + e.message; tekenLaadkosten(); }
+}
+function lkAllesKlik(){
+  if(lkBevestig > Date.now()) return lkZet('alles');
+  lkBevestig = Date.now() + 4000; tekenLaadkosten();
+  setTimeout(() => { if(lkBevestig && lkBevestig <= Date.now()){ lkBevestig = 0; tekenLaadkosten(); } }, 4100);
 }
 /* Laadpaal: demo tot er een laadpaal (bv. go-e Charger Gemini) in Homey staat */
 function tekenPaal(){
@@ -5788,6 +5930,10 @@ document.addEventListener('click', e => {
   if(e.target.closest('[data-bel-week]')) return belWeekOpslaan();
   if(e.target.closest('[data-st-test]')) return stocksTest();
   const belw = e.target.closest('[data-bel-weg]'); if(belw){ const d = belData(); d.posten.splice(+belw.dataset.belWeg, 1); belBewaar(d); belBewerk = null; return tekenBeleg(); }
+  if(lkOpen && (e.target === $('lkPaneel') || e.target.closest('[data-lk-sluit]'))) return sluitLk();
+  const lkz = e.target.closest('[data-lk-zet]'); if(lkz) return lkZet(lkz.dataset.lkZet);
+  if(e.target.closest('[data-lk-alles]')) return lkAllesKlik();
+  if(e.target.closest('[data-lk-open]') || e.target.closest('[data-lk]')) return openLk();
   if(rdwOpen && (e.target === $('rdwPaneel') || e.target.closest('[data-rdw-sluit]'))) return sluitRdw();
   if(e.target.closest('[data-rdw-ok]')) return rdwAfvinken(e.target.closest('[data-rdw-ok]').dataset.rdwOk);
   if(e.target.closest('[data-rdw-terug]')) return rdwTerug();
@@ -5870,6 +6016,7 @@ document.addEventListener('click', e => {
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
 document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && lkOpen) return sluitLk();
   if(e.key === 'Escape' && rdwOpen) return sluitRdw();
   if(e.key === 'Escape' && bnwOpen) return sluitBandPaneel();
   if(e.key === 'Escape' && ntOpen) return sluitNotion();
