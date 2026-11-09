@@ -4524,22 +4524,67 @@ const neerslagDefs = pre => `
 /* Ramen van ons huis in de avondbeelden (voor_avond*, zelfde camerastandpunt), per verdieping.
    In de avondbeelden branden alle ramen; staan de lampen op een verdieping uit, dan leggen we donker glas over die ramen. */
 const HUIS_RAMEN = {
-  zolder:  ['591,187 624,149 624,199 591,199', '591,207 624,207 624,235 591,235', '932,355 962,348 1030,428 1002,437', '1000,342 1030,335 1092,405 1067,413'],
+  zolder:  ['591,187 624,149 624,199 591,199', '591,207 624,207 624,235 591,235'],
+  zolderDak: ['932,355 962,348 1030,428 1002,437', '1000,342 1030,335 1092,405 1067,413'],   // dakramen (zolder)
   boven:   ['550,336 583,336 583,412 550,412', '591,340 624,340 624,420 591,420', '716,357 751,357 751,440 716,440'],
   beneden: ['550,502 583,502 583,592 550,592', '591,510 625,510 625,607 591,607', '716,536 753,536 753,688 716,688', '847,527 870,527 870,630 847,630'],
 };
 const HUIS_VOORDEURLAMP = { x:826, y:547 };
-function ramenLaag(s){
-  if(!s) return '';
-  const glas = pts => `<polygon points="${pts}" fill="url(#rGlas)"/><polygon points="${pts}" fill="url(#rGlans)"/>`;
-  let o = '';
-  for(const v of ['beneden', 'boven', 'zolder']) if(s[v] === false) o += `<g class="f-raam-uit" data-verdieping="${v}">${HUIS_RAMEN[v].map(glas).join('')}</g>`;
-  if(s.voordeur === false) o += `<circle cx="${HUIS_VOORDEURLAMP.x}" cy="${HUIS_VOORDEURLAMP.y}" r="78" fill="url(#rLampUit)"/>`;
-  return o ? `<defs>
-      <linearGradient id="rGlas" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A3442" stop-opacity=".94"/><stop offset="1" stop-color="#121821" stop-opacity=".96"/></linearGradient>
-      <linearGradient id="rGlans" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9FB4CC" stop-opacity=".16"/><stop offset=".45" stop-color="#9FB4CC" stop-opacity="0"/></linearGradient>
-      <radialGradient id="rLampUit"><stop offset="0" stop-color="#1A140F" stop-opacity=".75"/><stop offset=".55" stop-color="#1A140F" stop-opacity=".35"/><stop offset="1" stop-color="#1A140F" stop-opacity="0"/></radialGradient>
-    </defs><g class="f-ramen">${o}</g>` : '';
+/* Lampen uit: het raam wordt niet met een vlak afgedekt, maar uit de foto zelf gedimd.
+   Binnen (iets ruimere) raamcontouren wordt alleen het warme, verlichte glas donker en koel gemaakt;
+   witte kozijnen en baksteen blijven zoals ze zijn. Zo blijft de structuur van gordijnen en interieur vaag zichtbaar. */
+function ramenLaag(s, href, kleurFilter){
+  if(!s || !href) return '';
+  const ruim = (pts, m = 3) => { const P = pts.split(' ').map(q => q.split(',').map(Number));
+    const cx = P.reduce((t, q) => t + q[0], 0) / P.length, cy = P.reduce((t, q) => t + q[1], 0) / P.length;
+    const bx = Math.max(...P.map(q => Math.abs(q[0] - cx))) || 1, by = Math.max(...P.map(q => Math.abs(q[1] - cy))) || 1;
+    return P.map(([x, y]) => `${(cx + (x - cx) * (1 + m / bx)).toFixed(1)},${(cy + (y - cy) * (1 + m / by)).toFixed(1)}`).join(' '); };
+  const uit = ['beneden', 'boven', 'zolder'].filter(v => s[v] === false);
+  const lamp = s.voordeur === false;
+  if(!uit.length && !lamp) return '';
+  const clip = uit.flatMap(v => HUIS_RAMEN[v]).map(p => `<polygon points="${ruim(p)}"/>`).join('');
+  const dak = uit.includes('zolder') ? HUIS_RAMEN.zolderDak.map(p => `<polygon points="${p}"/>`).join('') : '';
+  const L = HUIS_VOORDEURLAMP;
+  return `<defs>
+      <clipPath id="rClip">${clip}</clipPath>${dak ? `<clipPath id="rClipDak">${dak}</clipPath>` : ''}
+      <!-- dakramen: licht beige glas → op helderheid dimmen (de dakraamlijsten zijn al donker) -->
+      <filter id="rUitDak" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .9 1.4 .3 0 -.75" result="licht"/>
+        <feColorMatrix in="SourceGraphic" type="matrix" values=".08 .08 .03 0 .04  .07 .09 .04 0 .055  .06 .08 .07 0 .08  0 0 0 1 0" result="donker"/>
+        <feComposite in="donker" in2="licht" operator="in" result="d"/>
+        <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="d"/></feMerge>
+      </filter>
+      <radialGradient id="rLampZacht"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <mask id="rLampKernMasker"><circle cx="${L.x}" cy="${L.y}" r="22" fill="url(#rLampZacht)"/></mask>
+      <!-- de lamp zelf en de witte halo: op helderheid terug naar een donkere armatuur -->
+      <filter id="rLampKern" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .8 1.2 .4 0 -1.05" result="licht"/>
+        <feColorMatrix in="SourceGraphic" type="matrix" values=".30 .05 0 0 .03  .02 .27 0 0 .025  0 .03 .25 0 .02  0 0 0 1 0" result="gedimd"/>
+        <feComposite in="gedimd" in2="licht" operator="in" result="d"/>
+        <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="d"/></feMerge>
+      </filter>
+      <mask id="rLampMasker"><circle cx="${L.x}" cy="${L.y}" r="85" fill="url(#rLampZacht)"/></mask>
+      <!-- verlicht glas (warm: rood ruim boven blauw) → donker, koel glas met een vleug van het interieur -->
+      <filter id="rUit" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3.2 0 -3.2 0 -.28" result="warm"/>
+        <feColorMatrix in="SourceGraphic" type="matrix" values=".07 .07 .02 0 .035  .06 .08 .03 0 .05  .05 .07 .06 0 .075  0 0 0 1 0" result="donker"/>
+        <feComposite in="donker" in2="warm" operator="in" result="dimmen"/>
+        <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="dimmen"/></feMerge>
+      </filter>
+      <!-- buitenlamp uit: alleen de lichte gloed (lamp en aangelichte muur) terugbrengen naar de muurkleur -->
+      <filter id="rLampUit" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  2.5 .5 -2.6 0 -.55" result="licht"/>
+        <feColorMatrix in="SourceGraphic" type="matrix" values=".52 0 0 0 0  0 .48 0 0 0  0 0 .5 0 0  0 0 0 1 0" result="gedimd"/>
+        <feComposite in="gedimd" in2="licht" operator="in" result="d"/>
+        <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="d"/></feMerge>
+      </filter>
+    </defs>
+    <g class="f-ramen" ${kleurFilter ? `filter="url(#${kleurFilter})"` : ''}>
+      ${dak ? `<g clip-path="url(#rClipDak)"><image href="${href}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="xMidYMid slice" filter="url(#rUitDak)"/></g>` : ''}
+      ${uit.length ? `<g clip-path="url(#rClip)"><image href="${href}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="xMidYMid slice" filter="url(#rUit)"/></g>` : ''}
+      ${lamp ? `<g mask="url(#rLampMasker)"><image href="${href}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="xMidYMid slice" filter="url(#rLampUit)"/></g>
+        <g mask="url(#rLampKernMasker)"><image href="${href}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="xMidYMid slice" filter="url(#rLampKern)"/></g>` : ''}
+    </g>`;
 }
 function huisSvg(net, zon, auto, s){
   const donker = isDonker();
@@ -4594,7 +4639,7 @@ function huisSvg(net, zon, auto, s){
       <clipPath id="fPaal"><polygon points="${PAAL}"/></clipPath>
       ${kleurFilter('wKleur', W.kleur)}${neerslagDefs('w')}</defs>
     <image href="${W.basis}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="xMidYMid slice" filter="url(#wKleur)"/>
-    ${donker && /voor_.*avond|voor_avond/.test(W.basis) ? ramenLaag(s) : ''}
+    ${donker && /voor_.*avond|voor_avond/.test(W.basis) ? ramenLaag(s, W.basis, 'wKleur') : ''}
     ${W.lagen}
     <rect x="0" y="0" width="1536" height="230" fill="url(#fKop)"/>
     <g class="f-weer-knop" data-beelden="voor"><rect x="1100" y="955" width="430" height="64" fill="transparent"/><text x="1510" y="1000" class="f-weer" style="text-anchor:end">${esc(o.label)} ⓘ</text></g>
