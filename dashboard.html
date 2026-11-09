@@ -81,6 +81,7 @@
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.amber { background:var(--amber-dim); color:var(--amber); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.green { background:var(--green-dim); color:var(--green); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.blue { background:var(--blue-dim); color:var(--blue); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.geel { background:rgba(250,204,21,.14); color:var(--geel); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.red { background:var(--red-dim); color:var(--red); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.on .ico, :root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.on .pwr { background:var(--amber-dim); color:var(--amber); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .segment button.on { background:linear-gradient(180deg, rgba(242,172,61,.32), rgba(140,92,32,.42)); border-color:rgba(242,172,61,.7); color:#FFD08A; }
@@ -480,11 +481,16 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 
 /* Airco */
 .klim-modus { font-size:var(--fs-sm); font-weight:600; color:var(--blue); margin-left:4px; }
+.klim-modus.k-uit { color:var(--text-muted); } .klim-modus.k-red { color:var(--red); } .klim-modus.k-geel { color:var(--geel); } .klim-modus.k-amber { color:var(--amber); }
 .klim.uit .klim-modus { color:var(--text-muted); }
+.ico.geel { background:rgba(250,204,21,.14); color:var(--geel); }
 .klim.uit .klim-val .doel { color:var(--text-muted); }
 .klim-modi { display:flex; gap:6px; margin-top:8px; }
 /* tado stuurt pas 7 s na de laatste wijziging door: rand loopt in 6 s vol, daarna 1 s bevestiging */
 .card.klim { position:relative; }
+.storing-knop { border:0; cursor:pointer; font:inherit; font-size:20px; font-weight:800; line-height:1; flex:none; }
+.storing-knop:active { transform:scale(.94); }
+.storing-tekst { font-size:var(--fs-md, 15px); line-height:1.5; color:var(--text); padding:4px 2px 8px; }
 .klim-ring { position:absolute; inset:-3px; width:calc(100% + 6px) !important; height:calc(100% + 6px) !important; pointer-events:none; overflow:visible; z-index:3; }
 .klim-ring rect { fill:none; stroke:var(--blue); stroke-width:3; stroke-linecap:round; stroke-dasharray:100 100; stroke-dashoffset:100;
   animation:klimRing var(--duur,6s) linear forwards; filter:drop-shadow(0 0 4px rgba(84,191,240,.5)); }
@@ -501,6 +507,7 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 .klim-modi button:active { transform:scale(.96); }
 .klim-modi button.on { color:var(--blue); background:var(--blue-dim); border-color:rgba(84,191,240,.4); }
 .klim-modi button.on.m-heat { color:var(--red); background:var(--red-dim); border-color:rgba(242,84,91,.4); }
+.klim-modi button.on.m-auto { color:var(--geel); background:rgba(250,204,21,.14); border-color:rgba(250,204,21,.4); }
 .klim-modi button.on.m-off { color:var(--text-primary); background:rgba(128,128,128,.18); border-color:var(--border2); }
 
 /* Klikbare kaart + lampenpaneel */
@@ -1700,6 +1707,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="storingPaneel">
+  <div class="modal lp" role="dialog" aria-label="Storing">
+    <div class="lp-kop">
+      <div class="ico red storing-knop" aria-hidden="true">!</div>
+      <div class="grow"><h2 id="sgTitel">Storing</h2><div class="card-sub" id="sgSub"></div></div>
+      <button class="lp-knop" data-sg-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="storing-tekst" id="sgTekst"></div>
+  </div>
+</div>
+
 <div class="overlay" id="varModal">
   <div class="modal">
     <h2 id="varTitel">Variabele aanpassen</h2>
@@ -1845,6 +1863,12 @@ const CONFIG = {
     { id:'61e4912b-8c24-4f88-8d46-c789313efdc2', naam:'Airco Slaapkamer',        ruimte:'Slaapkamer' },
     { id:'32b29831-27fd-4b9d-9010-32fd40e6210e', naam:'Infrarood spiegel',       ruimte:'Badkamer', icoon:'mirror' },
   ],
+  // Hulptekst bij een onbereikbaar apparaat: de kaart toont dan een rood "!" met deze uitleg.
+  // Infrarood spiegel: via de Tuya Cloud-app; de gratis IoT Core-trial bij Tuya verloopt (na 1 maand of na elke verlenging van 6 maanden).
+  storingHulp: {
+    '32b29831-27fd-4b9d-9010-32fd40e6210e': { titel:'Tuya-koppeling verlopen?',
+      tekst:'Verleng IoT Core op platform.tuya.com (op de computer, niet mobiel): Cloud → Project management → IoT Core → Extend Trial Period (6 maanden). Na goedkeuring de Tuya Cloud-app in Homey herstarten.' },
+  },
   // Achtertuin-foto (Tuin-pagina): waar lampen en sensoren op de foto staan (coördinaten 1536 × 1024).
   // Klopt een plek niet? Pas alleen x en y aan.
   achtertuin: {
@@ -1922,9 +1946,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '128';
+const DASHBOARD_VERSIE = '129';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'129', datum:'09-11-2026', punten:[ 'Infrarood spiegel: is hij onbereikbaar, dan toont de kaart een rood uitroepteken. Tik erop voor uitleg in een pop-up. Meestal is de gratis Tuya-koppeling (IoT Core) verlopen; verleng die op platform.tuya.com via de computer en herstart daarna de Tuya Cloud-app in Homey.', 'Klimaat: icoon en stand kleuren nu mee met wat het apparaat doet: rood bij verwarmen, blauw bij koelen, geel bij automatisch. De infrarood spiegel verwarmt altijd en is dus rood als hij aan staat.' ] },
   { v:'128', datum:'08-11-2026', punten:[ 'Beleggingen: Bitcoin, Ethereum en Monad gaan in de grafiek nu ook terug in de tijd (tot een jaar). De waarde is de koershistorie van CoinGecko × wat je op dat moment bezat, berekend uit je aankopen met datum.', 'Het knopje Totaal toont nu je rendement t.o.v. je inleg; in de %-weergave staat Totaal uit.' ] },
   { v:'127', datum:'08-11-2026', punten:[ 'Beleggingen: grafiek hersteld. Bitcoin en crypto hebben weer een eigen lijn, en het totaal wordt nu uit de losse beleggingen opgebouwd (het oude Insights-totaal bevatte de handmatige beleggingen nog niet).' ] },
   { v:'126', datum:'08-11-2026', punten:[ 'Beleggingen: de grafiek heeft nu bedragen op de verticale as en datums op de horizontale as.', 'Per belegging een eigen lijn (Totaal, je handmatige belegging, Bitcoin en crypto). Tik op een naam om hem aan of uit te zetten; met € of % kies je bedragen of de procentuele verandering.', 'Zondag bijwerken: naast de waarde kun je het aantal stuks invullen als controle. Elke ingevulde waarde wordt ook als weekstand bewaard voor de grafiek.' ] },
@@ -2930,6 +2955,19 @@ const isUit = d => (heeft(d,'thermostat_cmode') && isOffWaarde(cap(d,'thermostat
                 || isOffWaarde(cap(d,'ac_mode')) || cap(d,'onoff') === false;
 const huidigeModus = d => isUit(d) ? '__uit' : String(cap(d,'ac_mode') ?? cap(d,'thermostat_cmode') ?? '');
 
+/* Kleur van icoon en standtekst: rood = verwarmen, blauw = koelen, geel = automatisch.
+   De infrarood spiegel heeft geen standen: die verwarmt altijd, dus rood als hij aan staat. */
+function klimKleur(d, k, lijst){
+  if(lijst.length && isUit(d)) return '';
+  if(cap(d,'onoff') === false) return '';
+  if(k.icoon === 'thermo') return 'amber';
+  const m = String(lijst.length ? huidigeModus(d) : (cap(d,'custom_thermostat_mode') ?? '')).toLowerCase();
+  if(/heat/.test(m)) return 'red';
+  if(/cool/.test(m)) return 'blue';
+  if(/auto/.test(m)) return 'geel';
+  if(k.icoon === 'mirror' || k.naam.includes('spiegel')) return 'red';
+  return 'blue';
+}
 const KLIM_WACHT_MS = 6000, KLIM_OK_MS = 1000;
 var klimWacht = {};                               // id → { start, ok, t }
 function klimStart(id){
@@ -2955,16 +2993,19 @@ function klimaatKaart(k){
     const d = dev(k.id);
     if(!d) return '';
     const offline = d.available === false;
+    const hulp = CONFIG.storingHulp?.[k.id];
     const nu = cap(d,'measure_temperature'), doel = cap(d,'target_temperature');
     const metDoel = typeof doel === 'number' && doel >= 5;
     const lijst = modi(d), uit = lijst.length && isUit(d);
     const huidig = lijst.find(m => String(m.id).toLowerCase() === huidigeModus(d).toLowerCase());
+    const kleur = offline ? 'red' : klimKleur(d, k, lijst), kk = ` k-${kleur || 'uit'}`;
     return `<div class="card klim ${uit ? 'uit' : ''}">${klimRing(k.id)}<div class="row">
-      <div class="ico ${offline ? 'red' : uit || cap(d,'onoff') === false ? '' : k.icoon === 'thermo' ? 'amber' : 'blue'}">${ic(k.icoon || (k.naam.includes('spiegel') ? 'mirror' : 'ac'))}</div>
-      <div class="grow"><div style="font-weight:700">${esc(k.naam)}${lijst.length && !offline ? ` <span class="klim-modus">${uit ? 'staat uit' : esc(huidig?.label || '')}</span>`
-          : !offline && cap(d,'custom_thermostat_mode') ? ` <span class="klim-modus">${esc(({ heat:'Verwarmen', cool:'Koelen', off:'Uit', auto:'Auto' })[String(cap(d,'custom_thermostat_mode')).toLowerCase()] || cap(d,'custom_thermostat_mode'))}</span>`
-          : !offline && !lijst.length && typeof cap(d,'onoff') === 'boolean' ? ` <span class="klim-modus">${cap(d,'onoff') ? 'staat aan' : 'staat uit'}</span>` : ''}</div>
-        ${offline ? '<div class="warn">Onbereikbaar</div>' :
+      ${offline && hulp ? `<button class="ico red storing-knop" data-storing="${esc(k.id)}" aria-label="Wat is er aan de hand met ${esc(k.naam)}?">!</button>` :
+      `<div class="ico ${kleur}">${ic(k.icoon || (k.naam.includes('spiegel') ? 'mirror' : 'ac'))}</div>`}
+      <div class="grow"><div style="font-weight:700">${esc(k.naam)}${lijst.length && !offline ? ` <span class="klim-modus${kk}">${uit ? 'staat uit' : esc(huidig?.label || '')}</span>`
+          : !offline && cap(d,'custom_thermostat_mode') ? ` <span class="klim-modus${kk}">${esc(({ heat:'Verwarmen', cool:'Koelen', off:'Uit', auto:'Auto' })[String(cap(d,'custom_thermostat_mode')).toLowerCase()] || cap(d,'custom_thermostat_mode'))}</span>`
+          : !offline && !lijst.length && typeof cap(d,'onoff') === 'boolean' ? ` <span class="klim-modus${kk}">${cap(d,'onoff') ? 'staat aan' : 'staat uit'}</span>` : ''}</div>
+        ${offline ? `<div class="warn">Onbereikbaar${hulp ? ' · tik op !' : ''}</div>` :
           `<div class="klim-val">${nl(nu)}°${metDoel ? `<span class="pijl">→</span><span class="doel">${nl(doel)}°</span>` : ''}</div>`}</div>
       ${!offline && metDoel ? `<div class="stepper">
         <button data-temp="${esc(k.id)}" data-stap="0.5" aria-label="Warmer">${ic('up')}</button>
@@ -3575,6 +3616,16 @@ function openNieuw(){
 function sluitNieuw(){ nwOpen = false; $('nieuwPaneel').classList.remove('on'); }
 
 function openKlimaat(){ klOpen = true; $('klimaatPaneel').classList.add('on'); tekenKlimaatPaneel(); $('klLijst').scrollTop = 0; }
+let sgOpen = false;
+function openStoring(id){
+  const h = CONFIG.storingHulp?.[id]; if(!h) return;
+  sgOpen = true;
+  $('sgTitel').textContent = h.titel;
+  $('sgSub').textContent = (dev(id)?.name || '') + ' is onbereikbaar';
+  $('sgTekst').textContent = h.tekst;
+  $('storingPaneel').classList.add('on');
+}
+function sluitStoring(){ sgOpen = false; $('storingPaneel').classList.remove('on'); }
 function sluitKlimaat(){ klOpen = false; $('klimaatPaneel').classList.remove('on'); }
 async function zetModus(id, modus){
   const d = dev(id); if(!d) return;
@@ -6170,6 +6221,8 @@ function rdwTerug(){ const st = rdwStaat(); delete st.apk; rdwBewaar(st); }
 /* Eén klik-afhandelaar voor de hele pagina */
 document.addEventListener('click', e => {
   if(e.target.closest('[data-slot]')){ e.preventDefault(); return; }
+  if(sgOpen && (e.target === $('storingPaneel') || e.target.closest('[data-sg-sluit]'))) return sluitStoring();
+  const sg = e.target.closest('[data-storing]'); if(sg){ e.stopPropagation(); return openStoring(sg.dataset.storing); }
   const ep = e.target.closest('[data-eper]'); if(ep){ if(ep.dataset.eper !== ePer.soort || ePer.off) ePeriode(ep.dataset.eper); return; }
   const eo = e.target.closest('[data-eoff]'); if(eo){ if(!eo.disabled) ePeriode(null, +eo.dataset.eoff); return; }
   const bd = e.target.closest('[data-band]'); if(bd) return bandActie(bd.dataset.band);
@@ -6278,6 +6331,7 @@ document.addEventListener('click', e => {
      'var-min':() => stapVar(-1), 'var-plus':() => stapVar(1), 'var-sluit':sluitVar, 'var-opslaan':bewaarVar })[t.dataset.actie]?.();
 });
 document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && sgOpen) return sluitStoring();
   if(e.key === 'Escape' && lkOpen) return sluitLk();
   if(e.key === 'Escape' && rdwOpen) return sluitRdw();
   if(e.key === 'Escape' && bnwOpen) return sluitBandPaneel();
