@@ -1940,6 +1940,14 @@ const CONFIG = {
     zolder:  ['6a48add5-7349-4ff3-84b9-812e2d706e50'],
     voordeurlamp: 'c4a55e1e-b50e-4f74-9552-20b3be39dca9',   // "lamp voordeur" (Voortuin)
   },
+  /* Huiskaart 's avonds: welke kamer achter welke ramen zit. Staan alle lampen in de zones van een kamer uit,
+     dan worden zijn ramen donker. Een kamer zonder zones (nog geen lampen) blijft donker. */
+  huisKamers: [
+    { naam:'Woonkamer',   ramen:['beneden'],              zones:['9eb2975d-49ea-4033-8db0-105a3e982117'] },          // 0.1 Woonkamer
+    { naam:'Slaapkamer',  ramen:['bovenLinks'],           zones:['ddc3cdaa-8172-4c4a-97c9-22d8ec462972'] },          // 1.1 Slaapkamer
+    { naam:'Kinderkamer', ramen:['bovenRechts'],          zones:[] },                                                // bestaat nog niet
+    { naam:'Werkkamer',   ramen:['zolder', 'zolderDak'],  zones:['1815c884-af06-4d53-a2c1-6f4c77e9eb4e','6a48add5-7349-4ff3-84b9-812e2d706e50'] },  // 1.2 Werkkamer + 2. Zolder
+  ],
   // Lampen die niet meetellen bij "x staan aan" (groepen, dubbele)
   nietTellen: ['0182390e-4985-4df0-9769-a1a4c76aa0e8','d81c63a5-6699-4fae-b878-dbcd64ef651f','d8fc235f-e3a8-45cf-8fd7-01a3c7b491d2'],
 };
@@ -1947,9 +1955,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '129';
+const DASHBOARD_VERSIE = '130';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'130', datum:'09-11-2026', punten:[ 'Huiskaart \'s avonds: de ramen volgen de verlichting per kamer. Staan alle lampen in een kamer uit, dan is dat raam donker. Woonkamer: de ramen beneden. Slaapkamer: boven links. Kinderkamer: boven rechts, voorlopig altijd donker. Werkkamer: het zolderraam en de dakramen.', 'Staat de voordeurlamp uit, dan verdwijnt het licht bij de laadpaal.' ] },
   { v:'129', datum:'09-11-2026', punten:[ 'Infrarood spiegel: is hij onbereikbaar, dan toont de kaart een rood uitroepteken. Tik erop voor uitleg in een pop-up. Meestal is de gratis Tuya-koppeling (IoT Core) verlopen; verleng die op platform.tuya.com via de computer en herstart daarna de Tuya Cloud-app in Homey.', 'Klimaat: icoon en stand kleuren nu mee met wat het apparaat doet: rood bij verwarmen, blauw bij koelen, geel bij automatisch. De infrarood spiegel verwarmt altijd en is dus rood als hij aan staat.' ] },
   { v:'128', datum:'08-11-2026', punten:[ 'Beleggingen: Bitcoin, Ethereum en Monad gaan in de grafiek nu ook terug in de tijd (tot een jaar). De waarde is de koershistorie van CoinGecko × wat je op dat moment bezat, berekend uit je aankopen met datum.', 'Het knopje Totaal toont nu je rendement t.o.v. je inleg; in de %-weergave staat Totaal uit.' ] },
   { v:'127', datum:'08-11-2026', punten:[ 'Beleggingen: grafiek hersteld. Bitcoin en crypto hebben weer een eigen lijn, en het totaal wordt nu uit de losse beleggingen opgebouwd (het oude Insights-totaal bevatte de handmatige beleggingen nog niet).' ] },
@@ -4000,11 +4009,12 @@ function tekenEnergieLive(){
   const st = {
     beneden: lampAan(CONFIG.huisZones.beneden), boven: lampAan(CONFIG.huisZones.boven), zolder: lampAan(CONFIG.huisZones.zolder),
     voordeur: CONFIG.huisZones.voordeurlamp ? cap(dev(CONFIG.huisZones.voordeurlamp),'onoff') === true : null,
+    kamers: Object.fromEntries((CONFIG.huisKamers || []).map(k => [k.naam, k.zones.length ? lampAan(k.zones) : false])),
     autoThuis: !!AUTO && (typeof afstand !== 'number' || afstand < 150),
   };
   const emmer = w => w < 20 ? 0 : Math.min(5, Math.ceil(Math.log10(w)));
   const sleutel = [Math.sign(Math.round(net / 20)), emmer(Math.abs(net)), emmer(zon), emmer(auto),
-                   st.autoThuis, isDonker(), omstandigheden().label, Math.floor(Date.now() / 9e5), st.beneden, st.boven, st.zolder, st.voordeur].join('|');
+                   st.autoThuis, isDonker(), omstandigheden().label, Math.floor(Date.now() / 9e5), JSON.stringify(st.kamers), st.voordeur].join('|');
   if(sleutel !== flowSleutel || !$('flowSvg')){ flowSleutel = sleutel; $('flow').innerHTML = huisSvg(net, zon, auto, st); spiegelHuis(); }
   else if(!$('flowSvgHome')) spiegelHuis();
 
@@ -4524,10 +4534,11 @@ const neerslagDefs = pre => `
 /* Ramen van ons huis in de avondbeelden (voor_avond*, zelfde camerastandpunt), per verdieping.
    In de avondbeelden branden alle ramen; staan de lampen op een verdieping uit, dan leggen we donker glas over die ramen. */
 const HUIS_RAMEN = {
-  zolder:  ['591,187 624,149 624,199 591,199', '591,207 624,207 624,235 591,235'],
-  zolderDak: ['932,355 962,348 1030,428 1002,437', '1000,342 1030,335 1092,405 1067,413'],   // dakramen (zolder)
-  boven:   ['550,336 583,336 583,412 550,412', '591,340 624,340 624,420 591,420', '716,357 751,357 751,440 716,440'],
-  beneden: ['550,502 583,502 583,592 550,592', '591,510 625,510 625,607 591,607', '716,536 753,536 753,688 716,688', '847,527 870,527 870,630 847,630'],
+  zolder:      ['591,187 624,149 624,199 591,199', '591,207 624,207 624,235 591,235'],
+  zolderDak:   ['932,355 962,348 1030,428 1002,437', '1000,342 1030,335 1092,405 1067,413'],   // dakramen (zolder)
+  bovenLinks:  ['550,336 583,336 583,412 550,412', '591,340 624,340 624,420 591,420'],
+  bovenRechts: ['716,357 751,357 751,440 716,440'],
+  beneden:     ['550,502 583,502 583,592 550,592', '591,510 625,510 625,607 591,607', '716,536 753,536 753,688 716,688', '847,527 870,527 870,630 847,630'],
 };
 const HUIS_VOORDEURLAMP = { x:826, y:547 };
 /* Voordeurlamp uit: per avondbeeld een klein, vooraf gemaakt stukje muur (54×130 px) zonder lamplicht:
@@ -4547,12 +4558,13 @@ function ramenLaag(s, href, kleurFilter){
     const cx = P.reduce((t, q) => t + q[0], 0) / P.length, cy = P.reduce((t, q) => t + q[1], 0) / P.length;
     const bx = Math.max(...P.map(q => Math.abs(q[0] - cx))) || 1, by = Math.max(...P.map(q => Math.abs(q[1] - cy))) || 1;
     return P.map(([x, y]) => `${(cx + (x - cx) * (1 + m / bx)).toFixed(1)},${(cy + (y - cy) * (1 + m / by)).toFixed(1)}`).join(' '); };
-  const uit = ['beneden', 'boven', 'zolder'].filter(v => s[v] === false);
+  // per kamer (CONFIG.huisKamers): zijn al zijn lampen uit, dan gaan zijn ramen op donker
+  const uit = (CONFIG.huisKamers || []).filter(k => s.kamers?.[k.naam] === false).flatMap(k => k.ramen);
   const lamp = s.voordeur === false;
   const lampStukje = HUIS_LAMP_UIT.stukjes[(href.match(/([^/]+)\.\w+$/) || [])[1]];
   if(!uit.length && !lamp) return '';
-  const clip = uit.flatMap(v => HUIS_RAMEN[v]).map(p => `<polygon points="${ruim(p)}"/>`).join('');
-  const dak = uit.includes('zolder') ? HUIS_RAMEN.zolderDak.map(p => `<polygon points="${p}"/>`).join('') : '';
+  const clip = uit.filter(v => v !== 'zolderDak').flatMap(v => HUIS_RAMEN[v] || []).map(p => `<polygon points="${ruim(p)}"/>`).join('');
+  const dak = uit.includes('zolderDak') ? HUIS_RAMEN.zolderDak.map(p => `<polygon points="${p}"/>`).join('') : '';
   const L = HUIS_VOORDEURLAMP;
   return `<defs>
       <clipPath id="rClip">${clip}</clipPath>${dak ? `<clipPath id="rClipDak">${dak}</clipPath>` : ''}
