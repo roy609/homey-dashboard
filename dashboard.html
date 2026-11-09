@@ -1938,6 +1938,7 @@ const CONFIG = {
     boven:   ['b840a982-a3a7-4513-9d96-902d81128f5c','ddc3cdaa-8172-4c4a-97c9-22d8ec462972','1815c884-af06-4d53-a2c1-6f4c77e9eb4e',
               '2dbb556b-cd39-4835-9cb4-938624c3a483','3265d4b0-c5fd-4a1e-bff8-898a0c4f8140','8a6928ea-26b2-4922-9ead-d20ee6695dd3'],
     zolder:  ['6a48add5-7349-4ff3-84b9-812e2d706e50'],
+    voordeurlamp: 'c4a55e1e-b50e-4f74-9552-20b3be39dca9',   // "lamp voordeur" (Voortuin)
   },
   // Lampen die niet meetellen bij "x staan aan" (groepen, dubbele)
   nietTellen: ['0182390e-4985-4df0-9769-a1a4c76aa0e8','d81c63a5-6699-4fae-b878-dbcd64ef651f','d8fc235f-e3a8-45cf-8fd7-01a3c7b491d2'],
@@ -3998,11 +3999,12 @@ function tekenEnergieLive(){
   const afstand = cap(AUTO,'measure_distance_home');
   const st = {
     beneden: lampAan(CONFIG.huisZones.beneden), boven: lampAan(CONFIG.huisZones.boven), zolder: lampAan(CONFIG.huisZones.zolder),
+    voordeur: CONFIG.huisZones.voordeurlamp ? cap(dev(CONFIG.huisZones.voordeurlamp),'onoff') === true : null,
     autoThuis: !!AUTO && (typeof afstand !== 'number' || afstand < 150),
   };
   const emmer = w => w < 20 ? 0 : Math.min(5, Math.ceil(Math.log10(w)));
   const sleutel = [Math.sign(Math.round(net / 20)), emmer(Math.abs(net)), emmer(zon), emmer(auto),
-                   st.autoThuis, isDonker(), omstandigheden().label, Math.floor(Date.now() / 9e5)].join('|');
+                   st.autoThuis, isDonker(), omstandigheden().label, Math.floor(Date.now() / 9e5), st.beneden, st.boven, st.zolder, st.voordeur].join('|');
   if(sleutel !== flowSleutel || !$('flowSvg')){ flowSleutel = sleutel; $('flow').innerHTML = huisSvg(net, zon, auto, st); spiegelHuis(); }
   else if(!$('flowSvgHome')) spiegelHuis();
 
@@ -4519,6 +4521,26 @@ const neerslagDefs = pre => `
   <pattern id="${pre}Sneeuw3" width="200" height="200" patternUnits="userSpaceOnUse">
     <g fill="#fff" fill-opacity=".9"><circle cx="40" cy="50" r="3.6"/><circle cx="150" cy="140" r="3.2"/><circle cx="110" cy="20" r="2.6"/></g>
     <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="50 200" dur="5s" repeatCount="indefinite"/></pattern>`;
+/* Ramen van ons huis in de avondbeelden (voor_avond*, zelfde camerastandpunt), per verdieping.
+   In de avondbeelden branden alle ramen; staan de lampen op een verdieping uit, dan leggen we donker glas over die ramen. */
+const HUIS_RAMEN = {
+  zolder:  ['591,187 624,149 624,199 591,199', '591,207 624,207 624,235 591,235', '932,355 962,348 1030,428 1002,437', '1000,342 1030,335 1092,405 1067,413'],
+  boven:   ['550,336 583,336 583,412 550,412', '591,340 624,340 624,420 591,420', '716,357 751,357 751,440 716,440'],
+  beneden: ['550,502 583,502 583,592 550,592', '591,510 625,510 625,607 591,607', '716,536 753,536 753,688 716,688', '847,527 870,527 870,630 847,630'],
+};
+const HUIS_VOORDEURLAMP = { x:826, y:547 };
+function ramenLaag(s){
+  if(!s) return '';
+  const glas = pts => `<polygon points="${pts}" fill="url(#rGlas)"/><polygon points="${pts}" fill="url(#rGlans)"/>`;
+  let o = '';
+  for(const v of ['beneden', 'boven', 'zolder']) if(s[v] === false) o += `<g class="f-raam-uit" data-verdieping="${v}">${HUIS_RAMEN[v].map(glas).join('')}</g>`;
+  if(s.voordeur === false) o += `<circle cx="${HUIS_VOORDEURLAMP.x}" cy="${HUIS_VOORDEURLAMP.y}" r="78" fill="url(#rLampUit)"/>`;
+  return o ? `<defs>
+      <linearGradient id="rGlas" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A3442" stop-opacity=".94"/><stop offset="1" stop-color="#121821" stop-opacity=".96"/></linearGradient>
+      <linearGradient id="rGlans" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9FB4CC" stop-opacity=".16"/><stop offset=".45" stop-color="#9FB4CC" stop-opacity="0"/></linearGradient>
+      <radialGradient id="rLampUit"><stop offset="0" stop-color="#1A140F" stop-opacity=".75"/><stop offset=".55" stop-color="#1A140F" stop-opacity=".35"/><stop offset="1" stop-color="#1A140F" stop-opacity="0"/></radialGradient>
+    </defs><g class="f-ramen">${o}</g>` : '';
+}
 function huisSvg(net, zon, auto, s){
   const donker = isDonker();
   const o = omstandigheden(), W = weerLagen(o, donker, 'voor', 'w');
@@ -4572,6 +4594,7 @@ function huisSvg(net, zon, auto, s){
       <clipPath id="fPaal"><polygon points="${PAAL}"/></clipPath>
       ${kleurFilter('wKleur', W.kleur)}${neerslagDefs('w')}</defs>
     <image href="${W.basis}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="xMidYMid slice" filter="url(#wKleur)"/>
+    ${donker && /voor_.*avond|voor_avond/.test(W.basis) ? ramenLaag(s) : ''}
     ${W.lagen}
     <rect x="0" y="0" width="1536" height="230" fill="url(#fKop)"/>
     <g class="f-weer-knop" data-beelden="voor"><rect x="1100" y="955" width="430" height="64" fill="transparent"/><text x="1510" y="1000" class="f-weer" style="text-anchor:end">${esc(o.label)} ⓘ</text></g>
