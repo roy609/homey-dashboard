@@ -1054,6 +1054,48 @@ body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,
 .bel-totaal .verborgen { letter-spacing:.2em; color:var(--text-muted); }
 .bel-totaal .hint { font-size:11.5px; color:var(--text-muted); margin-top:4px; }
 .beleg-grid { display:grid; grid-template-columns:1.15fr 1fr; gap:18px; align-items:start; }
+/* v131: opbouw in de stijl van een portefeuille-overzicht */
+.beleg-grid.bel-nieuw { display:flex; flex-direction:column; align-items:stretch; gap:18px; }
+#belPagina svg polygon, #belPagina svg text { stroke:none; }
+.bel-boven { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:18px; align-items:stretch; }
+.bel-kaarten { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:18px; }
+.bel-onder { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+@media (max-width:1000px){ .bel-boven, .bel-onder { grid-template-columns:1fr; } }
+.bel-label { display:block; color:var(--text-muted); font-size:var(--fs-micro); font-weight:700; letter-spacing:1.2px; text-transform:uppercase; }
+.bel-hero { padding:18px 20px 14px; display:flex; flex-direction:column; gap:12px; }
+.bh-kop { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+.bh-totaal { font-size:2.6rem; font-weight:800; letter-spacing:-.5px; line-height:1.15; margin-top:2px; font-variant-numeric:tabular-nums; cursor:pointer; }
+.bh-totaal.verborgen { letter-spacing:4px; color:var(--text-muted); }
+.bh-pillen { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.bh-feiten { display:flex; gap:26px; flex-wrap:wrap; margin-top:12px; }
+.bh-feiten small { display:block; color:var(--text-muted); font-size:var(--fs-micro); font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+.bh-feiten b { display:block; margin-top:4px; font-size:1.05rem; font-variant-numeric:tabular-nums; }
+.bel-hero .bel-perioden { margin-top:0; }
+.bk-pil { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:8px; font-weight:700; font-size:var(--fs-sm); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.bk-pil.op { color:var(--green); background:var(--green-dim, rgba(74,222,128,.15)); } .bk-pil.neer { color:var(--red); background:var(--red-dim, rgba(242,84,91,.15)); }
+.bel-verdeel { padding:18px 20px; display:flex; flex-direction:column; gap:12px; }
+.bv-rij { display:flex; gap:16px; align-items:center; }
+.bv-rij svg { width:160px; height:160px; flex:none; }
+.bv-leg { display:grid; gap:8px; font-size:var(--fs-sm); font-weight:700; }
+.bv-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; }
+.bv-leg small { color:var(--text-muted); }
+.bel-kaart { padding:14px 16px 12px; display:flex; flex-direction:column; }
+.bel-kaart.oud { box-shadow:inset 0 0 0 1px var(--amber-border, rgba(245,165,36,.5)); }
+.bk-kop { display:flex; align-items:center; gap:10px; }
+.bk-kop b { display:block; } .bk-kop small { display:block; color:var(--text-muted); font-size:var(--fs-sm); font-weight:600; }
+.bk-sym { display:inline-grid; place-items:center; min-width:42px; height:28px; padding:0 8px; border-radius:8px; font-size:.82rem; font-weight:800; color:#1D1610; }
+.bk-waarde { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:12px 0 2px; }
+.bk-waarde b { font-size:1.3rem; font-weight:800; font-variant-numeric:tabular-nums; }
+.bk-spark { height:58px; margin:6px 0 8px; display:grid; place-items:center; }
+.bk-spark svg { width:100%; height:54px; display:block; overflow:visible; }
+.bk-regel { display:flex; justify-content:space-between; gap:8px; padding:6px 0; border-top:1px solid var(--border); font-size:var(--fs-sm); }
+.bk-regel span { color:var(--text-muted); font-weight:600; } .bk-regel b { font-weight:700; text-align:right; font-variant-numeric:tabular-nums; }
+.bk-regel b small { color:var(--text-muted); font-weight:600; }
+.bk-oud { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--amber); margin-right:6px; vertical-align:middle; }
+.bk-knop { margin-top:auto; width:100%; justify-content:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bk-knop, .bel-kaart > .bel-form { margin-top:auto; } .bel-kaart > .bk-regel:last-of-type { margin-bottom:10px; }
+.bel-kaart .bel-form { margin-top:10px; }
+.bel-kaart.bewerkt { grid-column:1 / -1; }
 .beleg-kolom { display:flex; flex-direction:column; gap:18px; min-width:0; }
 @media (max-width:1100px){ .beleg-grid { grid-template-columns:1fr; } }
 #page-beleg .card { padding:16px; gap:12px; display:flex; flex-direction:column; }
@@ -1955,9 +1997,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '130';
+const DASHBOARD_VERSIE = '131';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'131', datum:'10-11-2026', punten:[ 'Beleggingen in een nieuw jasje, zoals een portefeuille-overzicht. Bovenaan de totale waarde met labels voor vandaag, de gekozen periode en sinds begin, plus ingelegd, winst en startdatum. Daaronder de grafiek met 1D / 1W / 1M / Alles en rechts de verdeling als ring.', 'Per belegging een kaart met waarde, de verandering in de gekozen periode, een eigen mini-grafiek, het rendement sinds begin (€ en %), ingelegd sinds, en de koers of wanneer bijgewerkt. Aanpassen gaat direct vanuit de kaart.', 'Zondag bijwerken, inleg en winst met stortingen, en belegging toevoegen staan eronder.' ] },
   { v:'130', datum:'09-11-2026', punten:[ 'Huiskaart \'s avonds: de ramen volgen de verlichting per kamer. Staan alle lampen in een kamer uit, dan is dat raam donker. Woonkamer: de ramen beneden. Slaapkamer: boven links. Kinderkamer: boven rechts, voorlopig altijd donker. Werkkamer: het zolderraam en de dakramen.', 'Staat de voordeurlamp uit, dan verdwijnt het licht bij de laadpaal.' ] },
   { v:'129', datum:'09-11-2026', punten:[ 'Infrarood spiegel: is hij onbereikbaar, dan toont de kaart een rood uitroepteken. Tik erop voor uitleg in een pop-up. Meestal is de gratis Tuya-koppeling (IoT Core) verlopen; verleng die op platform.tuya.com via de computer en herstart daarna de Tuya Cloud-app in Homey.', 'Klimaat: icoon en stand kleuren nu mee met wat het apparaat doet: rood bij verwarmen, blauw bij koelen, geel bij automatisch. De infrarood spiegel verwarmt altijd en is dus rood als hij aan staat.' ] },
   { v:'128', datum:'08-11-2026', punten:[ 'Beleggingen: Bitcoin, Ethereum en Monad gaan in de grafiek nu ook terug in de tijd (tot een jaar). De waarde is de koershistorie van CoinGecko × wat je op dat moment bezat, berekend uit je aankopen met datum.', 'Het knopje Totaal toont nu je rendement t.o.v. je inleg; in de %-weergave staat Totaal uit.' ] },
@@ -5634,11 +5677,22 @@ function belReeksen(periode){
   const cr = cTijden.map(t => ({ t, v:cLogs.reduce((n, L) => n + stapOf(L, t), 0) })).filter(x => x.v > 0);
   const bLog = { ts:btc.map(x => x.t), pts:btc.map(x => x.v) }, cLog = { ts:cr.map(x => x.t), pts:cr.map(x => x.v) };
   const tijden = [...new Set([...hand.map(x => x.t), ...btc.map(x => x.t), ...cr.map(x => x.t)])].sort((a, b) => a - b);
-  const totaal = tijden.map(t => ({ t, v:(belStap(handLog, t) || 0) + (belStap(bLog, t) || 0) + (belStap(cLog, t) || 0) })).filter(x => x.v > 0);
+  const tBegin = Math.max(...[hand, btc, cr].filter(r => r.length).map(r => r[0].t), -Infinity);  // pas tellen als alle onderdelen meedoen (geen piek aan het begin)
+  const totaal = tijden.filter(t => t >= tBegin).map(t => ({ t, v:(belStap(handLog, t) || 0) + (belStap(bLog, t) || 0) + (belStap(cLog, t) || 0) })).filter(x => x.v > 0);
   const reeksen = [ { k:'totaal', naam:'Totaal', pts:totaal }, { k:'hand', naam:handNaam, pts:hand }, { k:'bitcoin', naam:'Bitcoin', pts:btc },
            ...(losse.length ? [{ k:'crypto', naam:Object.values(MUNTEN).map(m => m.naam).join(' + '), pts:cr }] : []) ]
     .filter(r => r.pts.length >= 2).map(r => ({ ...r, kleur:BEL_SERIE_KLEUR[r.k] }));
-  return { reeksen, sinds:null, laden:!M?.data };
+  // per belegging (voor de kaarten): bitcoin, elke munt en elke handmatige post apart
+  const per = { btc };
+  Object.entries(MUNTEN).forEach(([k, m]) => { per['c:' + k] = reeksMunt(m.id, muntData(d, k).stortingen, muntData(d, k).aantal).filter(x => x.v > 0); });
+  d.posten.forEach((p, i) => {
+    const h = (Array.isArray(p.historie) ? p.historie : []).map(x => ({ t:Date.parse(x.datum), v:+x.waarde })).filter(x => !isNaN(x.t) && x.v > 0).sort((a, b) => a.t - b.t);
+    if(+p.waarde > 0) h.push({ t:nu, v:+p.waarde });
+    const L = { ts:h.map(x => x.t), pts:h.map(x => x.v) }, sel = h.filter(x => x.t >= van), v0 = belStap(L, van);
+    if(v0 != null && (!sel.length || sel[0].t > van)) sel.unshift({ t:van, v:v0 });
+    per['p:' + i] = sel;
+  });
+  return { reeksen, sinds:null, laden:!M?.data, per };
 }
 function belAsStappen(min, max, n){
   const ruw = (max - min) / n || 1, mag = Math.pow(10, Math.floor(Math.log10(ruw))), f = ruw / mag;
@@ -5647,7 +5701,7 @@ function belAsStappen(min, max, n){
   return r;
 }
 function belGrafiekAssen(reeksen, o){
-  const aan = belSerieAan || new Set(['totaal', 'hand']), zicht = o.zicht, pct = belModus === 'pct' || !zicht;
+  const aan = belSerieAan || new Set(['totaal']), zicht = o.zicht, pct = belModus === 'pct' || !zicht;
   const zicht_r = reeksen.filter(r => aan.has(r.k) && !(pct && r.k === 'totaal')); if(!zicht_r.length) zicht_r.push(reeksen.find(r => r.k !== 'totaal') || reeksen[0]);
   const lijnen = zicht_r.map(r => { const b = r.pts[0].v; return { ...r, p:r.pts.map(x => ({ t:x.t, v:pct ? (b ? (x.v - b) / b * 100 : 0) : x.v })) }; });
   const alle = lijnen.flatMap(l => l.p), tMin = Math.min(...alle.map(x => x.t)), tMax = Math.max(...alle.map(x => x.t));
@@ -5665,7 +5719,8 @@ function belGrafiekAssen(reeksen, o){
       ${ticks.map(v => `<line x1="0" x2="${W}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('')}
       ${pct && y0 < 0 && y1 > 0 ? `<line x1="0" x2="${W}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="var(--text-muted)" stroke-dasharray="4 4" stroke-width="1" vector-effect="non-scaling-stroke"/>` : ''}
       ${o.sinds && o.sinds > tMin && o.sinds < tMax ? `<line x1="${X(o.sinds).toFixed(1)}" x2="${X(o.sinds).toFixed(1)}" y1="0" y2="${H}" stroke="var(--text-muted)" stroke-dasharray="2 5" stroke-width="1" vector-effect="non-scaling-stroke"/>` : ''}
-      ${lijnen.map(l => `<polyline points="${l.p.map(x => X(x.t).toFixed(1) + ',' + Y(x.v).toFixed(1)).join(' ')}" fill="none" stroke="${l.kleur}" stroke-width="${l.k === 'totaal' ? 2.6 : 2}" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('')}
+      ${lijnen.length === 1 ? (l => `<defs><linearGradient id="belVlak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${l.kleur === 'var(--text-primary)' ? 'var(--amber)' : l.kleur}" stop-opacity=".30"/><stop offset="1" stop-color="${l.kleur === 'var(--text-primary)' ? 'var(--amber)' : l.kleur}" stop-opacity="0"/></linearGradient></defs><polygon points="${X(l.p[0].t).toFixed(1)},${H} ${l.p.map(x => X(x.t).toFixed(1) + ',' + Y(x.v).toFixed(1)).join(' ')} ${X(l.p.at(-1).t).toFixed(1)},${H}" fill="url(#belVlak)"/>`)(lijnen[0]) : ''}
+      ${lijnen.map(l => `<polyline points="${l.p.map(x => X(x.t).toFixed(1) + ',' + Y(x.v).toFixed(1)).join(' ')}" fill="none" stroke="${lijnen.length === 1 && l.k === 'totaal' ? 'var(--amber)' : l.kleur}" stroke-width="${l.k === 'totaal' ? 2.6 : 2}" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('')}
     </svg>`;
   const yLab = ticks.map(v => `<span style="top:${(Y(v) / H * 100).toFixed(2)}%">${zicht || pct ? yTxt(v) : '••'}</span>`).join('');
   const xLab = xTicks.map((t, i) => `<span style="left:${(i * 25)}%">${xFmt(t)}</span>`).join('');
@@ -6319,7 +6374,7 @@ document.addEventListener('click', e => {
   if(belOpen && (e.target === $('belPaneel') || e.target.closest('[data-bel-sluit]'))) return sluitBeleg();
   if(e.target.closest('[data-beleg]')) return goPage('beleg', document.querySelector('.nav-item[data-page="beleg"]'));
   const bp = e.target.closest('[data-bel-periode]'); if(bp){ belPeriode = bp.dataset.belPeriode; return tekenBelPaneel(); }
-  const bs = e.target.closest('[data-bel-serie]'); if(bs){ const a = new Set(belSerieAan || ['totaal', 'hand']); a.has(bs.dataset.belSerie) ? a.delete(bs.dataset.belSerie) : a.add(bs.dataset.belSerie); belSerieAan = a.size ? a : null; return tekenBelPaneel(); }
+  const bs = e.target.closest('[data-bel-serie]'); if(bs){ const a = new Set(belSerieAan || ['totaal']); a.has(bs.dataset.belSerie) ? a.delete(bs.dataset.belSerie) : a.add(bs.dataset.belSerie); belSerieAan = a.size ? a : null; return tekenBelPaneel(); }
   const bm = e.target.closest('[data-bel-modus]'); if(bm){ belModus = bm.dataset.belModus; return tekenBelPaneel(); }
   const bb = e.target.closest('[data-bel-bewerk]'); if(bb){ const bw = bb.dataset.belBewerk; belBewerk = bw === 'btc' || bw === 'nieuw' || bw.startsWith('c:') ? bw : +bw; belZichtTot = Date.now() + BEL_ZICHT_MS;
     const dd = belData(), bron = belBewerk === 'btc' ? belStort(dd, true) : String(belBewerk).startsWith('c:') ? (muntData(dd, belBewerk.slice(2)).stortingen || []) : belBewerk === 'nieuw' ? [] : belStort(dd.posten[belBewerk] || {});
@@ -7085,7 +7140,76 @@ function tekenBelPaginaNu(){
       <p><b>Grafiek.</b> Tik op een reeks (Totaal, je beleggingen, Bitcoin, crypto) om hem aan of uit te zetten. Met € zie je bedragen, met % de verandering sinds het begin van de periode, handig om koersen te vergelijken.</p>
       <p><b>Let op.</b> Het verbergen van bedragen is een drempel, geen beveiliging. Wie toegang heeft tot jullie Homey kan de variabelen en Insights zien.</p></details></div>
   </div>`;
-  el.innerHTML = links + rechts;
+  // ── Nieuwe opbouw (v131): totaal + grafiek, verdeling, een kaart per belegging, daaronder bijwerken en inleg
+  el.classList.add('bel-nieuw');
+  const PER = { dag:'1D', week:'1W', maand:'1M', alles:'Alles' }, perLab = { dag:'vandaag', week:'deze week', maand:'afgelopen maand', alles:'in de grafiek' };
+  const R = belReeksen(belPeriode), verander = pts => pts && pts.length >= 2 && pts[0].v ? (pts.at(-1).v - pts[0].v) / pts[0].v * 100 : null;
+  let totPer = null;
+  const dagW = (BTC && +d.btc > 0 && typeof BTC.pct === 'number' ? T.btcW - T.btcW / (1 + BTC.pct / 100) : 0)
+    + Object.keys(MUNTEN).reduce((n, k) => { const w = muntWaarde(d, k), q = KOERS[k]?.pct; return n + (w && typeof q === 'number' ? w - w / (1 + q / 100) : 0); }, 0);
+  const dagP = T.tot && dagW ? dagW / (T.tot - dagW) * 100 : null;
+  const pil = (q, t) => typeof q === 'number' ? `<span class="bk-pil ${q >= 0 ? 'op' : 'neer'}">${pctTekst(q)}${t ? ' ' + t : ''}</span>` : '';
+  const geld = n => (n >= 0 ? '+ ' : '− ') + euroHeel(Math.abs(n));
+  const bezit = [];
+  { const st = belSorteer(belStort(d, true)); if(+d.btc > 0 || btcIn) bezit.push({ sleutel:'btc', sym:'₿', kl:'#F7931A', naam:'Bitcoin', sub:`${nl(+d.btc || 0, 6)} BTC`, w:T.btcW, inl:btcIn, start:st[0]?.datum, koers:BTC?.koers, dag:BTC?.pct, pts:R.per?.btc }); }
+  Object.entries(MUNTEN).forEach(([k, m]) => { const md = muntData(d, k), st = belSorteer(md.stortingen || []), inl = belSom(st);
+    if(+md.aantal > 0 || inl) bezit.push({ sleutel:'c:' + k, sym:m.teken, kl:m.kleur, naam:m.naam, sub:`${nl(+md.aantal || 0, m.dec)} ${k.toUpperCase()}`, w:muntWaarde(d, k), inl, start:st[0]?.datum, koers:KOERS[k]?.koers, dag:KOERS[k]?.pct, pts:R.per?.['c:' + k] }); });
+  d.posten.forEach((p, i) => { const st = belSorteer(belStort(p));
+    bezit.push({ sleutel:i, sym:esc((p.naam || '?').slice(0, 2).toUpperCase()), kl:BEL_KLEUR[(i + 1) % BEL_KLEUR.length], naam:p.naam, sub:'Handmatig · weekstand', w:+p.waarde || 0, inl:belSom(st), start:st[0]?.datum, hand:true, p, pts:R.per?.['p:' + i], oud:belOud(p) }); });
+  const spark = (pts, kl) => { if(!pts || pts.length < 2) return '<span class="bel-klein">Nog geen verloop in deze periode</span>';
+    const W = 240, Hh = 54, t0 = pts[0].t, t1 = pts.at(-1).t, mn = Math.min(...pts.map(x => x.v)), mx = Math.max(...pts.map(x => x.v));
+    const X = t => (t - t0) / ((t1 - t0) || 1) * W, Y = v => Hh - 3 - (v - mn) / ((mx - mn) || 1) * (Hh - 6), xy = pts.map(x => X(x.t).toFixed(1) + ',' + Y(x.v).toFixed(1)).join(' '), id = 'bks' + Math.round(Math.random() * 1e6);
+    return `<svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${kl}" stop-opacity=".25"/><stop offset="1" stop-color="${kl}" stop-opacity="0"/></linearGradient></defs>
+      <line x1="0" x2="${W}" y1="${Y(pts[0].v).toFixed(1)}" y2="${Y(pts[0].v).toFixed(1)}" stroke="var(--text-muted)" stroke-dasharray="3 4" stroke-width="1" vector-effect="non-scaling-stroke" opacity=".6"/>
+      <polygon points="0,${Hh} ${xy} ${W},${Hh}" fill="url(#${id})"/><polyline points="${xy}" fill="none" stroke="${kl}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`; };
+  const regel = (k, w, cl = '') => `<div class="bk-regel"><span>${k}</span><b class="${cl}">${w}</b></div>`;
+  const formVoor = b => {
+    if(b.sleutel === 'btc') return `<div class="bel-form"><label class="breed">Aantal bitcoin in bezit<input id="belBtc" inputmode="decimal" value="${belFv('belBtc', d.btc || '')}" placeholder="bijv. 0,125"></label>
+        ${belStortForm(true)}<div class="knoppen"><button class="btn" data-bel-annuleer="1">Annuleren</button><button class="pk-knop" data-bel-opslaan="btc">Opslaan</button></div></div>`;
+    if(String(b.sleutel).startsWith('c:')) return `<div class="bel-form"><label class="breed">Aantal ${esc(b.naam)} in bezit<input id="belMuntAantal" inputmode="decimal" value="${belFv('belMuntAantal', muntData(d, b.sleutel.slice(2)).aantal || '')}" placeholder="bijv. 1,5"></label>
+        ${belStortForm(true)}<div class="knoppen"><button class="btn" data-bel-annuleer="1">Annuleren</button><button class="pk-knop" data-bel-opslaan="munt">Opslaan</button></div></div>`;
+    return postForm(b.p, b.sleutel);
+  };
+  const postForm = (p, i) => `<div class="bel-form"><label class="breed">Naam (bijv. DEGIRO aandelen, ING ETF)<input id="belNaam" value="${belFv('belNaam', p.naam)}"></label>
+      <label class="breed">Huidige waarde (€)<input id="belWaarde" inputmode="decimal" value="${belFv('belWaarde', p.waarde || '')}"></label>
+      ${belStortForm(false)}
+      <div class="knoppen">${i !== 'nieuw' ? `<button class="btn" data-bel-weg="${i}">Verwijderen</button>` : ''}<button class="btn" data-bel-annuleer="1">Annuleren</button><button class="pk-knop" data-bel-opslaan="hand">Opslaan</button></div></div>`;
+  const kaart = b => {
+    const rp = b.hand && belPeriode === 'dag' ? null : b.pts?.length >= 2 && b.pts[0].v > 0 ? (b.w - b.pts[0].v) / b.pts[0].v * 100 : null, winst = b.inl ? b.w - b.inl : null, wp = b.inl ? winst / b.inl * 100 : null;
+    const bezig = zicht && String(belBewerk) === String(b.sleutel), kl = rp == null ? 'var(--text-muted)' : rp >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<div class="card bel-kaart ${b.oud ? 'oud' : ''} ${bezig ? 'bewerkt' : ''}"><div class="bk-kop"><span class="bk-sym" style="background:${b.kl}">${b.sym}</span><span class="grow"><b>${esc(b.naam)}</b><small>${zicht ? b.sub : b.hand ? 'Handmatig' : 'Live koers'}</small></span></div>
+      <div class="bk-waarde"><b>${zicht ? euroHeel(b.w) : verb}</b>${rp == null ? `<span class="bel-klein">— ${PER[belPeriode]}</span>` : pil(rp, PER[belPeriode])}</div>
+      <div class="bk-spark">${b.hand && belPeriode === 'dag' ? '<span class="bel-klein">Alleen weekstanden</span>' : spark(b.pts, kl)}</div>
+      ${regel('Sinds begin', winst == null ? '<span class="bel-klein">inleg invullen</span>' : (zicht ? geld(winst) + ' · ' : '') + pctTekst(wp), wp == null ? '' : wp >= 0 ? 'bel-op' : 'bel-neer')}
+      ${regel('Ingelegd', (zicht ? euroHeel(b.inl) : verb) + (b.start ? ` <small>sinds ${belStartTxt(b.start)}</small>` : ''))}
+      ${b.hand ? regel('Bijgewerkt', (b.oud ? '<i class="bk-oud"></i>' : '') + geleden(b.p.datum).replace(/ bijgewerkt$/, '')) + (zicht && +b.p.stuks > 0 ? regel('Stuks', nl(+b.p.stuks, 4) + ' à € ' + nl(b.w / b.p.stuks, 2)) : '')
+        : regel('Koers', b.koers ? (b.koers >= 10 ? euroHeel(b.koers) : '€ ' + nl(b.koers, b.koers < 1 ? 4 : 2)) + (typeof b.dag === 'number' ? ` <span class="${b.dag >= 0 ? 'bel-op' : 'bel-neer'}">${pctTekst(b.dag)}</span>` : '') : '–')}
+      ${zicht ? (bezig ? formVoor(b) : `<button class="btn bk-knop" data-bel-bewerk="${b.sleutel}">${ic('pen')} Aanpassen</button>`) : ''}</div>`;
+  };
+  { const met = bezit.filter(b => b.w > 0), v0 = met.reduce((n, b) => n + (b.pts?.length >= 2 ? b.pts[0].v : b.w), 0);  // periode-verandering: som van de startwaarden per belegging
+    if(met.length && v0 > 0 && met.some(b => b.pts?.length >= 2)) totPer = (met.reduce((n, b) => n + b.w, 0) - v0) / v0 * 100; }
+  const C = 2 * Math.PI * 58; let acc = 0; const deel = bezit.filter(b => b.w > 0);
+  const ring = deel.map(b => { const f = b.w / (T.tot || 1), x = `<circle cx="80" cy="80" r="58" fill="none" stroke="${b.kl}" stroke-width="20" stroke-dasharray="${Math.max(0, f * C - 2).toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-acc * C).toFixed(1)}" transform="rotate(-90 80 80)"/>`; acc += f; return x; }).join('');
+  const kort = n => n >= 1e4 ? '€ ' + nl(n / 1000, 1) + 'k' : euroHeel(n);
+  const verdeling2 = `<div class="card bel-verdeel"><small class="bel-label">Verdeling</small>
+      ${deel.length && T.tot > 0 ? `<div class="bv-rij"><svg width="160" height="160" viewBox="0 0 160 160">${ring}<text x="80" y="76" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-weight="700">${deel.length} ${deel.length === 1 ? 'post' : 'posten'}</text><text x="80" y="96" text-anchor="middle" fill="var(--text-primary)" font-size="15" font-weight="800">${zicht ? kort(T.tot) : '••'}</text></svg>
+      <div class="bv-leg">${deel.map(b => `<span><i style="background:${b.kl}"></i>${esc(b.naam)} <small>${nl(b.w / T.tot * 100, 0)}%</small></span>`).join('')}</div></div>` : '<p class="bel-klein">Nog geen beleggingen met een waarde.</p>'}
+      <p class="bel-klein">Koersen live van CoinGecko (reserve Bitvavo). Handmatige beleggingen: je weekstand van zondag.</p></div>`;
+  const hero = `<div class="card bel-hero"><div class="bh-kop"><div><small class="bel-label">Totale waarde</small>
+        <div class="bh-totaal ${zicht ? '' : 'verborgen'}" data-bel-tik="1">${zicht ? euro(T.tot) : verb}</div>
+        <div class="bh-pillen">${dagP != null ? pil(dagP, 'vandaag') : ''}${belPeriode === 'week' || belPeriode === 'maand' ? pil(totPer, perLab[belPeriode]) : ''}${pil(T.rend, 'sinds begin')}</div>
+        <div class="bh-feiten"><div><small>Ingelegd</small><b>${zicht ? euroHeel(T.inleg) : verb}</b></div><div><small>Winst sinds begin</small><b class="${!zicht || winst == null ? '' : winst >= 0 ? 'bel-op' : 'bel-neer'}">${zicht && winst != null ? geld(winst) : zicht ? '–' : verb}</b></div>${begin ? `<div><small>Begonnen</small><b>${belStartTxt(begin)}</b></div>` : ''}${zicht && dagW ? `<div><small>Dagwinst crypto</small><b class="${dagW >= 0 ? 'bel-op' : 'bel-neer'}">${geld(dagW)}</b></div>` : ''}</div></div>
+      <div class="segment bel-perioden" role="tablist">${['dag','week','maand','alles'].map(k => `<button class="${belPeriode === k ? 'on' : ''}" data-bel-periode="${k}">${PER[k]}</button>`).join('')}</div></div>
+      ${grafiek}</div>`;
+  const zondag = `<div class="card"><div class="auto-kop"><span class="ico amber">${ic('klok')}</span><b>Zondag bijwerken</b><span class="chip" style="${oudN ? 'background:rgba(245,165,36,.15);color:var(--amber)' : d.posten.length ? 'background:rgba(74,222,128,.12);color:var(--green)' : ''}">${oudN ? oudN + ' nog doen' : d.posten.length ? 'bijgewerkt' : '–'}</span></div>
+      ${week}<p class="bel-klein">Herinnering: elke zondag om 19:00. Vul de actuele waarde uit de app van je bank of broker in.</p>
+      ${belOpslagFout ? `<p class="pk-melding fout">${esc(belOpslagFout)}</p>` : ''}</div>`;
+  const toevoegen = zicht ? (belBewerk === 'nieuw' ? `<div class="card"><div class="auto-kop"><span class="ico">${ic('munten')}</span><b>Belegging toevoegen</b></div>${postForm({}, 'nieuw')}</div>`
+    : `<div class="pk-rij"><button class="btn" data-bel-bewerk="nieuw">+ Belegging toevoegen</button></div>`) : '';
+  const uitleg = rechts.slice(rechts.indexOf('<div class="card"><details class="bel-uitleg">'), rechts.lastIndexOf('</div>'));
+  el.innerHTML = `<div class="bel-boven">${hero}${verdeling2}</div>
+    <div class="bel-kaarten">${bezit.map(kaart).join('')}</div>${toevoegen}
+    <div class="bel-onder"><div class="beleg-kolom">${zondag}${stocksTestKaart()}</div><div class="beleg-kolom">${zicht ? belInlegKaart(d, T) : ''}${uitleg}</div></div>`;
 }
 function belWeekOpslaan(){
   const d = belData(); let n = 0;
