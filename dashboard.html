@@ -1479,6 +1479,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <div class="card"><div class="e-head"><div class="card-title">Aandachtspunten</div></div><div id="sysLijsten"></div></div>
       <div class="card"><div class="e-head"><div class="card-title">Bereikbaarheid · laatste 7 dagen</div></div><div id="sysBereik"></div></div>
     </div>
+    <div class="card" id="locTest" style="margin-top:18px"></div>
   </section>
 
   <!-- ═══════════ TUIN ═══════════ -->
@@ -1997,9 +1998,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '131';
+const DASHBOARD_VERSIE = '132';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'132', datum:'10-11-2026', punten:[ 'Demo-modus gebruikt neutrale namen voor de bewoners.', 'Test op de pagina Homey-status: kan het dashboard de locatie van Homey zelf lezen? Alleen lezen; regenradar en bandenadvies werken nog zoals voorheen.' ] },
   { v:'131', datum:'10-11-2026', punten:[ 'Beleggingen in een nieuw jasje, zoals een portefeuille-overzicht. Bovenaan de totale waarde met labels voor vandaag, de gekozen periode en sinds begin, plus ingelegd, winst en startdatum. Daaronder de grafiek met 1D / 1W / 1M / Alles en rechts de verdeling als ring.', 'Per belegging een kaart met waarde, de verandering in de gekozen periode, een eigen mini-grafiek, het rendement sinds begin (€ en %), ingelegd sinds, en de koers of wanneer bijgewerkt. Aanpassen gaat direct vanuit de kaart.', 'Zondag bijwerken, inleg en winst met stortingen, en belegging toevoegen staan eronder.' ] },
   { v:'130', datum:'09-11-2026', punten:[ 'Huiskaart \'s avonds: de ramen volgen de verlichting per kamer. Staan alle lampen in een kamer uit, dan is dat raam donker. Woonkamer: de ramen beneden. Slaapkamer: boven links. Kinderkamer: boven rechts, voorlopig altijd donker. Werkkamer: het zolderraam en de dakramen.', 'Staat de voordeurlamp uit, dan verdwijnt het licht bij de laadpaal.' ] },
   { v:'129', datum:'09-11-2026', punten:[ 'Infrarood spiegel: is hij onbereikbaar, dan toont de kaart een rood uitroepteken. Tik erop voor uitleg in een pop-up. Meestal is de gratis Tuya-koppeling (IoT Core) verlopen; verleng die op platform.tuya.com via de computer en herstart daarna de Tuya Cloud-app in Homey.', 'Klimaat: icoon en stand kleuren nu mee met wat het apparaat doet: rood bij verwarmen, blauw bij koelen, geel bij automatisch. De infrarood spiegel verwarmt altijd en is dus rood als hij aan staat.' ] },
@@ -3166,7 +3168,7 @@ function openClaude(){
 
 /* ── Bewoners: Homey-gebruikers met foto, thuis/weg en wakker/slaapt (zoals in de Homey-app) ── */
 let BEWONERS = null;
-const DEMO_BEWONERS = { u1:{ id:'u1', name:'Roy Frentz', role:'owner', present:true, asleep:false }, u2:{ id:'u2', name:'Beau Wemmers', present:false, asleep:false } };
+const DEMO_BEWONERS = { u1:{ id:'u1', name:'Bewoner 1', role:'owner', present:true, asleep:false }, u2:{ id:'u2', name:'Bewoner 2', present:false, asleep:false } };
 async function laadBewoners(){
   if(DEMO()){ BEWONERS = DEMO_BEWONERS; return tekenBewoners(); }
   try { BEWONERS = await homey('/api/manager/users/user') || {}; tekenBewoners(); tekenBewonerPaneel(); }
@@ -6930,7 +6932,7 @@ function goPage(id, el){
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + id));
   document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.toggle('active', n === el));
   if(id === 'energie'){ if(!eVandaag()){ ePer = { soort:'dag', off:0 }; REEKS = { p1:[], zon:[], gas:[], imp:[], exp:[] }; energieGeladen = 0; } tekenEPer(); laadEnergie(); }
-  if(id === 'systeem') laadSysteem();
+  if(id === 'systeem'){ laadSysteem(); testLocatie(); }
   if(id === 'auto') tekenAuto();
   if(id === 'beleg' && !belZicht()) return goPage('home', document.querySelector('.nav-item[data-page="home"]'));
   if(id === 'beleg'){ tekenBelPagina(); if(!BTC || Date.now() - BTC.t > 60000) laadBtc(); }
@@ -7260,6 +7262,31 @@ async function stocksTest(){
     tekenBelPagina();
   }
   stTest.bezig = false; tekenBelPagina();
+}
+/* TEST: kan het dashboard de locatie van Homey zelf lezen? Alleen lezen; de vaste locatie blijft voorlopig de reserve. */
+let locTest = { bezig:false, ok:null, tekst:'', t:0 };
+async function testLocatie(){
+  if(locTest.bezig || (locTest.ok && Date.now() - locTest.t < 36e5)) return tekenLocTest();
+  if(DEMO()){ locTest = { bezig:false, ok:null, tekst:'Demo-modus: geen Homey gekoppeld.', t:Date.now() }; return tekenLocTest(); }
+  locTest.bezig = true; tekenLocTest();
+  try {
+    const j = await homey('/api/manager/geolocation/option/location'), v = j?.value || j || {};
+    const la = +v.latitude, lo = +v.longitude, R = CONFIG.regen;
+    if(!isFinite(la) || !isFinite(lo) || (!la && !lo)) throw new Error('Antwoord zonder coördinaten');
+    const rad = x => x * Math.PI / 180, km = R ? 2 * 6371 * Math.asin(Math.sqrt(Math.sin(rad(la - R.lat) / 2) ** 2 + Math.cos(rad(la)) * Math.cos(rad(R.lat)) * Math.sin(rad(lo - R.lon) / 2) ** 2)) : null;
+    locTest = { bezig:false, ok:true, tekst:`Gelukt: Homey geeft zijn locatie door${km != null ? ` (${km < 1 ? 'minder dan 1' : nl(km, 0)} km van de huidige regenlocatie)` : ''}.`, t:Date.now() };
+  } catch(e){
+    const m = String(e.message || e), recht = /40[13]/.test(m) || /scope|permission|forbidden|missing/i.test(m);
+    locTest = { bezig:false, ok:false, tekst:(recht ? 'Geen toegang: de API-sleutel mist waarschijnlijk het recht "Geolocation" (lezen). ' : 'Niet gelukt. ') + 'Melding: ' + m.slice(0, 160), t:Date.now() };
+  }
+  tekenLocTest();
+}
+function tekenLocTest(){
+  const el = $('locTest'); if(!el) return;
+  el.innerHTML = `<div class="auto-kop"><span class="ico">${ic('cloud')}</span><b>Locatie via Homey (test)</b><span class="demo-label">test</span></div>
+    <p class="bel-klein">Kijkt of het dashboard de locatie van je Homey kan lezen, zodat de vaste locatie later uit de code kan. Leest alleen; regenradar en bandenadvies gebruiken nog de vaste locatie.</p>
+    <p class="bel-klein" style="font-weight:700;color:${locTest.bezig ? 'var(--text-muted)' : locTest.ok ? 'var(--green)' : locTest.ok === false ? 'var(--amber)' : 'var(--text-muted)'}">${locTest.bezig ? 'Bezig…' : esc(locTest.tekst || '–')}</p>
+    ${!locTest.bezig && locTest.ok != null ? '<p class="bel-klein">Maak een screenshot van dit blok en stuur het naar Claude.</p>' : ''}`;
 }
 function stocksTestKaart(){
   return `<div class="card"><div class="auto-kop"><span class="ico">${ic('grafiek')}</span><b>Koersen via Homey (test)</b><span class="demo-label">test</span></div>
