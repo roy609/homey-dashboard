@@ -1998,9 +1998,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '133';
+const DASHBOARD_VERSIE = '134';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'134', datum:'11-11-2026', punten:[ 'Infrarood spiegel: een nieuwe temperatuur wordt pas na 5 seconden doorgestuurd, zodat je rustig de juiste temperatuur kunt kiezen. Net als bij de airco loopt er een rand om de kaart vol en zie je daarna "Doorgestuurd".' ] },
   { v:'133', datum:'11-11-2026', punten:[ 'Infrarood spiegel: de ingestelde temperatuur staat weer op de kaart. 0 graden betekent uit; dan staat er "staat uit" en "→ uit".', 'Met de pijltjes stel je de temperatuur in. Omhoog vanaf uit gaat naar de laatst gebruikte temperatuur; onder de laagste stand gaat hij uit. De aan/uit-knop van de spiegel is weg, want die wordt niet gebruikt.', 'Is het in de badkamer al warmer dan de ingestelde temperatuur, dan verwarmt de spiegel niet: de kaart ziet er dan uit als "uit", maar met de ingestelde temperatuur erbij.' ] },
   { v:'132', datum:'10-11-2026', punten:[ 'Demo-modus gebruikt neutrale namen voor de bewoners.', 'Test op de pagina Homey-status: kan het dashboard de locatie van Homey zelf lezen? Alleen lezen; regenradar en bandenadvies werken nog zoals voorheen.' ] },
   { v:'131', datum:'10-11-2026', punten:[ 'Beleggingen in een nieuw jasje, zoals een portefeuille-overzicht. Bovenaan de totale waarde met labels voor vandaag, de gekozen periode en sinds begin, plus ingelegd, winst en startdatum. Daaronder de grafiek met 1D / 1W / 1M / Alles en rechts de verdeling als ring.', 'Per belegging een kaart met waarde, de verandering in de gekozen periode, een eigen mini-grafiek, het rendement sinds begin (€ en %), ingelegd sinds, en de koers of wanneer bijgewerkt. Aanpassen gaat direct vanuit de kaart.', 'Zondag bijwerken, inleg en winst met stortingen, en belegging toevoegen staan eronder.' ] },
@@ -3027,25 +3028,29 @@ function klimKleur(d, k, lijst){
 }
 /* Infrarood spiegel: aan/uit wordt niet gebruikt; Homey stuurt alleen de temperatuur. 0 = uit (verwarmt niet). */
 const isSpiegel = d => !!d && /spiegel/i.test(d.name || '') && typeof cap(d,'target_temperature') === 'number' && !modi(d).length;
-const spiegelUit = d => isSpiegel(d) && cap(d,'target_temperature') < 1;
+// Tijdens het wachten (5 s) telt de nieuwe, nog niet verstuurde temperatuur; zo zet een tussentijdse verversing hem niet terug
+const spiegelDoel = d => klimWacht[d.id]?.doel ?? cap(d,'target_temperature');
+const spiegelUit = d => isSpiegel(d) && spiegelDoel(d) < 1;
 // Ingesteld, maar het is al warmer dan de ingestelde temperatuur: verwarmt dan niet (zelfde uiterlijk als uit, met de temperatuur erbij)
-const spiegelRust = d => isSpiegel(d) && !spiegelUit(d) && typeof cap(d,'measure_temperature') === 'number' && cap(d,'target_temperature') <= cap(d,'measure_temperature');
+const spiegelRust = d => isSpiegel(d) && !spiegelUit(d) && typeof cap(d,'measure_temperature') === 'number' && spiegelDoel(d) <= cap(d,'measure_temperature');
 function spiegelBereik(d){ const o = d?.capabilitiesObj?.target_temperature || {};
   return { min:Math.max(1, +o.min || 5), max:+o.max > 1 ? +o.max : 35, stap:+o.step > 0 ? +o.step : 0.5 }; }
-const KLIM_WACHT_MS = 6000, KLIM_OK_MS = 1000;
+const KLIM_WACHT_MS = 6000, KLIM_OK_MS = 1000, SPIEGEL_WACHT_MS = 5000;
 var klimWacht = {};                               // id → { start, ok, t }
-function klimStart(id){
-  if(!CONFIG.klimVertraging?.includes(id)) return;
+/* klimStart(id): tado stuurt zelf pas na 6 s door (alleen de ring tonen).
+   klimStart(id, ms, verstuur): het dashboard wacht zelf; na ms zonder nieuwe tik wordt verstuur() uitgevoerd (infrarood spiegel). */
+function klimStart(id, ms, verstuur){
+  if(!verstuur && !CONFIG.klimVertraging?.includes(id)) return;
   const w = klimWacht[id] || (klimWacht[id] = {});
-  clearTimeout(w.t); w.start = Date.now(); w.ok = false;
-  w.t = setTimeout(() => { w.ok = true; tekenKlimaat();
-    w.t = setTimeout(() => { delete klimWacht[id]; tekenKlimaat(); }, KLIM_OK_MS); }, KLIM_WACHT_MS);
+  clearTimeout(w.t); w.start = Date.now(); w.ok = false; w.ms = ms || KLIM_WACHT_MS;
+  w.t = setTimeout(() => { w.ok = true; if(verstuur){ delete w.doel; verstuur(); } tekenKlimaat();
+    w.t = setTimeout(() => { delete klimWacht[id]; tekenKlimaat(); }, KLIM_OK_MS); }, w.ms);
 }
 function klimRing(id){
   const w = klimWacht[id]; if(!w) return '';
-  const rest = Math.max(0, KLIM_WACHT_MS - (Date.now() - w.start));
-  return `<svg class="klim-ring ${w.ok ? 'ok' : ''}" aria-hidden="true" style="--duur:${KLIM_WACHT_MS}ms"><rect x="1.5" y="1.5" rx="16" pathLength="100"
-      style="width:calc(100% - 3px);height:calc(100% - 3px);animation-delay:-${KLIM_WACHT_MS - rest}ms"/></svg>
+  const ms = w.ms || KLIM_WACHT_MS, rest = Math.max(0, ms - (Date.now() - w.start));
+  return `<svg class="klim-ring ${w.ok ? 'ok' : ''}" aria-hidden="true" style="--duur:${ms}ms"><rect x="1.5" y="1.5" rx="16" pathLength="100"
+      style="width:calc(100% - 3px);height:calc(100% - 3px);animation-delay:-${ms - rest}ms"/></svg>
     <span class="klim-status ${w.ok ? 'ok' : ''}" role="status">${w.ok ? '✓ Doorgestuurd' : 'Even wachten…'}</span>`;
 }
 function tekenKlimaat(){
@@ -3058,7 +3063,7 @@ function klimaatKaart(k){
     if(!d) return '';
     const offline = d.available === false;
     const hulp = CONFIG.storingHulp?.[k.id];
-    const nu = cap(d,'measure_temperature'), doel = cap(d,'target_temperature');
+    const nu = cap(d,'measure_temperature'), doel = isSpiegel(d) ? spiegelDoel(d) : cap(d,'target_temperature');
     const spiegel = isSpiegel(d), sUit = spiegelUit(d), sRust = spiegelRust(d);
     const metDoel = typeof doel === 'number' && (spiegel ? !sUit : doel >= 5);
     const lijst = modi(d), uit = (lijst.length && isUit(d)) || sUit || sRust;
@@ -5269,7 +5274,7 @@ async function zoneDimmen(pct){
                  () => lampen.forEach(d => { d.capabilitiesObj.dim.value = v; d.capabilitiesObj.onoff.value = true; }));
 }
 async function temperatuur(id, stap){
-  const d = dev(id), nu = cap(d,'target_temperature');
+  const d = dev(id), nu = isSpiegel(d) ? spiegelDoel(d) : cap(d,'target_temperature');
   if(typeof nu !== 'number') return;
   let nieuw = Math.round((nu + stap) * 2) / 2;
   if(isSpiegel(d)){                                  // 0 = uit; omhoog vanaf uit gaat naar de laatst gebruikte temperatuur
@@ -5278,6 +5283,10 @@ async function temperatuur(id, stap){
     else { nieuw = Math.round((nu + Math.sign(stap) * B.stap) / B.stap) * B.stap; nieuw = nieuw < B.min ? 0 : Math.min(B.max, nieuw); }
     if(nieuw > 0) try { localStorage.setItem('spiegel_laatst_' + id, nieuw); } catch(e){}
     if(nieuw === nu) return;
+    // Pas versturen als er 5 s niet meer is getikt; de ring toont hoe lang nog (zelfde als bij de airco)
+    const w = klimWacht[id] || (klimWacht[id] = {}); w.doel = nieuw;
+    klimStart(id, SPIEGEL_WACHT_MS, () => { d.capabilitiesObj.target_temperature.value = nieuw; opdracht(() => zetCap(id, 'target_temperature', nieuw)); });
+    return tekenKlimaat();
   }
   d.capabilitiesObj.target_temperature.value = nieuw; klimStart(id); tekenKlimaat();
   await opdracht(() => zetCap(id, 'target_temperature', nieuw));
