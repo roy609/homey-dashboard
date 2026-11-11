@@ -2002,9 +2002,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '136';
+const DASHBOARD_VERSIE = '137';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'137', datum:'11-11-2026', punten:[ 'Thermostaat (Honeywell): "Verwarmen" staat er alleen als het in de woonkamer even warm of kouder is dan ingesteld. Is het warmer, dan ziet de kaart eruit als bij de spiegel: zonder tekst, grijs icoon, wel met de ingestelde temperatuur.', 'Infrarood spiegel: bij precies de ingestelde temperatuur staat er nu ook "verwarmt".' ] },
   { v:'136', datum:'11-11-2026', punten:[ 'Pop-up van de stofzuiger werkt weer: hij botste met het keuzevenster voor het uiterlijk.', 'De pop-ups voor bewoners en radio staan weer als lijst onder elkaar.', 'Media-tegel bovenin: het icoon is weer paars als er iets speelt (ook in de stijl Mokka).' ] },
   { v:'135', datum:'11-11-2026', punten:[ 'Infrarood spiegel: "Doorgestuurd" verschijnt pas als Homey de nieuwe temperatuur heeft bevestigd. Lukt het niet, dan wordt de rand rood met "Niet gelukt" en springt de kaart terug naar de temperatuur die echt is ingesteld.', 'Na 15 en 60 seconden kijkt het dashboard nog eens of de spiegel de temperatuur heeft overgenomen. Zo niet, dan verschijnt er alsnog een melding.' ] },
   { v:'134', datum:'11-11-2026', punten:[ 'Infrarood spiegel: een nieuwe temperatuur wordt pas na 5 seconden doorgestuurd, zodat je rustig de juiste temperatuur kunt kiezen. Net als bij de airco loopt er een rand om de kaart vol en zie je daarna "Doorgestuurd".' ] },
@@ -3022,6 +3023,7 @@ const huidigeModus = d => isUit(d) ? '__uit' : String(cap(d,'ac_mode') ?? cap(d,
    De infrarood spiegel heeft geen standen: die verwarmt altijd, dus rood als hij aan staat. */
 function klimKleur(d, k, lijst){
   if(isSpiegel(d)) return spiegelUit(d) || spiegelRust(d) ? '' : 'red';
+  if(thermRust(d)) return '';
   if(lijst.length && isUit(d)) return '';
   if(cap(d,'onoff') === false) return '';
   if(k.icoon === 'thermo') return 'amber';
@@ -3038,7 +3040,10 @@ const isSpiegel = d => !!d && /spiegel/i.test(d.name || '') && typeof cap(d,'tar
 const spiegelDoel = d => klimWacht[d.id]?.doel ?? cap(d,'target_temperature');
 const spiegelUit = d => isSpiegel(d) && spiegelDoel(d) < 1;
 // Ingesteld, maar het is al warmer dan de ingestelde temperatuur: verwarmt dan niet (zelfde uiterlijk als uit, met de temperatuur erbij)
-const spiegelRust = d => isSpiegel(d) && !spiegelUit(d) && typeof cap(d,'measure_temperature') === 'number' && spiegelDoel(d) <= cap(d,'measure_temperature');
+const spiegelRust = d => isSpiegel(d) && !spiegelUit(d) && typeof cap(d,'measure_temperature') === 'number' && spiegelDoel(d) < cap(d,'measure_temperature');
+// Thermostaat op verwarmen, maar het is al warmer dan ingesteld: verwarmt dan niet (zelfde uiterlijk als de spiegel in rust)
+const thermRust = d => !!d && !isSpiegel(d) && !modi(d).length && /heat/i.test(String(cap(d,'custom_thermostat_mode') ?? ''))
+  && typeof cap(d,'measure_temperature') === 'number' && typeof cap(d,'target_temperature') === 'number' && cap(d,'measure_temperature') > cap(d,'target_temperature');
 function spiegelBereik(d){ const o = d?.capabilitiesObj?.target_temperature || {};
   return { min:Math.max(1, +o.min || 5), max:+o.max > 1 ? +o.max : 35, stap:+o.step > 0 ? +o.step : 0.5 }; }
 const KLIM_WACHT_MS = 6000, KLIM_OK_MS = 1000, SPIEGEL_WACHT_MS = 5000;
@@ -3080,13 +3085,14 @@ function klimaatKaart(k){
     const nu = cap(d,'measure_temperature'), doel = isSpiegel(d) ? spiegelDoel(d) : cap(d,'target_temperature');
     const spiegel = isSpiegel(d), sUit = spiegelUit(d), sRust = spiegelRust(d);
     const metDoel = typeof doel === 'number' && (spiegel ? !sUit : doel >= 5);
-    const lijst = modi(d), uit = (lijst.length && isUit(d)) || sUit || sRust;
+    const tRust = thermRust(d), lijst = modi(d), uit = (lijst.length && isUit(d)) || sUit || sRust || tRust;
     const huidig = lijst.find(m => String(m.id).toLowerCase() === huidigeModus(d).toLowerCase());
     const kleur = offline ? 'red' : klimKleur(d, k, lijst), kk = ` k-${kleur || 'uit'}`;
     return `<div class="card klim ${uit ? 'uit' : ''}">${klimRing(k.id)}<div class="row">
       ${offline && hulp ? `<button class="ico red storing-knop" data-storing="${esc(k.id)}" aria-label="Wat is er aan de hand met ${esc(k.naam)}?">!</button>` :
       `<div class="ico ${kleur}">${ic(k.icoon || (k.naam.includes('spiegel') ? 'mirror' : 'ac'))}</div>`}
       <div class="grow"><div style="font-weight:700">${esc(k.naam)}${lijst.length && !offline ? ` <span class="klim-modus${kk}">${uit ? 'staat uit' : esc(huidig?.label || '')}</span>`
+          : !offline && tRust ? ''
           : !offline && cap(d,'custom_thermostat_mode') ? ` <span class="klim-modus${kk}">${esc(({ heat:'Verwarmen', cool:'Koelen', off:'Uit', auto:'Auto' })[String(cap(d,'custom_thermostat_mode')).toLowerCase()] || cap(d,'custom_thermostat_mode'))}</span>`
           : !offline && spiegel ? (sRust ? '' : ` <span class="klim-modus${kk}">${sUit ? 'staat uit' : 'verwarmt'}</span>`)
           : !offline && !lijst.length && typeof cap(d,'onoff') === 'boolean' ? ` <span class="klim-modus${kk}">${cap(d,'onoff') ? 'staat aan' : 'staat uit'}</span>` : ''}</div>
@@ -3109,7 +3115,7 @@ function klimaatKaart(k){
 let klOpen = false;
 function klimaatSamenvatting(){
   const lijst = CONFIG.klimaatPaneel.map(k => dev(k.id)).filter(Boolean);
-  const aan = lijst.filter(d => d.available !== false && !(modi(d).length && isUit(d)) && !spiegelUit(d) && !spiegelRust(d) && (isSpiegel(d) || cap(d,'onoff') !== false)
+  const aan = lijst.filter(d => d.available !== false && !(modi(d).length && isUit(d)) && !spiegelUit(d) && !spiegelRust(d) && !thermRust(d) && (isSpiegel(d) || cap(d,'onoff') !== false)
     && !(heeft(d,'custom_thermostat_mode') && isOffWaarde(cap(d,'custom_thermostat_mode')))).length;
   return { aan, totaal:lijst.length };
 }
