@@ -83,6 +83,7 @@
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.blue { background:var(--blue-dim); color:var(--blue); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.geel { background:rgba(250,204,21,.14); color:var(--geel); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.red { background:var(--red-dim); color:var(--red); }
+:root:not([data-theme="light"]) body[data-stijl="mokka"] .ico.purple { background:rgba(167,139,250,.15); color:var(--purple); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.on .ico, :root:not([data-theme="light"]) body[data-stijl="mokka"] .tile.on .pwr { background:var(--amber-dim); color:var(--amber); }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .segment button.on { background:linear-gradient(180deg, rgba(242,172,61,.32), rgba(140,92,32,.42)); border-color:rgba(242,172,61,.7); color:#FFD08A; }
 :root:not([data-theme="light"]) body[data-stijl="mokka"] .g-lbl { background:rgba(22,16,11,.88); }
@@ -143,7 +144,7 @@ body[data-stijl="hotel"] .tile .t-name { font-size:1.15rem; }
 body[data-stijl="hotel"] .huiskaart { border:1px solid rgba(194,162,102,.55); }
 body[data-stijl="hotel"] .sec-label { color:var(--amber); letter-spacing:3px; }
 /* Keuzevenster voor het uiterlijk */
-.modal .st-lijst, .st-lijst { display:grid; overflow-y:auto; overscroll-behavior:contain; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:4px 2px 2px; }
+.modal .ui-lijst, .ui-lijst { display:grid; overflow-y:auto; overscroll-behavior:contain; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:4px 2px 2px; }
 .st-optie { display:flex; flex-direction:column; gap:8px; padding:10px; border-radius:14px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-primary); cursor:pointer; text-align:left; font:inherit; }
 .st-optie.on { border-color:var(--amber); box-shadow:0 0 0 2px var(--amber-dim); }
 .st-voorbeeld { height:74px; border-radius:10px; position:relative; overflow:hidden; display:flex; gap:5px; padding:8px; align-items:flex-end; }
@@ -1671,9 +1672,9 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     <div class="lp-kop">
       <div class="ico amber" data-icon="palet"></div>
       <div class="grow"><h2>Uiterlijk</h2><div class="card-sub">Kies hoe het dashboard eruitziet. Alleen kleuren en lettertypen veranderen.</div></div>
-      <button class="lp-knop" data-st-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+      <button class="lp-knop" data-ui-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
     </div>
-    <div class="st-lijst" id="stLijst"></div>
+    <div class="ui-lijst" id="uiLijst"></div>
   </div>
 </div>
 <div class="overlay" id="nieuwPaneel">
@@ -2001,9 +2002,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '135';
+const DASHBOARD_VERSIE = '136';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'136', datum:'11-11-2026', punten:[ 'Pop-up van de stofzuiger werkt weer: hij botste met het keuzevenster voor het uiterlijk.', 'De pop-ups voor bewoners en radio staan weer als lijst onder elkaar.', 'Media-tegel bovenin: het icoon is weer paars als er iets speelt (ook in de stijl Mokka).' ] },
   { v:'135', datum:'11-11-2026', punten:[ 'Infrarood spiegel: "Doorgestuurd" verschijnt pas als Homey de nieuwe temperatuur heeft bevestigd. Lukt het niet, dan wordt de rand rood met "Niet gelukt" en springt de kaart terug naar de temperatuur die echt is ingesteld.', 'Na 15 en 60 seconden kijkt het dashboard nog eens of de spiegel de temperatuur heeft overgenomen. Zo niet, dan verschijnt er alsnog een melding.' ] },
   { v:'134', datum:'11-11-2026', punten:[ 'Infrarood spiegel: een nieuwe temperatuur wordt pas na 5 seconden doorgestuurd, zodat je rustig de juiste temperatuur kunt kiezen. Net als bij de airco loopt er een rand om de kaart vol en zie je daarna "Doorgestuurd".' ] },
   { v:'133', datum:'11-11-2026', punten:[ 'Infrarood spiegel: de ingestelde temperatuur staat weer op de kaart. 0 graden betekent uit; dan staat er "staat uit" en "→ uit".', 'Met de pijltjes stel je de temperatuur in. Omhoog vanaf uit gaat naar de laatst gebruikte temperatuur; onder de laagste stand gaat hij uit. De aan/uit-knop van de spiegel is weg, want die wordt niet gebruikt.', 'Is het in de badkamer al warmer dan de ingestelde temperatuur, dan verwarmt de spiegel niet: de kaart ziet er dan uit als "uit", maar met de ingestelde temperatuur erbij.' ] },
@@ -6479,7 +6481,7 @@ document.addEventListener('click', e => {
   const bgc = e.target.closest('[data-bgkeuze]'); if(bgc){ const [v, w] = bgc.dataset.bgkeuze.split(':'); bgKeuze[v] = w; return tekenBeeldPaneel(); }
   const bgt = e.target.closest('[data-bgtest]'); if(bgt) return bgt.dataset.bgtest === 'stop' ? beeldTestUit() : beeldTestAan();
   if(nwOpen && (e.target === $('nieuwPaneel') || e.target.closest('[data-nw-sluit]'))) return sluitNieuw();
-  if(uiOpen){ if(e.target === $('stijlPaneel') || e.target.closest('[data-st-sluit]')) return sluitStijl();
+  if(uiOpen){ if(e.target === $('stijlPaneel') || e.target.closest('[data-ui-sluit]')) return sluitStijl();
     const k = e.target.closest('[data-stijl-kies]'); if(k) return kiesStijl(k.dataset.stijlKies); }
   if(klOpen && (e.target === $('klimaatPaneel') || e.target.closest('[data-kl-sluit]'))) return sluitKlimaat();
   if(mdOpen && (e.target === $('mediaPaneel') || e.target.closest('[data-md-sluit]'))) return sluitMedia();
@@ -7016,7 +7018,7 @@ var uiOpen = false;
 function openStijl(){
   uiOpen = true;
   const nu = huidigeStijl();
-  $('stLijst').innerHTML = STIJLEN.map(x => `<button class="st-optie ${x.id === nu ? 'on' : ''}" data-stijl-kies="${x.id}" aria-pressed="${x.id === nu}">
+  $('uiLijst').innerHTML = STIJLEN.map(x => `<button class="st-optie ${x.id === nu ? 'on' : ''}" data-stijl-kies="${x.id}" aria-pressed="${x.id === nu}">
       <span class="st-voorbeeld" style="background:${x.kl[0]}"><i style="background:${x.kl[1]}"></i><i style="background:${x.kl[1]};border-bottom:3px solid ${x.kl[2]}"></i><i style="background:${x.kl[1]};border-bottom:3px solid ${x.kl[3]}"></i></span>
       <b>${esc(x.naam)}</b><small>${esc(x.uitleg)}</small></button>`).join('');
   $('stijlPaneel').classList.add('on');
