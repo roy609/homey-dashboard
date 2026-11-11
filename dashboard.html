@@ -2001,7 +2001,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '133';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'133', datum:'11-11-2026', punten:[ 'Infrarood spiegel: de ingestelde temperatuur staat weer op de kaart. 0 graden betekent uit; dan staat er "staat uit" en "→ uit".', 'Met de pijltjes stel je de temperatuur in. Omhoog vanaf uit gaat naar de laatst gebruikte temperatuur; onder de laagste stand gaat hij uit. De aan/uit-knop van de spiegel is weg, want die wordt niet gebruikt.' ] },
+  { v:'133', datum:'11-11-2026', punten:[ 'Infrarood spiegel: de ingestelde temperatuur staat weer op de kaart. 0 graden betekent uit; dan staat er "staat uit" en "→ uit".', 'Met de pijltjes stel je de temperatuur in. Omhoog vanaf uit gaat naar de laatst gebruikte temperatuur; onder de laagste stand gaat hij uit. De aan/uit-knop van de spiegel is weg, want die wordt niet gebruikt.', 'Is het in de badkamer al warmer dan de ingestelde temperatuur, dan verwarmt de spiegel niet: de kaart ziet er dan uit als "uit", maar met de ingestelde temperatuur erbij.' ] },
   { v:'132', datum:'10-11-2026', punten:[ 'Demo-modus gebruikt neutrale namen voor de bewoners.', 'Test op de pagina Homey-status: kan het dashboard de locatie van Homey zelf lezen? Alleen lezen; regenradar en bandenadvies werken nog zoals voorheen.' ] },
   { v:'131', datum:'10-11-2026', punten:[ 'Beleggingen in een nieuw jasje, zoals een portefeuille-overzicht. Bovenaan de totale waarde met labels voor vandaag, de gekozen periode en sinds begin, plus ingelegd, winst en startdatum. Daaronder de grafiek met 1D / 1W / 1M / Alles en rechts de verdeling als ring.', 'Per belegging een kaart met waarde, de verandering in de gekozen periode, een eigen mini-grafiek, het rendement sinds begin (€ en %), ingelegd sinds, en de koers of wanneer bijgewerkt. Aanpassen gaat direct vanuit de kaart.', 'Zondag bijwerken, inleg en winst met stortingen, en belegging toevoegen staan eronder.' ] },
   { v:'130', datum:'09-11-2026', punten:[ 'Huiskaart \'s avonds: de ramen volgen de verlichting per kamer. Staan alle lampen in een kamer uit, dan is dat raam donker. Woonkamer: de ramen beneden. Slaapkamer: boven links. Kinderkamer: boven rechts, voorlopig altijd donker. Werkkamer: het zolderraam en de dakramen.', 'Staat de voordeurlamp uit, dan verdwijnt het licht bij de laadpaal.' ] },
@@ -3014,7 +3014,7 @@ const huidigeModus = d => isUit(d) ? '__uit' : String(cap(d,'ac_mode') ?? cap(d,
 /* Kleur van icoon en standtekst: rood = verwarmen, blauw = koelen, geel = automatisch.
    De infrarood spiegel heeft geen standen: die verwarmt altijd, dus rood als hij aan staat. */
 function klimKleur(d, k, lijst){
-  if(isSpiegel(d)) return spiegelUit(d) ? '' : 'red';
+  if(isSpiegel(d)) return spiegelUit(d) || spiegelRust(d) ? '' : 'red';
   if(lijst.length && isUit(d)) return '';
   if(cap(d,'onoff') === false) return '';
   if(k.icoon === 'thermo') return 'amber';
@@ -3028,6 +3028,8 @@ function klimKleur(d, k, lijst){
 /* Infrarood spiegel: aan/uit wordt niet gebruikt; Homey stuurt alleen de temperatuur. 0 = uit (verwarmt niet). */
 const isSpiegel = d => !!d && /spiegel/i.test(d.name || '') && typeof cap(d,'target_temperature') === 'number' && !modi(d).length;
 const spiegelUit = d => isSpiegel(d) && cap(d,'target_temperature') < 1;
+// Ingesteld, maar het is al warmer dan de ingestelde temperatuur: verwarmt dan niet (zelfde uiterlijk als uit, met de temperatuur erbij)
+const spiegelRust = d => isSpiegel(d) && !spiegelUit(d) && typeof cap(d,'measure_temperature') === 'number' && cap(d,'target_temperature') <= cap(d,'measure_temperature');
 function spiegelBereik(d){ const o = d?.capabilitiesObj?.target_temperature || {};
   return { min:Math.max(1, +o.min || 5), max:+o.max > 1 ? +o.max : 35, stap:+o.step > 0 ? +o.step : 0.5 }; }
 const KLIM_WACHT_MS = 6000, KLIM_OK_MS = 1000;
@@ -3057,9 +3059,9 @@ function klimaatKaart(k){
     const offline = d.available === false;
     const hulp = CONFIG.storingHulp?.[k.id];
     const nu = cap(d,'measure_temperature'), doel = cap(d,'target_temperature');
-    const spiegel = isSpiegel(d), sUit = spiegelUit(d);
+    const spiegel = isSpiegel(d), sUit = spiegelUit(d), sRust = spiegelRust(d);
     const metDoel = typeof doel === 'number' && (spiegel ? !sUit : doel >= 5);
-    const lijst = modi(d), uit = (lijst.length && isUit(d)) || sUit;
+    const lijst = modi(d), uit = (lijst.length && isUit(d)) || sUit || sRust;
     const huidig = lijst.find(m => String(m.id).toLowerCase() === huidigeModus(d).toLowerCase());
     const kleur = offline ? 'red' : klimKleur(d, k, lijst), kk = ` k-${kleur || 'uit'}`;
     return `<div class="card klim ${uit ? 'uit' : ''}">${klimRing(k.id)}<div class="row">
@@ -3067,7 +3069,7 @@ function klimaatKaart(k){
       `<div class="ico ${kleur}">${ic(k.icoon || (k.naam.includes('spiegel') ? 'mirror' : 'ac'))}</div>`}
       <div class="grow"><div style="font-weight:700">${esc(k.naam)}${lijst.length && !offline ? ` <span class="klim-modus${kk}">${uit ? 'staat uit' : esc(huidig?.label || '')}</span>`
           : !offline && cap(d,'custom_thermostat_mode') ? ` <span class="klim-modus${kk}">${esc(({ heat:'Verwarmen', cool:'Koelen', off:'Uit', auto:'Auto' })[String(cap(d,'custom_thermostat_mode')).toLowerCase()] || cap(d,'custom_thermostat_mode'))}</span>`
-          : !offline && spiegel ? ` <span class="klim-modus${kk}">${sUit ? 'staat uit' : 'verwarmt'}</span>`
+          : !offline && spiegel ? (sRust ? '' : ` <span class="klim-modus${kk}">${sUit ? 'staat uit' : 'verwarmt'}</span>`)
           : !offline && !lijst.length && typeof cap(d,'onoff') === 'boolean' ? ` <span class="klim-modus${kk}">${cap(d,'onoff') ? 'staat aan' : 'staat uit'}</span>` : ''}</div>
         ${offline ? `<div class="warn">Onbereikbaar${hulp ? ' · tik op !' : ''}</div>` :
           `<div class="klim-val">${nl(nu)}°${metDoel ? `<span class="pijl">→</span><span class="doel">${nl(doel)}°</span>` : sUit ? '<span class="pijl">→</span><span class="doel">uit</span>' : ''}</div>`}</div>
@@ -3088,7 +3090,7 @@ function klimaatKaart(k){
 let klOpen = false;
 function klimaatSamenvatting(){
   const lijst = CONFIG.klimaatPaneel.map(k => dev(k.id)).filter(Boolean);
-  const aan = lijst.filter(d => d.available !== false && !(modi(d).length && isUit(d)) && !spiegelUit(d) && (isSpiegel(d) || cap(d,'onoff') !== false)
+  const aan = lijst.filter(d => d.available !== false && !(modi(d).length && isUit(d)) && !spiegelUit(d) && !spiegelRust(d) && (isSpiegel(d) || cap(d,'onoff') !== false)
     && !(heeft(d,'custom_thermostat_mode') && isOffWaarde(cap(d,'custom_thermostat_mode')))).length;
   return { aan, totaal:lijst.length };
 }
