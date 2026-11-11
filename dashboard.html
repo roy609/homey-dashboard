@@ -2005,7 +2005,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '137';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'137', datum:'11-11-2026', punten:[ 'Thermostaat (Honeywell): "Verwarmen" staat er alleen als het in de woonkamer even warm of kouder is dan ingesteld. Is het warmer, dan ziet de kaart eruit als bij de spiegel: zonder tekst, grijs icoon, wel met de ingestelde temperatuur.', 'Infrarood spiegel: bij precies de ingestelde temperatuur staat er nu ook "verwarmt".' ] },
+  { v:'137', datum:'11-11-2026', punten:[ 'Thermostaat (Honeywell): "Verwarmen" staat er alleen als het in de woonkamer even warm of kouder is dan ingesteld. Is het warmer, dan ziet de kaart eruit als bij de spiegel: zonder tekst, grijs icoon, wel met de ingestelde temperatuur.', 'Infrarood spiegel: bij precies de ingestelde temperatuur staat er nu ook "verwarmt".', 'Thermostaat: een nieuwe temperatuur gaat net als bij de spiegel pas na 5 seconden naar Homey, met de rand om de kaart, "Doorgestuurd" na bevestiging en een rode melding als het niet lukt.' ] },
   { v:'136', datum:'11-11-2026', punten:[ 'Pop-up van de stofzuiger werkt weer: hij botste met het keuzevenster voor het uiterlijk.', 'De pop-ups voor bewoners en radio staan weer als lijst onder elkaar.', 'Media-tegel bovenin: het icoon is weer paars als er iets speelt (ook in de stijl Mokka).' ] },
   { v:'135', datum:'11-11-2026', punten:[ 'Infrarood spiegel: "Doorgestuurd" verschijnt pas als Homey de nieuwe temperatuur heeft bevestigd. Lukt het niet, dan wordt de rand rood met "Niet gelukt" en springt de kaart terug naar de temperatuur die echt is ingesteld.', 'Na 15 en 60 seconden kijkt het dashboard nog eens of de spiegel de temperatuur heeft overgenomen. Zo niet, dan verschijnt er alsnog een melding.' ] },
   { v:'134', datum:'11-11-2026', punten:[ 'Infrarood spiegel: een nieuwe temperatuur wordt pas na 5 seconden doorgestuurd, zodat je rustig de juiste temperatuur kunt kiezen. Net als bij de airco loopt er een rand om de kaart vol en zie je daarna "Doorgestuurd".' ] },
@@ -2141,7 +2141,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '11-11-2026 08:54';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '11-11-2026 09:27';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -3038,12 +3038,14 @@ function klimKleur(d, k, lijst){
 const isSpiegel = d => !!d && /spiegel/i.test(d.name || '') && typeof cap(d,'target_temperature') === 'number' && !modi(d).length;
 // Tijdens het wachten (5 s) telt de nieuwe, nog niet verstuurde temperatuur; zo zet een tussentijdse verversing hem niet terug
 const spiegelDoel = d => klimWacht[d.id]?.doel ?? cap(d,'target_temperature');
+// Apparaten waarbij het dashboard zelf 5 s wacht met versturen: de spiegel en de thermostaat (tado-airco's wachten zelf al)
+const eigenWacht = d => !!d && !CONFIG.klimVertraging?.includes(d.id) && (isSpiegel(d) || (!modi(d).length && heeft(d,'custom_thermostat_mode')));
 const spiegelUit = d => isSpiegel(d) && spiegelDoel(d) < 1;
 // Ingesteld, maar het is al warmer dan de ingestelde temperatuur: verwarmt dan niet (zelfde uiterlijk als uit, met de temperatuur erbij)
 const spiegelRust = d => isSpiegel(d) && !spiegelUit(d) && typeof cap(d,'measure_temperature') === 'number' && spiegelDoel(d) < cap(d,'measure_temperature');
 // Thermostaat op verwarmen, maar het is al warmer dan ingesteld: verwarmt dan niet (zelfde uiterlijk als de spiegel in rust)
 const thermRust = d => !!d && !isSpiegel(d) && !modi(d).length && /heat/i.test(String(cap(d,'custom_thermostat_mode') ?? ''))
-  && typeof cap(d,'measure_temperature') === 'number' && typeof cap(d,'target_temperature') === 'number' && cap(d,'measure_temperature') > cap(d,'target_temperature');
+  && typeof cap(d,'measure_temperature') === 'number' && typeof spiegelDoel(d) === 'number' && cap(d,'measure_temperature') > spiegelDoel(d);
 function spiegelBereik(d){ const o = d?.capabilitiesObj?.target_temperature || {};
   return { min:Math.max(1, +o.min || 5), max:+o.max > 1 ? +o.max : 35, stap:+o.step > 0 ? +o.step : 0.5 }; }
 const KLIM_WACHT_MS = 6000, KLIM_OK_MS = 1000, SPIEGEL_WACHT_MS = 5000;
@@ -3082,7 +3084,7 @@ function klimaatKaart(k){
     if(!d) return '';
     const offline = d.available === false;
     const hulp = CONFIG.storingHulp?.[k.id];
-    const nu = cap(d,'measure_temperature'), doel = isSpiegel(d) ? spiegelDoel(d) : cap(d,'target_temperature');
+    const nu = cap(d,'measure_temperature'), doel = eigenWacht(d) ? spiegelDoel(d) : cap(d,'target_temperature');
     const spiegel = isSpiegel(d), sUit = spiegelUit(d), sRust = spiegelRust(d);
     const metDoel = typeof doel === 'number' && (spiegel ? !sUit : doel >= 5);
     const tRust = thermRust(d), lijst = modi(d), uit = (lijst.length && isUit(d)) || sUit || sRust || tRust;
@@ -5294,7 +5296,7 @@ async function zoneDimmen(pct){
                  () => lampen.forEach(d => { d.capabilitiesObj.dim.value = v; d.capabilitiesObj.onoff.value = true; }));
 }
 async function temperatuur(id, stap){
-  const d = dev(id), nu = isSpiegel(d) ? spiegelDoel(d) : cap(d,'target_temperature');
+  const d = dev(id), nu = eigenWacht(d) ? spiegelDoel(d) : cap(d,'target_temperature');
   if(typeof nu !== 'number') return;
   let nieuw = Math.round((nu + stap) * 2) / 2;
   if(isSpiegel(d)){                                  // 0 = uit; omhoog vanaf uit gaat naar de laatst gebruikte temperatuur
@@ -5303,6 +5305,8 @@ async function temperatuur(id, stap){
     else { nieuw = Math.round((nu + Math.sign(stap) * B.stap) / B.stap) * B.stap; nieuw = nieuw < B.min ? 0 : Math.min(B.max, nieuw); }
     if(nieuw > 0) try { localStorage.setItem('spiegel_laatst_' + id, nieuw); } catch(e){}
     if(nieuw === nu) return;
+  }
+  if(eigenWacht(d)){
     // Pas versturen als er 5 s niet meer is getikt; de ring toont hoe lang nog (zelfde als bij de airco)
     const w = klimWacht[id] || (klimWacht[id] = {}); w.doel = nieuw;
     klimStart(id, SPIEGEL_WACHT_MS, async () => {
@@ -5332,7 +5336,7 @@ function spiegelControle(id, doel){
       const w = klimWacht[id] = { fout:true, start:0, ms:1, tekst:'✗ Niet overgenomen' };    // rode rand ook op de kaart
       w.t = setTimeout(() => { if(klimWacht[id] === w){ delete klimWacht[id]; tekenKlimaat(); } }, 6000);
       tekenKlimaat();
-      status('fout', `Infrarood spiegel heeft ${nl(doel)}° niet overgenomen (staat op ${v < 1 ? 'uit' : nl(v) + '°'})`);
+      status('fout', `${d?.name || 'Apparaat'} heeft ${nl(doel)}° niet overgenomen (staat op ${v < 1 ? 'uit' : nl(v) + '°'})`);
     } catch(e){}
   }, ms));
 }
