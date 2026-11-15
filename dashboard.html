@@ -1236,7 +1236,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 .pill { display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-micro); font-weight:600; letter-spacing:1px; text-transform:uppercase;
   padding:4px 10px; border-radius:100px; background:rgba(128,128,128,.14); color:var(--text-muted); }
 .pill i { width:6px; height:6px; border-radius:50%; background:currentColor; }
-.pill.ok { color:var(--green); } .pill.fout { color:var(--red); } .pill.demo { color:var(--blue); }
+.pill.ok { color:var(--green); } .pill.fout { color:var(--red); } .pill.demo { color:var(--blue); } .pill.waarsch { color:var(--amber); }
 .statusbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; }
 .kop-links { display:flex; align-items:center; gap:18px; min-width:0; }
 .bewoners { display:flex; gap:12px; }
@@ -1791,7 +1791,7 @@ const CONFIG = {
     weer:        'e47563d9-72ca-40a4-a538-517e3ae88429', // KNMI weather
     p1:          '51c4d050-c085-4f94-afd2-9fe91687d94f', // Gas-/Stroomverbruik
     zon:         '5e6c8155-f7e7-4023-9557-9c25a54cc5c8', // Zonnepanelen
-    auto:        '61478bcd-411a-4027-8920-74f3e95bed08', // ID.4 Pro Performance
+    auto:        '8f3869e3-e8c8-4636-b004-3b43e592cf62', // ID.4 Pro Performance (nieuwe koppeling, nov 2026)
   },
   // Gemiddelde binnentemperatuur en luchtvochtigheid ("Thuis 22,6° | 58%")
   binnenklimaat: [
@@ -2002,9 +2002,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '137';
+const DASHBOARD_VERSIE = '138';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'138', datum:'15-11-2026', punten:[ 'De ID.4 gebruikt de nieuwe koppeling in Homey. Accu, laaddoel, laden (vermogen, nog te gaan, klaar om, geladen deze laadbeurt, laadstroom), kilometerstand, slot en handrem komen nu daarvandaan.', 'Waarden die de nieuwe koppeling niet levert (portieren en ramen, locatie, onderhoud) worden niet meer als lege streepjes getoond.', 'Ook de autotegel op het hoofdscherm, de auto in het energiebeeld en de kilometerstand bij de banden gebruiken de nieuwe koppeling.' ] },
   { v:'137', datum:'11-11-2026', punten:[ 'Thermostaat (Honeywell): "Verwarmen" staat er alleen als het in de woonkamer even warm of kouder is dan ingesteld. Is het warmer, dan ziet de kaart eruit als bij de spiegel: zonder tekst, grijs icoon, wel met de ingestelde temperatuur.', 'Infrarood spiegel: bij precies de ingestelde temperatuur staat er nu ook "verwarmt".', 'Thermostaat: een nieuwe temperatuur gaat net als bij de spiegel pas na 5 seconden naar Homey, met de rand om de kaart, "Doorgestuurd" na bevestiging en een rode melding als het niet lukt.' ] },
   { v:'136', datum:'11-11-2026', punten:[ 'Pop-up van de stofzuiger werkt weer: hij botste met het keuzevenster voor het uiterlijk.', 'De pop-ups voor bewoners en radio staan weer als lijst onder elkaar.', 'Media-tegel bovenin: het icoon is weer paars als er iets speelt (ook in de stijl Mokka).' ] },
   { v:'135', datum:'11-11-2026', punten:[ 'Infrarood spiegel: "Doorgestuurd" verschijnt pas als Homey de nieuwe temperatuur heeft bevestigd. Lukt het niet, dan wordt de rand rood met "Niet gelukt" en springt de kaart terug naar de temperatuur die echt is ingesteld.', 'Na 15 en 60 seconden kijkt het dashboard nog eens of de spiegel de temperatuur heeft overgenomen. Zo niet, dan verschijnt er alsnog een melding.' ] },
@@ -2278,7 +2279,7 @@ const DEMO_RAW = {
   'e47563d9-72ca-40a4-a538-517e3ae88429':['KNMI weather','other',Z.thuis,{current_temp:11,recap:'Droog na regen',expected_today_recap:'bewolkt',expected_today_max_temp:12,expected_today_min_temp:9,expected:'Overdag buien'}],
   '51c4d050-c085-4f94-afd2-9fe91687d94f':['Gas-/Stroomverbruik','sensor',Z.thuis,{measure_power:485,'meter_power.daily':2.7,'meter_gas.daily':0.07}],
   '5e6c8155-f7e7-4023-9557-9c25a54cc5c8':['Zonnepanelen','solarpanel',Z.thuis,{measure_power:0,measure_generation_today:6.1}],
-  '61478bcd-411a-4027-8920-74f3e95bed08':['ID.4 Pro Performance','car',Z.thuis,{measure_battery:80,target_soc:80,is_charging:false,is_plug_connected:false,measure_distance_home:11}],
+  '8f3869e3-e8c8-4636-b004-3b43e592cf62':['ID.4 Pro Performance','car',Z.thuis,{measure_battery:64,measure_target_soc:80,ev_charging_state:'plugged_in_charging',charging_state:'charging hv battery',measure_charge_power:3.5,measure_power:3500,measure_charge_speed:16,charge_type:'ac',measure_charge_remaining:330,measure_charged_energy:12,measure_mileage:105305,locked:true,parking_brake_set:true,measure_climate_remaining:0,last_updated:'15.11.2026 22:42',data_captured:'15.11.2026 21:46'}],
   'e2f02bdd-56ae-4d56-808b-ca8cca2e02cf':['Honeywell Home','thermostat',Z.woon,{measure_temperature:21,target_temperature:19}],
   '48da39ac-c472-4d54-9ced-5a1441fffbbb':['Airco woonkamer nwe','airconditioning',Z.woon,{measure_temperature:23.7,measure_humidity:57.4}],
   'bc002a04-2df3-439a-a62c-dfb102835d67':['slaapkamer','airconditioning',Z.thuis,{measure_temperature:23.6,measure_humidity:55.7}],
@@ -2353,7 +2354,6 @@ const DEMO_VARS = {
   'f3ad21fd-45e5-4c19-ad83-d7bd0ef70072':{ type:'string', value:'' },      // Laadkosten (dashboard) → demo via lkDemo()
   '73874538-1baf-4cb6-9456-001471ea072b':{ type:'string', value:'' },      // Laadkosten verrekenen (dashboard)
 };
-DEMO_DEVICES['61478bcd-411a-4027-8920-74f3e95bed08'].capabilitiesObj.measure_charging_power = { value:0 };
 DEMO_DEVICES['51c4d050-c085-4f94-afd2-9fe91687d94f'].capabilitiesObj['meter_gas.daily'] = { value:1.14 };
 DEMO_DEVICES['89bd8240-0bcd-41ce-a021-05a589436030'].capabilitiesObj.ac_mode = { value:'OFF' };   // zonder lijst: test de reservewaarden
 DEMO_DEVICES['89bd8240-0bcd-41ce-a021-05a589436030'].capabilitiesObj.measure_humidity = { value:57.4 };
@@ -2416,6 +2416,40 @@ const gem = arr => { const a = arr.filter(v => typeof v === 'number'); return a.
 /* ═════════════════════════════════════════════
    TEKENEN
 ═════════════════════════════════════════════ */
+/* ── Auto: één vertaling voor beide Homey-apps van de ID.4 (oude koppeling: is_charging/meter_odometer…,
+   nieuwe koppeling: ev_charging_state/measure_mileage/measure_charge_power…). Ontbrekende waarden blijven null. ── */
+function autoInfo(a){
+  if(!a) return null;
+  const c = k => cap(a, k), num = v => typeof v === 'number' && isFinite(v) ? v : null;
+  const st = String(c('ev_charging_state') ?? '');
+  const laadt = c('is_charging') === true || /(^|_)charging$/.test(st) || /^charging/.test(String(c('charging_state') ?? ''));
+  const stekker = laadt || c('is_plug_connected') === true || /plugged_in|ready_for|conserving|charge_purpose/.test(st);
+  const kw = num(c('measure_charge_power')) ?? num(c('measure_charging_power')) ?? (num(c('measure_power')) != null ? c('measure_power') / 1000 : null);
+  const tijd = v => { if(typeof v === 'number') return v; const m = String(v ?? '').match(/(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})/);
+    return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]).getTime() : null; };
+  return {
+    acc: num(c('measure_battery')) ?? num(c('measure_battery_percentage')),
+    doel: num(c('measure_target_soc')) ?? num(c('target_soc')),
+    laadt, stekker, kw: laadt ? (kw || 0) : 0, stand: st,
+    restMin: num(c('measure_charge_remaining')) ?? num(c('measure_remaining_charging_time')),
+    geladen: num(c('measure_charged_energy')),
+    stroom: num(c('measure_charge_speed')) ?? num(c('max_charging_current')),
+    laadType: c('charge_type') ? String(c('charge_type')).toUpperCase() : null,
+    km: num(c('measure_mileage')) ?? num(c('meter_odometer')),
+    bereik: num(c('measure_range')),
+    slot: typeof c('locked') === 'boolean' ? c('locked') : null,
+    handrem: typeof c('parking_brake_set') === 'boolean' ? c('parking_brake_set') : null,
+    klimaatAan: c('climatisation_onoff') === true || (num(c('measure_climate_remaining')) || 0) > 0,
+    klimaatRest: num(c('measure_climate_remaining')) ?? num(c('measure_remaining_climatisation_time')),
+    gemeten: tijd(c('data_captured')) ?? tijd(c('timestamp.battery_status')) ?? tijd(c('timestamp')),
+    bijgewerkt: tijd(c('last_updated')) ?? tijd(c('timestamp')),
+    afstand: num(c('measure_distance_home')),
+    deuren: heeft(a, 'alarm_door.frontLeft'),
+  };
+}
+const AUTO_STAND = { plugged_out:'Stekker los', plugged_in:'Stekker in', plugged_in_charging:'Laadt', plugged_in_discharging:'Ontlaadt', charging:'Laadt',
+  ready_for_charging:'Klaar om te laden', not_ready_for_charging:'Niet klaar', conserving:'Laden gepauzeerd', charge_purpose_reached_and_conservation:'Laaddoel bereikt' };
+const autoStandTekst = I => AUTO_STAND[I.stand] || (I.laadt ? 'Laadt' : I.stekker ? 'Stekker in' : 'Stekker los');
 function miniKaart(icoon, kleur, titel, waarde, actie, sub){
   return `<div class="card ${actie ? 'klikbaar' : ''}" ${actie ? `data-actie="${actie}" role="button"` : ''}><div class="row"><div class="ico ${kleur}">${ic(icoon)}</div>
     <div class="grow"><div class="card-title">${esc(titel)}</div><div class="card-sub" style="color:var(--text-primary);font-weight:600">${waarde}</div>
@@ -2480,13 +2514,13 @@ function tekenLinks(){
     </div>`;
 
   // Auto
-  const a = dev(CONFIG.apparaten.auto);
-  const acc = cap(a,'measure_battery');
-  const laad = cap(a,'is_charging') ? 'Laadt' : cap(a,'is_plug_connected') ? 'Stekker in' : 'Niet aangesloten';
+  const a = dev(CONFIG.apparaten.auto), AI = autoInfo(a);
+  const acc = AI?.acc;
+  const laad = AI ? (AI.laadt ? `Laadt ${nl(AI.kw, 1)} kW` : autoStandTekst(AI)) : '';
   if($('autoKaart')) $('autoKaart').innerHTML = a ? `<div class="row"><div class="ico green">${ic('car')}</div><div class="grow">
       <div class="card-title">ID.4 · accu</div>
       <div class="card-val">${acc ?? '–'}<span class="u">%</span></div></div>
-      <div class="card-sub" style="text-align:right">${laad}<br>Doel ${cap(a,'target_soc') ?? '–'}%</div></div>
+      <div class="card-sub" style="text-align:right">${laad}<br>Doel ${AI?.doel ?? '–'}%</div></div>
       <div class="bar"><i style="width:${Math.max(0, Math.min(100, acc || 0))}%"></i></div>` : '<span class="leeg">Auto niet gevonden</span>';
 }
 
@@ -4080,15 +4114,15 @@ function tekenEnergieLive(){
   const net = cap(P1,'measure_power') ?? 0;                                  // + afname, − teruglevering
   const ZV = zonVermogen(), zon = ZV.w;                                         // 's nachts 0 (omvormer in rust)
   const huis = Math.max(0, net + zon);
-  const laadt = cap(AUTO,'is_charging') === true;
-  const auto = laadt ? (cap(AUTO,'measure_charging_power') || 0) * 1000 : 0;
+  const AI = autoInfo(AUTO), laadt = !!AI?.laadt;
+  const auto = laadt ? AI.kw * 1000 : 0;
   const gasNu = cap(P1,'measure_gas');
   const T = totalen();
 
   // De lijnen en bolletjes alleen opnieuw tekenen als richting of snelheid verandert,
   // anders begint de animatie elke paar seconden opnieuw.
   const lampAan = zones => Object.values(DEVS).some(d => d.class === 'light' && zones.includes(d.zone) && cap(d,'onoff') === true);
-  const afstand = cap(AUTO,'measure_distance_home');
+  const afstand = AI?.afstand;
   const st = {
     beneden: lampAan(CONFIG.huisZones.beneden), boven: lampAan(CONFIG.huisZones.boven), zolder: lampAan(CONFIG.huisZones.zolder),
     voordeur: CONFIG.huisZones.voordeurlamp ? cap(dev(CONFIG.huisZones.voordeurlamp),'onoff') === true : null,
@@ -4111,8 +4145,8 @@ function tekenEnergieLive(){
   zet('fHuisW', wTekst(huis));
   zet('fHuisSub', T.huis != null ? `${kWh(T.huis)} kWh vandaag` : '');
   zet('fGasW', typeof T.gas === 'number' ? nl(T.gas, 2) + ' m³' : '–');
-  zet('fAutoW', laadt ? wTekst(auto) : (cap(AUTO,'measure_battery') ?? '–') + '%');
-  zet('fAutoSub', laadt ? `Laadt · ${cap(AUTO,'measure_battery') ?? '–'}%` : cap(AUTO,'is_plug_connected') ? 'Stekker in' : 'Niet aangesloten');
+  zet('fAutoW', laadt ? wTekst(auto) : (AI?.acc ?? '–') + '%');
+  zet('fAutoSub', laadt ? `Laadt · ${AI?.acc ?? '–'}%` : AI ? autoStandTekst(AI) : 'Niet gevonden');
   zet('fNetNaam', net < -20 ? 'Teruglevering' : net > 20 ? 'Van het net' : 'Stroomnet');
   zet('fAutoSub', laadt ? 'ID.4 laadt' : 'ID.4');
   // Huiskaart op het hoofddashboard: verbruik in het huis kleurt mee (groen bij teruglevering, daarna geel → oranje → rood)
@@ -6098,7 +6132,7 @@ function tekenBanden(){
   if(bandBewerk && bandBewerk === bandGetekend && el.querySelector('.band-form')) return;
   bandGetekend = bandBewerk;
   if(!autoWeer || Date.now() - autoWeer.t > 3 * 3600e3) laadAutoWeer();
-  const d = bandData(), a = autoDev(), km = cap(a,'meter_odometer');
+  const d = bandData(), a = autoDev(), km = autoInfo(a)?.km;
   const set = s => { const A = bandAnalyse(d, s), act = d.actief === s;
     const status = A.nu == null ? '' : A.nu <= AUTO_CFG.banden.wettelijk + .4 ? 'slecht' : A.nu <= A.grens + .5 ? 'waarsch' : '';
     const jr = A.jaren; const wanneer = jr == null ? '–' : jr < .5 ? 'dit seizoen' : `over ~${nl(jr, jr < 2 ? 1 : 0)} jaar`;
@@ -6133,7 +6167,7 @@ function bandActie(w){
   if(w === 'meting' || w === 'wissel'){ bandBewerk = w; return tekenBanden(); }
   if(w === 'annuleer'){ bandBewerk = null; return tekenBanden(); }
   if(d.demo){ d.metingen = []; d.wissels = []; delete d.demo; }                 // eerste echte invoer: voorbeeld weg
-  const kmv = parseInt(String($('bdKm')?.value || '').replace(/\D/g, ''), 10) || cap(autoDev(),'meter_odometer') || 0;
+  const kmv = parseInt(String($('bdKm')?.value || '').replace(/\D/g, ''), 10) || autoInfo(autoDev())?.km || 0;
   if(w === 'wisselok'){ const naar = $('bdNaar').value; d.actief = naar; delete d.afspraak; d.wissels.push({ datum:new Date().toISOString().slice(0, 10), km:kmv, naar }); bandBewerk = 'meting'; bandBewaar(d); return; }
   if(w === 'opslaan'){
     const mm = [0, 1, 2, 3].map(i => parseFloat(String($('bdMm' + i).value).replace(',', '.')));
@@ -6166,46 +6200,57 @@ function tekenAuto(){
   if(!$('page-auto')?.classList.contains('on')) return;
   const a = autoDev();
   if(!a){ $('autoHoofd').innerHTML = '<span class="leeg">Auto niet gevonden in Homey</span>'; return; }
-  const c = k => cap(a, k), acc = c('measure_battery') ?? c('measure_battery_percentage');
-  const bereik = typeof acc === 'number' ? Math.round(acc / 100 * AUTO_CFG.accuKwh * AUTO_CFG.kmPerKwh) : null;
-  const open = ['alarm_door.frontLeft','alarm_door.frontRight','alarm_door.rearLeft','alarm_door.rearRight','alarm_door.trunk','alarm_door.bonnet'].filter(k => c(k) === true).length;
-  const ramen = ['alarm_window.frontLeft','alarm_window.frontRight','alarm_window.rearLeft','alarm_window.rearRight'].filter(k => c(k) === true).length;
-  const thuis = typeof c('measure_distance_home') === 'number' && c('measure_distance_home') < 150;
+  const c = k => cap(a, k), I = autoInfo(a), acc = I.acc;
+  const schat = typeof acc === 'number' ? Math.round(acc / 100 * AUTO_CFG.accuKwh * AUTO_CFG.kmPerKwh) : null;
+  const bereik = I.bereik ?? schat, bereikTxt = I.bereik != null ? 'actieradius' : 'actieradius (schatting)';
+  const thuis = I.afstand != null && I.afstand < 150;
   const ond = c('maintenance_due_days'), ondDatum = typeof ond === 'number' ? new Date(Date.now() + ond * 864e5) : null;
+  const oud = I.gemeten && Date.now() - I.gemeten > 6 * 3600e3;
   $('autoTitel').textContent = a.name;
-  $('autoStand').className = 'pill ' + (c('vehicle_online') === false ? 'fout' : 'ok');
-  $('autoStand').lastElementChild.textContent = c('vehicle_online') === false ? 'Offline' : `Bijgewerkt ${autoGeleden(c('timestamp'))}`;
-  const feit = (t, w, k = '') => `<div class="${k}"><small>${t}</small><b>${w}</b></div>`;
+  $('autoStand').className = 'pill ' + (c('vehicle_online') === false || a.available === false ? 'fout' : oud ? 'waarsch' : 'ok');
+  $('autoStand').lastElementChild.textContent = c('vehicle_online') === false || a.available === false ? 'Offline' : `Auto gemeld ${autoGeleden(I.gemeten)}`;
   const deelNaam = { 'alarm_door.frontLeft':'Portier linksvoor', 'alarm_door.frontRight':'Portier rechtsvoor', 'alarm_door.rearLeft':'Portier linksachter', 'alarm_door.rearRight':'Portier rechtsachter',
     'alarm_door.trunk':'Kofferbak', 'alarm_door.bonnet':'Motorkap', 'alarm_window.frontLeft':'Raam linksvoor', 'alarm_window.frontRight':'Raam rechtsvoor', 'alarm_window.rearLeft':'Raam linksachter', 'alarm_window.rearRight':'Raam rechtsachter' };
   const openLijst = Object.keys(deelNaam).filter(k => c(k) === true).map(k => deelNaam[k]);
+  const feiten = [
+    I.km != null && feit('Kilometerstand', I.km.toLocaleString('nl-NL') + ' km'),
+    I.afstand != null ? feit('Locatie', thuis ? 'Thuis' : c('is_parked') ? 'Geparkeerd elders' : 'Onderweg', thuis ? 'groen' : '') : null,
+    I.handrem != null && feit('Handrem', I.handrem ? 'Erop (geparkeerd)' : 'Eraf'),
+    heeft(a,'measure_battery_temperature.min') && feit('Accutemperatuur', `${c('measure_battery_temperature.min') ?? '–'}–${c('measure_battery_temperature.max') ?? '–'} °C`),
+    typeof ond === 'number' && feit('Onderhoud', `over ${ond} dagen`, ond < 30 ? 'amber' : ''),
+    heeft(a,'alarm_general') && feit('Alarm', c('alarm_general') ? 'Alarm!' : 'Geen', c('alarm_general') ? 'rood' : ''),
+    feit('Laatste gegevens', I.gemeten ? new Date(I.gemeten).toLocaleString('nl-NL', { weekday:'short', hour:'2-digit', minute:'2-digit' }) : '–', oud ? 'amber' : ''),
+  ].filter(Boolean).join('');
   $('autoHoofd').innerHTML = `<div class="auto-top">
-      <div class="auto-foto"><img src="${AUTO_CFG.foto}" alt="${esc(a.name)}" onerror="this.parentNode.classList.add('geen');this.remove()">${autoSvg(a)}</div>
+      <div class="auto-foto"><img src="${AUTO_CFG.foto}" alt="${esc(a.name)}" onerror="this.parentNode.classList.add('geen');this.remove()">${I.deuren || I.slot != null ? autoSvg(a) : ''}</div>
       <div class="auto-acc"><small class="card-title">Accu</small><b>${acc ?? '–'}<span class="u">%</span></b>
-        <div class="card-sub">± ${bereik ?? '–'} km actieradius (schatting) · laaddoel ${c('target_soc') ?? '–'}%</div>
+        <div class="card-sub">± ${bereik ?? '–'} km ${bereikTxt} · laaddoel ${I.doel ?? '–'}%</div>
         <div class="bar"><i style="width:${Math.max(0, Math.min(100, acc || 0))}%"></i></div>
         <div class="auto-status">
-          <span class="${c('locked') ? 'ok' : 'nee'}">${c('locked') ? '🔒 Op slot' : '🔓 Niet op slot'}</span>
-          ${openLijst.length ? openLijst.map(n => `<span class="nee">${esc(n)} open</span>`).join('') : '<span class="ok">Portieren, ramen en kleppen dicht</span>'}
+          ${I.slot != null ? `<span class="${I.slot ? 'ok' : 'nee'}">${I.slot ? '🔒 Op slot' : '🔓 Niet op slot'}</span>` : ''}
+          ${I.deuren ? (openLijst.length ? openLijst.map(n => `<span class="nee">${esc(n)} open</span>`).join('') : '<span class="ok">Portieren, ramen en kleppen dicht</span>') : ''}
+          ${I.laadt ? `<span class="ok">⚡ Laadt ${nl(I.kw, 1)} kW</span>` : ''}
         </div>
       </div></div>
-    <div class="auto-feiten">
-      ${feit('Kilometerstand', typeof c('meter_odometer') === 'number' ? c('meter_odometer').toLocaleString('nl-NL') + ' km' : '–')}
-      ${feit('Locatie', thuis ? 'Thuis' : c('is_parked') ? 'Geparkeerd elders' : 'Onderweg', thuis ? 'groen' : '')}
-      ${feit('Accutemperatuur', `${c('measure_battery_temperature.min') ?? '–'}–${c('measure_battery_temperature.max') ?? '–'} °C`)}
-      ${feit('Onderhoud', ondDatum ? `over ${ond} dagen` : '–', typeof ond === 'number' && ond < 30 ? 'amber' : '')}
-      ${feit('Status', c('vehicle_active') ? 'In gebruik' : 'In rust')}
-      ${feit('Alarm', c('alarm_general') ? 'Alarm!' : 'Geen', c('alarm_general') ? 'rood' : '')}
-    </div>
-    ${ondDatum ? `<div class="bel-klein">Volgende onderhoudsbeurt rond ${ondDatum.toLocaleDateString('nl-NL', { day:'numeric', month:'long', year:'numeric' })}. Laatste contact met de auto: ${autoGeleden(c('timestamp'))}.</div>` : ''}`;
+    <div class="auto-feiten">${feiten}</div>
+    ${ondDatum ? `<div class="bel-klein">Volgende onderhoudsbeurt rond ${ondDatum.toLocaleDateString('nl-NL', { day:'numeric', month:'long', year:'numeric' })}.</div>` : ''}
+    ${oud ? `<div class="bel-klein">De auto heeft sinds ${autoGeleden(I.gemeten)} geen nieuwe gegevens gestuurd (Homey vroeg het laatst ${autoGeleden(I.bijgewerkt)} op).</div>` : ''}`;
   // laden
-  const st = { plugged_out:'Stekker los', plugged_in:'Stekker in', charging:'Laadt', ready_for_charging:'Klaar om te laden', not_ready_for_charging:'Niet klaar', conserving:'Laden gepauzeerd', charge_purpose_reached_and_conservation:'Laaddoel bereikt' }[c('ev_charging_state')] || (c('is_charging') ? 'Laadt' : c('is_plug_connected') ? 'Stekker in' : 'Stekker los');
-  const rest = c('measure_remaining_charging_time');
-  $('autoLaden').innerHTML = `<div class="auto-kop"><span class="ico ${c('is_charging') ? 'green' : ''}">${ic('plug')}</span><b>Laden</b><span class="chip">${st}</span></div>
-    <div class="auto-feiten">${feit('Vermogen', `${nl(c('measure_charging_power') || 0, 1)} kW`, c('is_charging') ? 'groen' : '')}${feit('Nog te gaan', rest ? `${Math.floor(rest / 60)}u ${rest % 60}m` : '–')}${feit('Tot vol', `${c('measure_battery.until_full') ?? '–'}%`)}
-      ${feit('Laaddoel', `${c('target_soc') ?? '–'}%`)}${feit('Max. stroom', `${c('max_charging_current') ?? '–'} A`)}${feit('Tot laaddoel', `${c('measure_battery.until_target_soc') ?? '–'}%`)}</div>`;
-  $('autoKlimaat').innerHTML = `<div class="auto-kop"><span class="ico ${c('climatisation_onoff') ? 'amber' : ''}">${ic('thermo')}</span><b>Klimaat</b><span class="chip">${c('climatisation_onoff') ? 'Aan' : 'Uit'}</span></div>
-    <div class="auto-feiten">${feit('Doeltemperatuur', `${c('target_temperature') ?? '–'} °C`)}${feit('Ruitverwarming', c('window_heating_enabled') ? 'Aan' : 'Uit')}${feit('Nog', c('measure_remaining_climatisation_time') ? c('measure_remaining_climatisation_time') + ' min' : '–')}</div>`;
+  const rest = I.restMin, tijdTxt = rest ? `${Math.floor(rest / 60)}u ${String(Math.round(rest % 60)).padStart(2, '0')}m` : '–';
+  const klaar = I.laadt && rest ? new Date(Date.now() + rest * 60000).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' }) : null;
+  $('autoLaden').innerHTML = `<div class="auto-kop"><span class="ico ${I.laadt ? 'green' : ''}">${ic('plug')}</span><b>Laden</b><span class="chip">${autoStandTekst(I)}</span></div>
+    <div class="auto-feiten">
+      ${feit('Vermogen', `${nl(I.kw, 1)} kW`, I.laadt ? 'groen' : '')}
+      ${feit('Nog te gaan', I.laadt ? tijdTxt : '–')}
+      ${klaar ? feit('Klaar om', klaar) : feit('Laaddoel', `${I.doel ?? '–'}%`)}
+      ${klaar ? feit('Laaddoel', `${I.doel ?? '–'}%`) : ''}
+      ${I.geladen != null ? feit('Deze laadbeurt', `${nl(I.geladen, 1)} kWh`) : ''}
+      ${I.stroom != null ? feit('Laadstroom', `${I.stroom} A${I.laadType ? ' · ' + I.laadType : ''}`) : ''}
+      ${heeft(a,'measure_battery.until_full') ? feit('Tot vol', `${c('measure_battery.until_full') ?? '–'}%`) : ''}
+    </div>`;
+  const klimTemp = c('target_temperature');
+  $('autoKlimaat').innerHTML = `<div class="auto-kop"><span class="ico ${I.klimaatAan ? 'amber' : ''}">${ic('thermo')}</span><b>Klimaat</b><span class="chip">${I.klimaatAan ? 'Aan' : 'Uit'}</span></div>
+    <div class="auto-feiten">${typeof klimTemp === 'number' ? feit('Doeltemperatuur', `${klimTemp} °C`) : ''}${heeft(a,'window_heating_enabled') ? feit('Ruitverwarming', c('window_heating_enabled') ? 'Aan' : 'Uit') : ''}${feit('Nog', I.klimaatRest ? I.klimaatRest + ' min' : '–')}</div>`;
   tekenBanden(); tekenPaal(); tekenLaadkosten(); tekenAutoRdw();
 }
 /* ═════════════════════════════════════════════
