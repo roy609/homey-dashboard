@@ -1237,6 +1237,20 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   padding:4px 10px; border-radius:100px; background:rgba(128,128,128,.14); color:var(--text-muted); }
 .pill i { width:6px; height:6px; border-radius:50%; background:currentColor; }
 .pill.ok { color:var(--green); } .pill.fout { color:var(--red); } .pill.demo { color:var(--blue); } .pill.waarsch { color:var(--amber); }
+/* Laadbalk bovenaan de autopagina (alleen zichtbaar tijdens laden) */
+@keyframes lbStreep { from { background-position:0 0 } to { background-position:40px 0 } }
+@keyframes lbPuls { 0%,100% { opacity:.55 } 50% { opacity:1 } }
+.laadbalk { display:flex; align-items:center; gap:16px; padding:14px 18px; margin:0 0 16px; border-radius:16px;
+  background:linear-gradient(90deg, rgba(14,185,141,.28), rgba(14,185,141,.10)); border:1px solid rgba(14,185,141,.55); }
+.laadbalk[hidden] { display:none; }
+.laadbalk .bliksem { font-size:28px; animation:lbPuls 1.6s ease-in-out infinite; }
+.laadbalk b { font-size:1.25rem; } .laadbalk small { display:block; color:var(--text-muted); font-weight:600; margin-top:2px; }
+.laadbalk .lb-spoor { flex:1; min-width:120px; height:12px; border-radius:6px; background:rgba(255,255,255,.08); position:relative; overflow:hidden; }
+.laadbalk .lb-spoor i { position:absolute; left:0; top:0; bottom:0; border-radius:6px; background:repeating-linear-gradient(45deg, var(--green) 0 10px, #33d6a6 10px 20px); animation:lbStreep 1s linear infinite; }
+.laadbalk .lb-spoor u { position:absolute; top:-3px; bottom:-3px; width:3px; background:#fff; border-radius:2px; }
+.laadbalk .lb-pct { color:var(--green); font-size:1.25rem; font-weight:800; }
+@media (max-width:700px){ .laadbalk { flex-wrap:wrap; } .laadbalk .lb-spoor { flex-basis:100%; order:3; } }
+@media (prefers-reduced-motion:reduce){ .laadbalk .bliksem, .laadbalk .lb-spoor i { animation:none; } }
 .statusbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; }
 .kop-links { display:flex; align-items:center; gap:18px; min-width:0; }
 .bewoners { display:flex; gap:12px; }
@@ -1508,6 +1522,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
 
   <section class="page" id="page-auto">
     <div class="statusbar"><h1 id="autoTitel">Auto</h1><span class="pill" id="autoStand"><i></i><span>–</span></span></div>
+    <div class="laadbalk" id="autoLaadbalk" hidden></div>
     <div class="auto-grid">
       <div class="auto-kolom">
         <div class="card auto-hoofd" id="autoHoofd"></div>
@@ -2002,9 +2017,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '138';
+const DASHBOARD_VERSIE = '139';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'139', datum:'15-11-2026', punten:[ 'Auto: tijdens het laden staat bovenaan de pagina een groene laadbalk met het vermogen, van hoeveel naar hoeveel procent, hoe lang nog en hoe laat klaar. De balk loopt richting het laaddoel en verdwijnt als de auto niet laadt.' ] },
   { v:'138', datum:'15-11-2026', punten:[ 'De ID.4 gebruikt de nieuwe koppeling in Homey. Accu, laaddoel, laden (vermogen, nog te gaan, klaar om, geladen deze laadbeurt, laadstroom), kilometerstand, slot en handrem komen nu daarvandaan.', 'Waarden die de nieuwe koppeling niet levert (portieren en ramen, locatie, onderhoud) worden niet meer als lege streepjes getoond.', 'Ook de autotegel op het hoofdscherm, de auto in het energiebeeld en de kilometerstand bij de banden gebruiken de nieuwe koppeling.' ] },
   { v:'137', datum:'11-11-2026', punten:[ 'Thermostaat (Honeywell): "Verwarmen" staat er alleen als het in de woonkamer even warm of kouder is dan ingesteld. Is het warmer, dan ziet de kaart eruit als bij de spiegel: zonder tekst, grijs icoon, wel met de ingestelde temperatuur.', 'Infrarood spiegel: bij precies de ingestelde temperatuur staat er nu ook "verwarmt".', 'Thermostaat: een nieuwe temperatuur gaat net als bij de spiegel pas na 5 seconden naar Homey, met de rand om de kaart, "Doorgestuurd" na bevestiging en een rode melding als het niet lukt.' ] },
   { v:'136', datum:'11-11-2026', punten:[ 'Pop-up van de stofzuiger werkt weer: hij botste met het keuzevenster voor het uiterlijk.', 'De pop-ups voor bewoners en radio staan weer als lijst onder elkaar.', 'Media-tegel bovenin: het icoon is weer paars als er iets speelt (ook in de stijl Mokka).' ] },
@@ -2142,7 +2158,7 @@ const WIJZIGINGEN = [
   { v:'56', datum:'27-10-2026', punten:[
     'Dashboard wordt via GitHub bijgewerkt: de tablet haalt nieuwe versies zelf op.' ] },
 ];
-const DASHBOARD_DATUM = '15-11-2026 22:53';   // moment van publiceren (Nederlandse tijd)
+const DASHBOARD_DATUM = '15-11-2026 23:05';   // moment van publiceren (Nederlandse tijd)
 /* Nieuwe versie op GitHub? Dan herladen (alleen als de pagina via de lader op de Homey draait). */
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Roy609/homey-dashboard/main/';
 async function checkNieuweVersie(){
@@ -6235,6 +6251,13 @@ function tekenAuto(){
     <div class="auto-feiten">${feiten}</div>
     ${ondDatum ? `<div class="bel-klein">Volgende onderhoudsbeurt rond ${ondDatum.toLocaleDateString('nl-NL', { day:'numeric', month:'long', year:'numeric' })}.</div>` : ''}
     ${oud ? `<div class="bel-klein">De auto heeft sinds ${autoGeleden(I.gemeten)} geen nieuwe gegevens gestuurd (Homey vroeg het laatst ${autoGeleden(I.bijgewerkt)} op).</div>` : ''}`;
+  // laadbalk bovenaan: alleen tijdens laden
+  const lb = $('autoLaadbalk');
+  if(lb){ lb.hidden = !I.laadt;
+    if(I.laadt){ const r = I.restMin, k = r ? new Date(Date.now() + r * 60000).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' }) : null;
+      lb.innerHTML = `<span class="bliksem" aria-hidden="true">⚡</span><div><b>Laadt · ${nl(I.kw, 1)} kW</b><small>${acc ?? '–'}% → ${I.doel ?? '–'}%${r ? ` · nog ${Math.floor(r / 60)}u ${String(Math.round(r % 60)).padStart(2, '0')}m · klaar om ${k}` : ''}</small></div>
+        <div class="lb-spoor" role="progressbar" aria-valuenow="${acc ?? 0}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.max(0, Math.min(100, acc || 0))}%"></i>${I.doel ? `<u style="left:${Math.min(99, I.doel)}%"></u>` : ''}</div>
+        <span class="lb-pct">${acc ?? '–'}%</span>`; } }
   // laden
   const rest = I.restMin, tijdTxt = rest ? `${Math.floor(rest / 60)}u ${String(Math.round(rest % 60)).padStart(2, '0')}m` : '–';
   const klaar = I.laadt && rest ? new Date(Date.now() + rest * 60000).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' }) : null;
