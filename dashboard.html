@@ -2017,9 +2017,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '139';
+const DASHBOARD_VERSIE = '140';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'140', datum:'20-11-2026', punten:[ 'Beleggingen: Nvidia staat erbij met een live koers (Finnhub, omgerekend naar euro). Vul via "Aanpassen" je aantal stuks en je aankopen in; Nvidia telt dan mee in het totaal, de verdeling, de grafiek en de dagwinst.', 'Finnhub geeft gratis geen koershistorie: het dashboard bewaart vanaf nu elke handelsdag de slotkoers, zodat de grafiek van Nvidia zich opbouwt. Op 1D zie je de stand ten opzichte van de vorige slotkoers.', 'Het testblok "Koersen via Homey" is weg.' ] },
   { v:'139', datum:'15-11-2026', punten:[ 'Auto: tijdens het laden staat bovenaan de pagina een groene laadbalk met het vermogen, van hoeveel naar hoeveel procent, hoe lang nog en hoe laat klaar. De balk loopt richting het laaddoel en verdwijnt als de auto niet laadt.' ] },
   { v:'138', datum:'15-11-2026', punten:[ 'De ID.4 gebruikt de nieuwe koppeling in Homey. Accu, laaddoel, laden (vermogen, nog te gaan, klaar om, geladen deze laadbeurt, laadstroom), kilometerstand, slot en handrem komen nu daarvandaan.', 'Waarden die de nieuwe koppeling niet levert (portieren en ramen, locatie, onderhoud) worden niet meer als lege streepjes getoond.', 'Ook de autotegel op het hoofdscherm, de auto in het energiebeeld en de kilometerstand bij de banden gebruiken de nieuwe koppeling.' ] },
   { v:'137', datum:'11-11-2026', punten:[ 'Thermostaat (Honeywell): "Verwarmen" staat er alleen als het in de woonkamer even warm of kouder is dan ingesteld. Is het warmer, dan ziet de kaart eruit als bij de spiegel: zonder tekst, grijs icoon, wel met de ingestelde temperatuur.', 'Infrarood spiegel: bij precies de ingestelde temperatuur staat er nu ook "verwarmt".', 'Thermostaat: een nieuwe temperatuur gaat net als bij de spiegel pas na 5 seconden naar Homey, met de rand om de kaart, "Doorgestuurd" na bevestiging en een rode melding als het niet lukt.' ] },
@@ -5763,7 +5764,7 @@ function belStap(log, t){                                   // laatste waarde op
   return r < 0 ? null : log.pts[r];
 }
 /* Koershistorie per munt (CoinGecko), met tijdstippen. "alles" wordt altijd geladen: nodig voor de aankoopkoersen. */
-const muntHist = {}, MUNT_IDS = () => ['bitcoin', ...Object.values(MUNTEN).map(m => m.id)];
+const muntHist = {}, MUNT_IDS = () => ['bitcoin', ...Object.values(MUNTEN).filter(isMunt).map(m => m.id)];
 async function laadMuntHist(periode){
   const h = muntHist[periode]; if(h?.bezig || (h?.t && Date.now() - h.t < (h.data ? 15 : 2) * 60000)) return;   // mislukt: pas na 2 min opnieuw
   muntHist[periode] = { ...(h || {}), bezig:true }; const data = {};
@@ -5791,7 +5792,16 @@ function belReeksen(periode){
   const handLog = { ts:handAll.map(x => x.t), pts:handAll.map(x => x.v) };
   const hand = handAll.filter(x => x.t >= van), h0 = belStap(handLog, van);
   if(h0 != null && (!hand.length || hand[0].t > van)) hand.unshift({ t:van, v:h0 });
+  const aandeelPr = k => { const K = KOERS[k], h = (d.aandeelKoers?.[k] || []).map(x => [Date.parse(x.datum + 'T21:00:00Z'), +x.eur]).filter(x => x[1] > 0);
+    if(K?.vorige && K.handel){ const gisteren = K.handel - 864e5; if(!h.length || h.at(-1)[0] < gisteren - 6 * 3600e3) h.push([gisteren, K.vorige]); }
+    if(K?.koers) h.push([nu, K.koers]); return h.sort((a, b) => a[0] - b[0]); };
   const reeksMunt = (id, stortingen, aantal) => {
+    const ak = Object.keys(MUNTEN).find(k => MUNTEN[k].aandeel && MUNTEN[k].symbool === id);
+    if(ak){ const K = KOERS[ak], pr = periode === 'dag' && K?.vorige && K?.koers ? [[van, K.vorige], [nu, K.koers]] : aandeelPr(ak);   // 1D: t.o.v. vorige slotkoers
+      if(pr.length < 2 || !(+aantal > 0)) return [];
+      const bezit = muntBezitFn(stortingen, +aantal, pr), v0 = pr.filter(x => x[0] < van).at(-1);
+      const sel = pr.filter(x => x[0] >= van); if(v0) sel.unshift([van, v0[1]]);
+      return sel.map(([t, p]) => ({ t, v:bezit(t) * p })); }
     const pr = M?.data?.[id]; if(!pr?.length || !(+aantal > 0)) return [];
     const bezit = muntBezitFn(stortingen, +aantal, A?.data?.[id] || pr);
     return pr.filter(x => x[0] >= van).map(([t, p]) => ({ t, v:bezit(t) * p }));
@@ -5799,7 +5809,7 @@ function belReeksen(periode){
   const stapOf = (L, t) => { const v = belStap(L, t); return v != null ? v : L.ts.length && L.ts[0] - t < 3 * 3600e3 ? L.pts[0] : 0; };
   let btc = reeksMunt('bitcoin', belStort(d, true), d.btc).filter(x => x.v > 0);
   if(!btc.length){ const B = belHist[periode]?.logs?.bitcoin; if(B) btc = B.ts.map((t, i) => ({ t, v:B.pts[i] })).filter(x => x.v > 0 && x.t >= van); }  // reserve: Insights
-  const losse = Object.entries(MUNTEN).map(([k, m]) => reeksMunt(m.id, muntData(d, k).stortingen, muntData(d, k).aantal)).filter(r => r.length);
+  const losse = Object.entries(MUNTEN).map(([k, m]) => reeksMunt(m.id || m.symbool, muntData(d, k).stortingen, muntData(d, k).aantal)).filter(r => r.length);
   const cLogs = losse.map(r => ({ ts:r.map(x => x.t), pts:r.map(x => x.v) }));
   const cTijden = [...new Set(losse.flatMap(r => r.map(x => x.t)))].sort((a, b) => a - b);
   const cr = cTijden.map(t => ({ t, v:cLogs.reduce((n, L) => n + stapOf(L, t), 0) })).filter(x => x.v > 0);
@@ -5808,11 +5818,11 @@ function belReeksen(periode){
   const tBegin = Math.max(...[hand, btc, cr].filter(r => r.length).map(r => r[0].t), -Infinity);  // pas tellen als alle onderdelen meedoen (geen piek aan het begin)
   const totaal = tijden.filter(t => t >= tBegin).map(t => ({ t, v:(belStap(handLog, t) || 0) + (belStap(bLog, t) || 0) + (belStap(cLog, t) || 0) })).filter(x => x.v > 0);
   const reeksen = [ { k:'totaal', naam:'Totaal', pts:totaal }, { k:'hand', naam:handNaam, pts:hand }, { k:'bitcoin', naam:'Bitcoin', pts:btc },
-           ...(losse.length ? [{ k:'crypto', naam:Object.values(MUNTEN).map(m => m.naam).join(' + '), pts:cr }] : []) ]
+           ...(losse.length ? [{ k:'crypto', naam:Object.entries(MUNTEN).filter(([k]) => +muntData(d, k).aantal > 0).map(([, m]) => m.naam).join(' + ') || 'Overig', pts:cr }] : []) ]
     .filter(r => r.pts.length >= 2).map(r => ({ ...r, kleur:BEL_SERIE_KLEUR[r.k] }));
   // per belegging (voor de kaarten): bitcoin, elke munt en elke handmatige post apart
   const per = { btc };
-  Object.entries(MUNTEN).forEach(([k, m]) => { per['c:' + k] = reeksMunt(m.id, muntData(d, k).stortingen, muntData(d, k).aantal).filter(x => x.v > 0); });
+  Object.entries(MUNTEN).forEach(([k, m]) => { per['c:' + k] = reeksMunt(m.id || m.symbool, muntData(d, k).stortingen, muntData(d, k).aantal).filter(x => x.v > 0); });
   d.posten.forEach((p, i) => {
     const h = (Array.isArray(p.historie) ? p.historie : []).map(x => ({ t:Date.parse(x.datum), v:+x.waarde })).filter(x => !isNaN(x.t) && x.v > 0).sort((a, b) => a.t - b.t);
     if(+p.waarde > 0) h.push({ t:nu, v:+p.waarde });
@@ -5870,7 +5880,40 @@ const euroHeel = n => typeof n === 'number' ? '€ ' + Math.round(n).toLocaleStr
 const pctTekst = p => typeof p === 'number' ? `${p >= 0 ? '▲' : '▼'} ${nl(Math.abs(p), 1)}%` : '–';
 /* Crypto naast bitcoin: zelfde werkwijze (live koers van CoinGecko, reserve Bitvavo; aantal + aankopen met datum) */
 const MUNTEN = { eth:{ id:'ethereum', naam:'Ethereum', teken:'Ξ', kleur:'#627EEA', markt:'ETH-EUR', dec:4 },
-                 mon:{ id:'monad', naam:'Monad', teken:'M', kleur:'#836EF9', markt:'MON-EUR', dec:2 } };
+                 mon:{ id:'monad', naam:'Monad', teken:'M', kleur:'#836EF9', markt:'MON-EUR', dec:2 },
+                 nvda:{ aandeel:true, symbool:'NVDA', naam:'Nvidia', teken:'NV', kleur:'#76B900', dec:4 } };
+const isMunt = m => !m.aandeel;                                        // alleen echte crypto via CoinGecko/Bitvavo
+/* Aandelen: live koers via Finnhub (gratis sleutel in de Homey-variabele hieronder; nooit in de code), omgerekend naar euro
+   met de dollarkoers van CoinGecko (USDC in euro). Elke handelsdag bewaart het dashboard de slotkoers in de beleggingsvariabele,
+   zodat er een eigen koersverloop ontstaat (Finnhub gratis geeft geen historie). */
+const FINNHUB_VAR = '3d71d306-cefd-46d2-b5f7-9fc41194776c';
+let EUR_PER_USD = (() => { try { return +localStorage.getItem('dashboard_eur_usd') || null; } catch(e){ return null; } })();
+let aandeelFout = null;
+async function laadAandelen(){
+  const sleutel = String(VARS[FINNHUB_VAR]?.value || '').trim(), lijst = Object.entries(MUNTEN).filter(([, m]) => m.aandeel);
+  if(!lijst.length) return;
+  if(!sleutel){ aandeelFout = DEMO() ? null : 'Geen Finnhub-sleutel in Homey'; return; }
+  const haal = async u => { const st = new AbortController(), t = setTimeout(() => st.abort(), 12000);
+    try { const r = await fetch(u, { signal:st.signal, cache:'no-store' }); if(!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); } finally { clearTimeout(t); } };
+  try { const j = await haal('https://api.coingecko.com/api/v3/simple/price?ids=usd-coin&vs_currencies=eur'); const f = +j?.['usd-coin']?.eur;
+    if(f > .5 && f < 1.5){ EUR_PER_USD = f; try { localStorage.setItem('dashboard_eur_usd', String(f)); } catch(e){} } } catch(e){}
+  if(!EUR_PER_USD){ aandeelFout = 'Dollarkoers niet bereikbaar'; return; }
+  let fout = null; const d = belData(), dagen = [];
+  for(const [k, m] of lijst){
+    try { const q = await haal(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(m.symbool)}&token=${encodeURIComponent(sleutel)}`);
+      if(!(+q.c > 0)) throw new Error('geen koers');
+      KOERS[k] = { koers:q.c * EUR_PER_USD, usd:q.c, pct:typeof q.dp === 'number' ? q.dp : null, vorige:+q.pc > 0 ? q.pc * EUR_PER_USD : null, t:Date.now(), handel:(+q.t || 0) * 1000 };
+      const dag = q.t ? new Date(q.t * 1000).toISOString().slice(0, 10) : null, md = muntData(d, k);
+      if(dag && +md.aantal > 0){ const hist = (d.aandeelKoers = d.aandeelKoers || {})[k] = d.aandeelKoers[k] || [];
+        const laatst = hist[hist.length - 1];
+        if(!laatst || laatst.datum < dag){ hist.push({ datum:dag, eur:Math.round(q.c * EUR_PER_USD * 100) / 100 }); if(hist.length > 800) hist.splice(0, hist.length - 800); dagen.push(k); }
+        else if(laatst.datum === dag){ laatst.eur = Math.round(q.c * EUR_PER_USD * 100) / 100; } }
+    } catch(e){ fout = /HTTP 401|HTTP 403/.test(e.message) ? 'Finnhub-sleutel geweigerd' : /HTTP 429/.test(e.message) ? 'Finnhub: te veel verzoeken' : 'Aandelenkoers niet bereikbaar'; }
+  }
+  aandeelFout = fout;
+  if(dagen.length && belBewerk == null && !DEMO()) belBewaar(d);              // eens per handelsdag de slotkoers bewaren
+  belSchrijfGetallen(false); tekenBeleg();
+}
 let KOERS = {};
 const muntData = (d, k) => (d.crypto && d.crypto[k]) || { aantal:0, stortingen:[] };
 const muntWaarde = (d, k) => KOERS[k] ? (+muntData(d, k).aantal || 0) * KOERS[k].koers : 0;
@@ -5878,16 +5921,16 @@ async function laadBtc(){
   const haal = async (u) => { const st = new AbortController(), t = setTimeout(() => st.abort(), 12000);
     try { const r = await fetch(u, { signal:st.signal, cache:'no-store' }); if(!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); } finally { clearTimeout(t); } };
   try {
-    const j = await haal('https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=bitcoin,' + Object.values(MUNTEN).map(m => m.id).join(',') + '&sparkline=true&price_change_percentage=24h');
+    const j = await haal('https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=bitcoin,' + Object.values(MUNTEN).filter(isMunt).map(m => m.id).join(',') + '&sparkline=true&price_change_percentage=24h');
     const b = j.find(x => x.id === 'bitcoin') || j[0]; BTC = { koers:b.current_price, pct:b.price_change_percentage_24h, reeks:(b.sparkline_in_7d?.price || []).slice(-24), t:Date.now() };
-    for(const [k, m] of Object.entries(MUNTEN)){ const x = j.find(y => y.id === m.id);
+    for(const [k, m] of Object.entries(MUNTEN).filter(([, m]) => isMunt(m))){ const x = j.find(y => y.id === m.id);
       if(x) KOERS[k] = { koers:x.current_price, pct:x.price_change_percentage_24h, reeks:(x.sparkline_in_7d?.price || []).slice(-24), t:Date.now() }; }
     belFout = null;
   } catch(e){
     try { const j = await haal('https://api.bitvavo.com/v2/ticker/24h?market=BTC-EUR');
       const k = +j.last, o = +j.open; BTC = { koers:k, pct:o ? (k - o) / o * 100 : null, reeks:[], t:Date.now() }; belFout = null; }
     catch(e2){ belFout = 'Koers niet bereikbaar'; }
-    for(const [k, m] of Object.entries(MUNTEN)){
+    for(const [k, m] of Object.entries(MUNTEN).filter(([, m]) => isMunt(m))){
       try { const j = await haal('https://api.bitvavo.com/v2/ticker/24h?market=' + m.markt); const kk = +j.last, o = +j.open; if(kk) KOERS[k] = { koers:kk, pct:o ? (kk - o) / o * 100 : null, reeks:[], t:Date.now() }; } catch(e3){}
     }
   }
@@ -7128,7 +7171,8 @@ laadBewoners(); setInterval(laadBewoners, 30000);
 verversVariabelen(); setInterval(verversVariabelen, POLL_VARIABELEN_MS);
 laadEnergie(true); setInterval(() => laadEnergie(true), 5 * 60000);   // grafieken elke 5 minuten
 laadRegen(); setInterval(laadRegen, 5 * 60000);
-laadBtc(); setInterval(laadBtc, 5 * 60000);                             // bitcoinkoers (CoinGecko)                        // Buienradar: regen komende 2 uur
+laadBtc(); setInterval(laadBtc, 5 * 60000);
+setTimeout(laadAandelen, 4000); setInterval(laadAandelen, 5 * 60000);   // Nvidia e.d. via Finnhub                             // bitcoinkoers (CoinGecko)                        // Buienradar: regen komende 2 uur
 laadZones().then(() => { tekenLinks(); tekenLampenOverzicht(); }); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
 setInterval(() => { if($('page-systeem').classList.contains('on')) laadSysteem(true); }, 5 * 60000);   // namen van ruimtes en moods
 
@@ -7276,7 +7320,7 @@ function tekenBelPaginaNu(){
       ${belOpslagFout ? `<p class="pk-melding fout">${esc(belOpslagFout)}</p>` : ''}</div>
     <div class="card"><div class="auto-kop"><span class="ico">${ic('munten')}</span><b>Mijn beleggingen</b></div>${lijst}</div>
     ${zicht ? belInlegKaart(d, T) : ''}
-    ${stocksTestKaart()}
+    
     ${verdeling}
     <div class="card"><details class="bel-uitleg"><summary>Hoe werkt dit?</summary>
       <p><b>Koers.</b> De bitcoinkoers komt live van CoinGecko (reserve: Bitvavo) en ververst elke 5 minuten. Waarde van je bitcoin = aantal BTC × koers.</p>
@@ -7299,7 +7343,7 @@ function tekenBelPaginaNu(){
   const bezit = [];
   { const st = belSorteer(belStort(d, true)); if(+d.btc > 0 || btcIn) bezit.push({ sleutel:'btc', sym:'₿', kl:'#F7931A', naam:'Bitcoin', sub:`${nl(+d.btc || 0, 6)} BTC`, w:T.btcW, inl:btcIn, start:st[0]?.datum, koers:BTC?.koers, dag:BTC?.pct, pts:R.per?.btc }); }
   Object.entries(MUNTEN).forEach(([k, m]) => { const md = muntData(d, k), st = belSorteer(md.stortingen || []), inl = belSom(st);
-    if(+md.aantal > 0 || inl) bezit.push({ sleutel:'c:' + k, sym:m.teken, kl:m.kleur, naam:m.naam, sub:`${nl(+md.aantal || 0, m.dec)} ${k.toUpperCase()}`, w:muntWaarde(d, k), inl, start:st[0]?.datum, koers:KOERS[k]?.koers, dag:KOERS[k]?.pct, pts:R.per?.['c:' + k] }); });
+    if(+md.aantal > 0 || inl || (m.aandeel && (KOERS[k] || aandeelFout))) bezit.push({ sleutel:'c:' + k, sym:m.teken, kl:m.kleur, naam:m.naam, aandeel:m.aandeel, sub:`${nl(+md.aantal || 0, m.dec)} ${m.aandeel ? 'stuks' : k.toUpperCase()}`, w:muntWaarde(d, k), inl, start:st[0]?.datum, koers:KOERS[k]?.koers, dag:KOERS[k]?.pct, pts:R.per?.['c:' + k] }); });
   d.posten.forEach((p, i) => { const st = belSorteer(belStort(p));
     bezit.push({ sleutel:i, sym:esc((p.naam || '?').slice(0, 2).toUpperCase()), kl:BEL_KLEUR[(i + 1) % BEL_KLEUR.length], naam:p.naam, sub:'Handmatig · weekstand', w:+p.waarde || 0, inl:belSom(st), start:st[0]?.datum, hand:true, p, pts:R.per?.['p:' + i], oud:belOud(p) }); });
   const spark = (pts, kl) => { if(!pts || pts.length < 2) return '<span class="bel-klein">Nog geen verloop in deze periode</span>';
@@ -7329,7 +7373,7 @@ function tekenBelPaginaNu(){
       ${regel('Sinds begin', winst == null ? '<span class="bel-klein">inleg invullen</span>' : (zicht ? geld(winst) + ' · ' : '') + pctTekst(wp), wp == null ? '' : wp >= 0 ? 'bel-op' : 'bel-neer')}
       ${regel('Ingelegd', (zicht ? euroHeel(b.inl) : verb) + (b.start ? ` <small>sinds ${belStartTxt(b.start)}</small>` : ''))}
       ${b.hand ? regel('Bijgewerkt', (b.oud ? '<i class="bk-oud"></i>' : '') + geleden(b.p.datum).replace(/ bijgewerkt$/, '')) + (zicht && +b.p.stuks > 0 ? regel('Stuks', nl(+b.p.stuks, 4) + ' à € ' + nl(b.w / b.p.stuks, 2)) : '')
-        : regel('Koers', b.koers ? (b.koers >= 10 ? euroHeel(b.koers) : '€ ' + nl(b.koers, b.koers < 1 ? 4 : 2)) + (typeof b.dag === 'number' ? ` <span class="${b.dag >= 0 ? 'bel-op' : 'bel-neer'}">${pctTekst(b.dag)}</span>` : '') : '–')}
+        : regel('Koers', b.koers ? (b.aandeel ? '€ ' + nl(b.koers, 2) + ` <small>($ ${nl(KOERS[String(b.sleutel).slice(2)]?.usd, 2)})</small>` : b.koers >= 10 ? euroHeel(b.koers) : '€ ' + nl(b.koers, b.koers < 1 ? 4 : 2)) + (typeof b.dag === 'number' ? ` <span class="${b.dag >= 0 ? 'bel-op' : 'bel-neer'}">${pctTekst(b.dag)}</span>` : '') : b.aandeel && aandeelFout ? `<span class="bel-neer">${esc(aandeelFout)}</span>` : '–')}
       ${zicht ? (bezig ? formVoor(b) : `<button class="btn bk-knop" data-bel-bewerk="${b.sleutel}">${ic('pen')} Aanpassen</button>`) : ''}</div>`;
   };
   { const met = bezit.filter(b => b.w > 0), v0 = met.reduce((n, b) => n + (b.pts?.length >= 2 ? b.pts[0].v : b.w), 0);  // periode-verandering: som van de startwaarden per belegging
@@ -7340,11 +7384,11 @@ function tekenBelPaginaNu(){
   const verdeling2 = `<div class="card bel-verdeel"><small class="bel-label">Verdeling</small>
       ${deel.length && T.tot > 0 ? `<div class="bv-rij"><svg width="160" height="160" viewBox="0 0 160 160">${ring}<text x="80" y="76" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-weight="700">${deel.length} ${deel.length === 1 ? 'post' : 'posten'}</text><text x="80" y="96" text-anchor="middle" fill="var(--text-primary)" font-size="15" font-weight="800">${zicht ? kort(T.tot) : '••'}</text></svg>
       <div class="bv-leg">${deel.map(b => `<span><i style="background:${b.kl}"></i>${esc(b.naam)} <small>${nl(b.w / T.tot * 100, 0)}%</small></span>`).join('')}</div></div>` : '<p class="bel-klein">Nog geen beleggingen met een waarde.</p>'}
-      <p class="bel-klein">Koersen live van CoinGecko (reserve Bitvavo). Handmatige beleggingen: je weekstand van zondag.</p></div>`;
+      <p class="bel-klein">Crypto live van CoinGecko (reserve Bitvavo), aandelen live van Finnhub. Handmatige beleggingen: je weekstand van zondag.</p></div>`;
   const hero = `<div class="card bel-hero"><div class="bh-kop"><div><small class="bel-label">Totale waarde</small>
         <div class="bh-totaal ${zicht ? '' : 'verborgen'}" data-bel-tik="1">${zicht ? euro(T.tot) : verb}</div>
         <div class="bh-pillen">${dagP != null ? pil(dagP, 'vandaag') : ''}${belPeriode === 'week' || belPeriode === 'maand' ? pil(totPer, perLab[belPeriode]) : ''}${pil(T.rend, 'sinds begin')}</div>
-        <div class="bh-feiten"><div><small>Ingelegd</small><b>${zicht ? euroHeel(T.inleg) : verb}</b></div><div><small>Winst sinds begin</small><b class="${!zicht || winst == null ? '' : winst >= 0 ? 'bel-op' : 'bel-neer'}">${zicht && winst != null ? geld(winst) : zicht ? '–' : verb}</b></div>${begin ? `<div><small>Begonnen</small><b>${belStartTxt(begin)}</b></div>` : ''}${zicht && dagW ? `<div><small>Dagwinst crypto</small><b class="${dagW >= 0 ? 'bel-op' : 'bel-neer'}">${geld(dagW)}</b></div>` : ''}</div></div>
+        <div class="bh-feiten"><div><small>Ingelegd</small><b>${zicht ? euroHeel(T.inleg) : verb}</b></div><div><small>Winst sinds begin</small><b class="${!zicht || winst == null ? '' : winst >= 0 ? 'bel-op' : 'bel-neer'}">${zicht && winst != null ? geld(winst) : zicht ? '–' : verb}</b></div>${begin ? `<div><small>Begonnen</small><b>${belStartTxt(begin)}</b></div>` : ''}${zicht && dagW ? `<div><small>Dagwinst live koersen</small><b class="${dagW >= 0 ? 'bel-op' : 'bel-neer'}">${geld(dagW)}</b></div>` : ''}</div></div>
       <div class="segment bel-perioden" role="tablist">${['dag','week','maand','alles'].map(k => `<button class="${belPeriode === k ? 'on' : ''}" data-bel-periode="${k}">${PER[k]}</button>`).join('')}</div></div>
       ${grafiek}</div>`;
   const zondag = `<div class="card"><div class="auto-kop"><span class="ico amber">${ic('klok')}</span><b>Zondag bijwerken</b><span class="chip" style="${oudN ? 'background:rgba(245,165,36,.15);color:var(--amber)' : d.posten.length ? 'background:rgba(74,222,128,.12);color:var(--green)' : ''}">${oudN ? oudN + ' nog doen' : d.posten.length ? 'bijgewerkt' : '–'}</span></div>
@@ -7355,7 +7399,7 @@ function tekenBelPaginaNu(){
   const uitleg = rechts.slice(rechts.indexOf('<div class="card"><details class="bel-uitleg">'), rechts.lastIndexOf('</div>'));
   el.innerHTML = `<div class="bel-boven">${hero}${verdeling2}</div>
     <div class="bel-kaarten">${bezit.map(kaart).join('')}</div>${toevoegen}
-    <div class="bel-onder"><div class="beleg-kolom">${zondag}${stocksTestKaart()}</div><div class="beleg-kolom">${zicht ? belInlegKaart(d, T) : ''}${uitleg}</div></div>`;
+    <div class="bel-onder"><div class="beleg-kolom">${zondag}</div><div class="beleg-kolom">${zicht ? belInlegKaart(d, T) : ''}${uitleg}</div></div>`;
 }
 function belWeekOpslaan(){
   const d = belData(); let n = 0;
