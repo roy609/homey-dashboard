@@ -2017,9 +2017,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '140';
+const DASHBOARD_VERSIE = '141';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'141', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek heeft nu voor elke belegging een eigen lijn in de kleur van zijn kaart (Bitcoin, Ethereum, Monad, Nvidia en je handmatige beleggingen), in plaats van crypto en handmatig samengevoegd. Tik op een naam om de lijn aan of uit te zetten.', 'Ook beleggingen met nog maar één meetpunt (zoals Nvidia vlak na de aankoop) staan in de legenda met hun waarde; de lijn verschijnt zodra er een tweede punt is.' ] },
   { v:'140', datum:'20-11-2026', punten:[ 'Beleggingen: Nvidia staat erbij met een live koers (Finnhub, omgerekend naar euro). Vul via "Aanpassen" je aantal stuks en je aankopen in; Nvidia telt dan mee in het totaal, de verdeling, de grafiek en de dagwinst.', 'Finnhub geeft gratis geen koershistorie: het dashboard bewaart vanaf nu elke handelsdag de slotkoers, zodat de grafiek van Nvidia zich opbouwt. Op 1D zie je de stand ten opzichte van de vorige slotkoers.', 'Het testblok "Koersen via Homey" is weg.' ] },
   { v:'139', datum:'15-11-2026', punten:[ 'Auto: tijdens het laden staat bovenaan de pagina een groene laadbalk met het vermogen, van hoeveel naar hoeveel procent, hoe lang nog en hoe laat klaar. De balk loopt richting het laaddoel en verdwijnt als de auto niet laadt.' ] },
   { v:'138', datum:'15-11-2026', punten:[ 'De ID.4 gebruikt de nieuwe koppeling in Homey. Accu, laaddoel, laden (vermogen, nog te gaan, klaar om, geladen deze laadbeurt, laadstroom), kilometerstand, slot en handrem komen nu daarvandaan.', 'Waarden die de nieuwe koppeling niet levert (portieren en ramen, locatie, onderhoud) worden niet meer als lege streepjes getoond.', 'Ook de autotegel op het hoofdscherm, de auto in het energiebeeld en de kilometerstand bij de banden gebruiken de nieuwe koppeling.' ] },
@@ -5817,9 +5818,6 @@ function belReeksen(periode){
   const tijden = [...new Set([...hand.map(x => x.t), ...btc.map(x => x.t), ...cr.map(x => x.t)])].sort((a, b) => a - b);
   const tBegin = Math.max(...[hand, btc, cr].filter(r => r.length).map(r => r[0].t), -Infinity);  // pas tellen als alle onderdelen meedoen (geen piek aan het begin)
   const totaal = tijden.filter(t => t >= tBegin).map(t => ({ t, v:(belStap(handLog, t) || 0) + (belStap(bLog, t) || 0) + (belStap(cLog, t) || 0) })).filter(x => x.v > 0);
-  const reeksen = [ { k:'totaal', naam:'Totaal', pts:totaal }, { k:'hand', naam:handNaam, pts:hand }, { k:'bitcoin', naam:'Bitcoin', pts:btc },
-           ...(losse.length ? [{ k:'crypto', naam:Object.entries(MUNTEN).filter(([k]) => +muntData(d, k).aantal > 0).map(([, m]) => m.naam).join(' + ') || 'Overig', pts:cr }] : []) ]
-    .filter(r => r.pts.length >= 2).map(r => ({ ...r, kleur:BEL_SERIE_KLEUR[r.k] }));
   // per belegging (voor de kaarten): bitcoin, elke munt en elke handmatige post apart
   const per = { btc };
   Object.entries(MUNTEN).forEach(([k, m]) => { per['c:' + k] = reeksMunt(m.id || m.symbool, muntData(d, k).stortingen, muntData(d, k).aantal).filter(x => x.v > 0); });
@@ -5830,6 +5828,12 @@ function belReeksen(periode){
     if(v0 != null && (!sel.length || sel[0].t > van)) sel.unshift({ t:van, v:v0 });
     per['p:' + i] = sel;
   });
+  // Grafiek: Totaal plus elke belegging apart, in dezelfde kleur als zijn kaart (ook als er nog maar één punt is: dan alleen in de legenda)
+  const reeksen = [ { k:'totaal', naam:'Totaal', kleur:BEL_SERIE_KLEUR.totaal, pts:totaal },
+    { k:'btc', naam:'Bitcoin', kleur:'#F7931A', pts:per.btc || [] },
+    ...Object.entries(MUNTEN).map(([k, m]) => ({ k:'c:' + k, naam:m.naam, kleur:m.kleur, pts:per['c:' + k] || [] })),
+    ...d.posten.map((p, i) => ({ k:'p:' + i, naam:p.naam || 'Belegging', kleur:BEL_KLEUR[(i + 1) % BEL_KLEUR.length], pts:per['p:' + i] || [] })) ]
+    .filter(r => r.pts.length >= 1);
   return { reeksen, sinds:null, laden:!M?.data, per };
 }
 function belAsStappen(min, max, n){
@@ -5840,7 +5844,8 @@ function belAsStappen(min, max, n){
 }
 function belGrafiekAssen(reeksen, o){
   const aan = belSerieAan || new Set(['totaal']), zicht = o.zicht, pct = belModus === 'pct' || !zicht;
-  const zicht_r = reeksen.filter(r => aan.has(r.k) && !(pct && r.k === 'totaal')); if(!zicht_r.length) zicht_r.push(reeksen.find(r => r.k !== 'totaal') || reeksen[0]);
+  const lijnbaar = reeksen.filter(r => r.pts.length >= 2);
+  const zicht_r = lijnbaar.filter(r => aan.has(r.k) && !(pct && r.k === 'totaal')); if(!zicht_r.length) zicht_r.push(lijnbaar.find(r => r.k !== 'totaal') || lijnbaar[0]);
   const lijnen = zicht_r.map(r => { const b = r.pts[0].v; return { ...r, p:r.pts.map(x => ({ t:x.t, v:pct ? (b ? (x.v - b) / b * 100 : 0) : x.v })) }; });
   const alle = lijnen.flatMap(l => l.p), tMin = Math.min(...alle.map(x => x.t)), tMax = Math.max(...alle.map(x => x.t));
   let vMin = Math.min(...alle.map(x => x.v)), vMax = Math.max(...alle.map(x => x.v)); if(vMax - vMin < (pct ? .2 : 1)){ vMin -= pct ? .1 : 1; vMax += pct ? .1 : 1; }
@@ -5871,9 +5876,9 @@ function belGrafiekAssen(reeksen, o){
     <div class="bel-series">${chips}</div></div>`;
 }
 function belGrafiekBlok(periode, label, hoog){
-  const { reeksen, sinds } = belReeksen(periode); if(!reeksen.length) return null;
+  const { reeksen, sinds } = belReeksen(periode); if(!reeksen.some(r => r.pts.length >= 2)) return null;
   return belGrafiekAssen(reeksen, { label, zicht:belZicht(), hoog, sinds })
-    + `<p class="bel-klein">Bitcoin en crypto: koers van CoinGecko × wat je op dat moment had (bij meerdere aankopen geschat uit de aankoopbedragen). ${esc(belData().posten.length === 1 ? belData().posten[0].naam : 'Handmatige beleggingen')}: je weekstanden. Bij Totaal staat het rendement t.o.v. je inleg; in de %-weergave staat Totaal uit, omdat stortingen die lijn vertekenen.</p>`;
+    + `<p class="bel-klein">Elke belegging heeft een eigen lijn; tik op een naam om hem aan of uit te zetten. Crypto: koers van CoinGecko × wat je op dat moment had (bij meerdere aankopen geschat uit de aankoopbedragen). Aandelen: Finnhub, met de slotkoers per handelsdag. ${esc(belData().posten.length === 1 ? belData().posten[0].naam : 'Handmatige beleggingen')}: je weekstanden. Bij Totaal staat het rendement t.o.v. je inleg; in de %-weergave staat Totaal uit, omdat stortingen die lijn vertekenen.</p>`;
 }
 const belZicht = () => Date.now() < belZichtTot;
 const euroHeel = n => typeof n === 'number' ? '€ ' + Math.round(n).toLocaleString('nl-NL') : '–';
