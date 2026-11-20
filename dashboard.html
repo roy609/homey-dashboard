@@ -2017,9 +2017,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '142';
+const DASHBOARD_VERSIE = '143';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'143', datum:'20-11-2026', punten:[ 'Beleggingen: de koershistorie van Bitcoin, Ethereum en Monad komt nu van Bitvavo (ruime limiet, alle munten tegelijk) met CoinGecko als reserve. Daardoor hebben ze weer op elk tabblad een lijn en een percentage.', 'Alles begint nu bij je eerste aankoop en gaat tot 2 jaar terug. Bij Alles tonen de lijnen, namen en kaarten je rendement op je inleg, gelijk aan "Sinds begin".', 'Percentages in de grafiek, bij de namen en op de kaarten tellen een bijkoop of storting binnen de periode niet meer als winst (Bitcoin stond bij Alles bijvoorbeeld op +96% doordat je tweede aankoop meetelde). Totaal staat daardoor nu ook als lijn in de %-weergave.' ] },
   { v:'142', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek staat standaard op % met alle lijnen aan.', 'Bitcoin en Ethereum ontbraken soms bij 1D, 1W en 1M: de koershistorie van CoinGecko werd te snel achter elkaar opgevraagd. Nu na elkaar, bewaard in de browser, en voor 1D/1W met de 7-daagse koerslijn als reserve. Elke belegging staat altijd in de legenda.', 'Nvidia toont bij 1D de koersverandering van je stuks, ook op de dag van aankoop.', 'Grotere knoppen voor de periode, €/% en de lijnen.' ] },
   { v:'141', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek heeft nu voor elke belegging een eigen lijn in de kleur van zijn kaart (Bitcoin, Ethereum, Monad, Nvidia en je handmatige beleggingen), in plaats van crypto en handmatig samengevoegd. Tik op een naam om de lijn aan of uit te zetten.', 'Ook beleggingen met nog maar één meetpunt (zoals Nvidia vlak na de aankoop) staan in de legenda met hun waarde; de lijn verschijnt zodra er een tweede punt is.' ] },
   { v:'140', datum:'20-11-2026', punten:[ 'Beleggingen: Nvidia staat erbij met een live koers (Finnhub, omgerekend naar euro). Vul via "Aanpassen" je aantal stuks en je aankopen in; Nvidia telt dan mee in het totaal, de verdeling, de grafiek en de dagwinst.', 'Finnhub geeft gratis geen koershistorie: het dashboard bewaart vanaf nu elke handelsdag de slotkoers, zodat de grafiek van Nvidia zich opbouwt. Op 1D zie je de stand ten opzichte van de vorige slotkoers.', 'Het testblok "Koersen via Homey" is weg.' ] },
@@ -5776,9 +5777,18 @@ async function laadMuntHist(periode){
   const compleet = h?.data && MUNT_IDS().every(id => h.data[id]?.length);
   if(h?.bezig || (h?.t && Date.now() - h.t < (compleet ? vers : 1) * 60000)) return;
   muntHist[periode] = { ...(h || {}), bezig:true }; const data = { ...(h?.data || {}) };
-  for(const id of MUNT_IDS()){ const st = new AbortController(), tm = setTimeout(() => st.abort(), 12000);
-    try { const r = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=eur&days=${BTC_DAGEN[periode]}`, { signal:st.signal, cache:'no-store' });
-      if(r.ok){ const j = await r.json(), pr = (j.prices || []).filter(x => x && x[1] > 0); if(pr.length) data[id] = pr; } } catch(e){} finally { clearTimeout(tm); }
+  const haal = async u => { const st = new AbortController(), tm = setTimeout(() => st.abort(), 12000);
+    try { const r = await fetch(u, { signal:st.signal, cache:'no-store' }); return r.ok ? await r.json() : null; } catch(e){ return null; } finally { clearTimeout(tm); } };
+  const markt = id => id === 'bitcoin' ? 'BTC-EUR' : Object.values(MUNTEN).find(m => m.id === id)?.markt;
+  const BV = { dag:['15m', 100], week:['1h', 170], maand:['4h', 190], alles:['1d', 740] }[periode];
+  // 1) Bitvavo-candles (ruime limiet, alle munten tegelijk)  2) reserve: CoinGecko, na elkaar met pauze
+  await Promise.all(MUNT_IDS().map(async id => { const m = markt(id); if(!m) return;
+    const j = await haal(`https://api.bitvavo.com/v2/${m}/candles?interval=${BV[0]}&limit=${BV[1]}`);
+    const pr = (Array.isArray(j) ? j : []).map(c => Array.isArray(c) ? [+c[0], +c[4]] : [+c.timestamp, +c.close]).filter(x => x[0] > 0 && x[1] > 0).sort((a, b) => a[0] - b[0]);
+    if(pr.length > 1) data[id] = pr; }));
+  for(const id of MUNT_IDS().filter(id => !(data[id]?.length > 1) || (h?.data?.[id] === data[id]))){
+    const j = await haal(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=eur&days=${BTC_DAGEN[periode]}`);
+    const pr = (j?.prices || []).filter(x => x && x[1] > 0); if(pr.length) data[id] = pr;
     await new Promise(r => setTimeout(r, 1500)); }
   muntHist[periode] = { t:Date.now(), data:Object.keys(data).length ? data : null };
   try { localStorage.setItem(MH_KEY(periode), JSON.stringify(muntHist[periode])); } catch(e){}
@@ -5795,7 +5805,7 @@ function muntBezitFn(stortingen, aantal, prijzen){
 }
 function belReeksen(periode){
   // Handmatige posten (ING): weekstanden + huidige waarde. Bitcoin en crypto: koershistorie (CoinGecko) × je bezit op dat moment.
-  const d = belData(), nu = Date.now(), van = nu - BEL_PER_MS[periode];
+  const d = belData(), nu = Date.now(), b0 = Date.parse(belBeginStart(d) || ''), van = periode === 'alles' && b0 > 0 ? Math.max(nu - BEL_PER_MS.alles, b0 - 864e5) : nu - BEL_PER_MS[periode];   // Alles: vanaf je eerste aankoop
   const M = muntHist[periode], A = muntHist.alles; if(!M?.data) laadMuntHist(periode); if(periode !== 'alles' && !A?.data) laadMuntHist('alles');
   const handNaam = d.posten.length === 1 ? (d.posten[0].naam || 'Handmatig') : 'Handmatig';
   const handAll = belHandHist(), hw = d.posten.reduce((n, p) => n + (+p.waarde || 0), 0);
@@ -5828,7 +5838,7 @@ function belReeksen(periode){
   const cr = cTijden.map(t => ({ t, v:cLogs.reduce((n, L) => n + stapOf(L, t), 0) })).filter(x => x.v > 0);
   const bLog = { ts:btc.map(x => x.t), pts:btc.map(x => x.v) }, cLog = { ts:cr.map(x => x.t), pts:cr.map(x => x.v) };
   const tijden = [...new Set([...hand.map(x => x.t), ...btc.map(x => x.t), ...cr.map(x => x.t)])].sort((a, b) => a - b);
-  const tBegin = Math.max(...[hand, btc, cr].filter(r => r.length).map(r => r[0].t), -Infinity);  // pas tellen als alle onderdelen meedoen (geen piek aan het begin)
+  const tBegin = periode === 'alles' ? -Infinity : Math.max(...[hand, btc, cr].filter(r => r.length).map(r => r[0].t), -Infinity);   // Alles: alles wat je nog niet had telt als 0  // pas tellen als alle onderdelen meedoen (geen piek aan het begin)
   const totaal = tijden.filter(t => t >= tBegin).map(t => ({ t, v:(belStap(handLog, t) || 0) + (belStap(bLog, t) || 0) + (belStap(cLog, t) || 0) })).filter(x => x.v > 0);
   // per belegging (voor de kaarten): bitcoin, elke munt en elke handmatige post apart
   const per = { btc };
@@ -5841,10 +5851,11 @@ function belReeksen(periode){
     per['p:' + i] = sel;
   });
   // Grafiek: Totaal plus elke belegging apart, in dezelfde kleur als zijn kaart (ook als er nog maar één punt is: dan alleen in de legenda)
-  const reeksen = [ { k:'totaal', naam:'Totaal', kleur:BEL_SERIE_KLEUR.totaal, pts:totaal },
-    { k:'btc', naam:'Bitcoin', kleur:'#F7931A', pts:per.btc || [] },
-    ...Object.entries(MUNTEN).map(([k, m]) => ({ k:'c:' + k, naam:m.naam, kleur:m.kleur, pts:per['c:' + k] || [] })),
-    ...d.posten.map((p, i) => ({ k:'p:' + i, naam:p.naam || 'Belegging', kleur:BEL_KLEUR[(i + 1) % BEL_KLEUR.length], pts:per['p:' + i] || [] })) ]
+  const stAlle = [...belStort(d, true), ...Object.keys(MUNTEN).flatMap(k => muntData(d, k).stortingen || []), ...d.posten.flatMap(p => belStort(p))];
+  const reeksen = [ { k:'totaal', naam:'Totaal', kleur:BEL_SERIE_KLEUR.totaal, pts:totaal, stort:stAlle },
+    { k:'btc', naam:'Bitcoin', kleur:'#F7931A', pts:per.btc || [], stort:belStort(d, true) },
+    ...Object.entries(MUNTEN).map(([k, m]) => ({ k:'c:' + k, naam:m.naam, kleur:m.kleur, pts:per['c:' + k] || [], stort:m.aandeel && periode === 'dag' ? [] : muntData(d, k).stortingen || [] })),   // aandeel 1D = koersverandering van je stuks
+    ...d.posten.map((p, i) => ({ k:'p:' + i, naam:p.naam || 'Belegging', kleur:BEL_KLEUR[(i + 1) % BEL_KLEUR.length], pts:per['p:' + i] || [], stort:belStort(p) })) ]
     .map(r => { if(r.pts.length) return r; const w = r.k === 'btc' ? (BTC && +d.btc > 0 ? d.btc * BTC.koers : 0) : r.k.startsWith('c:') ? muntWaarde(d, r.k.slice(2)) : +d.posten[+r.k.slice(2)]?.waarde || 0;
       return { ...r, pts:w > 0 ? [{ t:nu, v:w }] : [] }; })
     .filter(r => r.pts.length >= 1);
@@ -5859,8 +5870,14 @@ function belAsStappen(min, max, n){
 function belGrafiekAssen(reeksen, o){
   const aan = belSerieAan || new Set(reeksen.map(r => r.k)), zicht = o.zicht, pct = belModus === 'pct' || !zicht;
   const lijnbaar = reeksen.filter(r => r.pts.length >= 2);
-  const zicht_r = lijnbaar.filter(r => aan.has(r.k) && !(pct && r.k === 'totaal')); if(!zicht_r.length) zicht_r.push(lijnbaar.find(r => r.k !== 'totaal') || lijnbaar[0]);
-  const lijnen = zicht_r.map(r => { const b = r.pts[0].v; return { ...r, p:r.pts.map(x => ({ t:x.t, v:pct ? (b ? (x.v - b) / b * 100 : 0) : x.v })) }; });
+  // Totaal in %: rendement op de inleg van de beleggingen waarvan op dat moment al een waarde bekend is (anders lijkt een storting zonder waarde een verlies)
+  const delen = reeksen.filter(c => c.k !== 'totaal' && c.pts.length);
+  const rendTot = (v, t) => { const i = delen.filter(c => c.pts[0].t <= t + 36e5).reduce((n, c) => n + stortTot(c.stort, t), 0); return i > 0 ? (v / i - 1) * 100 : null; };
+  const zicht_r = lijnbaar.filter(r => aan.has(r.k)); if(!zicht_r.length) zicht_r.push(lijnbaar.find(r => r.k !== 'totaal') || lijnbaar[0]);
+  const lijnen = zicht_r.map(r => { const b = r.pts[0].v, s0 = stortTot(r.stort, r.pts[0].t);   // %: zonder stortingen binnen de periode
+    const r0 = r.k === 'totaal' && o.periode !== 'alles' ? rendTot(b, r.pts[0].t) ?? 0 : 0;   // Alles: gewoon je rendement op dat moment
+    const alles = o.periode === 'alles' && r.k !== 'totaal' && r.stort?.length;          // Alles: rendement op je inleg (zelfde als "Sinds begin" op de kaart)
+    return { ...r, p:r.pts.map(x => ({ t:x.t, v:!pct ? x.v : r.k === 'totaal' ? (rendTot(x.v, x.t) ?? r0) - r0 : alles ? rendOp(x.v, r.stort, x.t) ?? 0 : b ? (x.v - (stortTot(r.stort, x.t) - s0) - b) / b * 100 : 0 })) }; });
   const alle = lijnen.flatMap(l => l.p), tMin = Math.min(...alle.map(x => x.t)), tMax = Math.max(...alle.map(x => x.t));
   let vMin = Math.min(...alle.map(x => x.v)), vMax = Math.max(...alle.map(x => x.v)); if(vMax - vMin < (pct ? .2 : 1)){ vMin -= pct ? .1 : 1; vMax += pct ? .1 : 1; }
   const ticks = belAsStappen(vMin, vMax, 4), y0 = ticks[0], y1 = ticks[ticks.length - 1];
@@ -5881,7 +5898,7 @@ function belGrafiekAssen(reeksen, o){
     </svg>`;
   const yLab = ticks.map(v => `<span style="top:${(Y(v) / H * 100).toFixed(2)}%">${zicht || pct ? yTxt(v) : '••'}</span>`).join('');
   const xLab = xTicks.map((t, i) => `<span style="left:${(i * 25)}%">${xFmt(t)}</span>`).join('');
-  const chips = reeksen.map(r => { const a = r.pts[0].v, b = r.pts[r.pts.length - 1].v, ch = r.k === 'totaal' ? belTotalen().rend : a && r.pts.length > 1 ? (b - a) / a * 100 : null;
+  const chips = reeksen.map(r => { const a = r.pts[0].v, b = r.k === 'totaal' ? belTotalen().tot : r.pts[r.pts.length - 1].v, ch = a && r.pts.length > 1 ? (r.k === 'totaal' ? (o.periode === 'alles' ? belTotalen().rend : ((x, y) => x == null || y == null ? null : y - x)(rendTot(a, r.pts[0].t), rendTot(b, Date.now()))) : o.periode === 'alles' && r.stort?.length ? rendOp(b, r.stort, Date.now()) : periodePct(r.pts, r.stort)) : null;
     return `<button class="bel-serie ${aan.has(r.k) ? 'on' : ''}" data-bel-serie="${r.k}"><i style="background:${r.kleur}"></i>${esc(r.naam)}${zicht ? ` <b>${euroHeel(b)}</b>` : ''}${typeof ch === 'number' ? ` <small class="${ch >= 0 ? 'bel-op' : 'bel-neer'}">${pctTekst(ch)}</small>` : ''}</button>`; }).join('');
   return `<div class="bel-grafiek2"><div class="bel-g-kop"><span class="bel-klein">${esc(o.label)}</span>
       <div class="segment bel-modus">${zicht ? `<button class="${!pct ? 'on' : ''}" data-bel-modus="eur">€</button>` : ''}<button class="${pct ? 'on' : ''}" data-bel-modus="pct">%</button></div></div>
@@ -5891,8 +5908,8 @@ function belGrafiekAssen(reeksen, o){
 }
 function belGrafiekBlok(periode, label, hoog){
   const { reeksen, sinds } = belReeksen(periode); if(!reeksen.some(r => r.pts.length >= 2)) return null;
-  return belGrafiekAssen(reeksen, { label, zicht:belZicht(), hoog, sinds })
-    + `<p class="bel-klein">Elke belegging heeft een eigen lijn; tik op een naam om hem aan of uit te zetten. Crypto: koers van CoinGecko × wat je op dat moment had (bij meerdere aankopen geschat uit de aankoopbedragen). Aandelen: Finnhub, met de slotkoers per handelsdag. ${esc(belData().posten.length === 1 ? belData().posten[0].naam : 'Handmatige beleggingen')}: je weekstanden. Bij Totaal staat het rendement t.o.v. je inleg; in de %-weergave staat Totaal uit, omdat stortingen die lijn vertekenen.</p>`;
+  return belGrafiekAssen(reeksen, { label, zicht:belZicht(), hoog, sinds, periode })
+    + `<p class="bel-klein">Elke belegging heeft een eigen lijn; tik op een naam om hem aan of uit te zetten. Crypto: koers van CoinGecko × wat je op dat moment had (bij meerdere aankopen geschat uit de aankoopbedragen). Aandelen: Finnhub, met de slotkoers per handelsdag. ${esc(belData().posten.length === 1 ? belData().posten[0].naam : 'Handmatige beleggingen')}: je weekstanden. Percentages zijn de verandering in de gekozen periode, zonder je stortingen en bijkopen in die periode (die zijn geen winst). Bij Totaal: hoeveel je rendement op je inleg in die periode is veranderd. Bij Alles: je rendement op je inleg, zoals "Sinds begin" op de kaarten.</p>`;
 }
 const belZicht = () => Date.now() < belZichtTot;
 const euroHeel = n => typeof n === 'number' ? '€ ' + Math.round(n).toLocaleString('nl-NL') : '–';
@@ -6069,6 +6086,16 @@ function belStort(o, btc){
 }
 const belSorteer = r => [...r].sort((a, b) => (a.datum || '9999') < (b.datum || '9999') ? -1 : 1);
 const belSom = r => r.reduce((n, x) => n + (+x.bedrag || 0), 0);
+/* Stortingen tot en met moment t, en de verandering over een periode zónder nieuwe stortingen (anders telt een bijkoop als winst) */
+const stortTot = (lijst, t) => (lijst || []).reduce((n, x) => n + (Date.parse(x.datum) <= t ? +x.bedrag || 0 : 0), 0);
+/* Totaal: rendement t.o.v. alles wat je tot dat moment had ingelegd; over een periode = verschil in rendement */
+const rendOp = (v, lijst, t) => { const i = stortTot(lijst, t); return i > 0 ? (v / i - 1) * 100 : null; };
+function periodePct(pts, lijst, totaal){
+  if(totaal){ if(!pts || pts.length < 2) return null; const a = rendOp(pts[0].v, lijst, pts[0].t), b = rendOp(pts.at(-1).v, lijst, pts.at(-1).t); return a == null || b == null ? null : b - a; }
+  if(!pts || pts.length < 2 || !(pts[0].v > 0)) return null;
+  const a = pts[0], b = pts[pts.length - 1];
+  return (b.v - (stortTot(lijst, b.t) - stortTot(lijst, a.t)) - a.v) / a.v * 100;
+}
 function belBeginStart(d){ const st = [belSorteer(belStort(d, true))[0]?.datum, ...Object.keys(MUNTEN).map(k => belSorteer(muntData(d, k).stortingen || [])[0]?.datum), ...d.posten.map(p => belSorteer(belStort(p))[0]?.datum)].filter(x => !isNaN(Date.parse(x || ''))).sort(); return st[0] || ''; }
 function belBeginStartOud(d){ const st = [d.btcStart, ...d.posten.map(p => p.start)].filter(x => !isNaN(Date.parse(x || ''))).sort(); return st[0] || ''; }
 function belTik(){
@@ -7363,11 +7390,11 @@ function tekenBelPaginaNu(){
   const pil = (q, t) => typeof q === 'number' ? `<span class="bk-pil ${q >= 0 ? 'op' : 'neer'}">${pctTekst(q)}${t ? ' ' + t : ''}</span>` : '';
   const geld = n => (n >= 0 ? '+ ' : '− ') + euroHeel(Math.abs(n));
   const bezit = [];
-  { const st = belSorteer(belStort(d, true)); if(+d.btc > 0 || btcIn) bezit.push({ sleutel:'btc', sym:'₿', kl:'#F7931A', naam:'Bitcoin', sub:`${nl(+d.btc || 0, 6)} BTC`, w:T.btcW, inl:btcIn, start:st[0]?.datum, koers:BTC?.koers, dag:BTC?.pct, pts:R.per?.btc }); }
+  { const st = belSorteer(belStort(d, true)); if(+d.btc > 0 || btcIn) bezit.push({ sleutel:'btc', stort:st, sym:'₿', kl:'#F7931A', naam:'Bitcoin', sub:`${nl(+d.btc || 0, 6)} BTC`, w:T.btcW, inl:btcIn, start:st[0]?.datum, koers:BTC?.koers, dag:BTC?.pct, pts:R.per?.btc }); }
   Object.entries(MUNTEN).forEach(([k, m]) => { const md = muntData(d, k), st = belSorteer(md.stortingen || []), inl = belSom(st);
-    if(+md.aantal > 0 || inl || (m.aandeel && (KOERS[k] || aandeelFout))) bezit.push({ sleutel:'c:' + k, sym:m.teken, kl:m.kleur, naam:m.naam, aandeel:m.aandeel, sub:`${nl(+md.aantal || 0, m.dec)} ${m.aandeel ? 'stuks' : k.toUpperCase()}`, w:muntWaarde(d, k), inl, start:st[0]?.datum, koers:KOERS[k]?.koers, dag:KOERS[k]?.pct, pts:R.per?.['c:' + k] }); });
+    if(+md.aantal > 0 || inl || (m.aandeel && (KOERS[k] || aandeelFout))) bezit.push({ sleutel:'c:' + k, stort:m.aandeel && belPeriode === 'dag' ? [] : st, sym:m.teken, kl:m.kleur, naam:m.naam, aandeel:m.aandeel, sub:`${nl(+md.aantal || 0, m.dec)} ${m.aandeel ? 'stuks' : k.toUpperCase()}`, w:muntWaarde(d, k), inl, start:st[0]?.datum, koers:KOERS[k]?.koers, dag:KOERS[k]?.pct, pts:R.per?.['c:' + k] }); });
   d.posten.forEach((p, i) => { const st = belSorteer(belStort(p));
-    bezit.push({ sleutel:i, sym:esc((p.naam || '?').slice(0, 2).toUpperCase()), kl:BEL_KLEUR[(i + 1) % BEL_KLEUR.length], naam:p.naam, sub:'Handmatig · weekstand', w:+p.waarde || 0, inl:belSom(st), start:st[0]?.datum, hand:true, p, pts:R.per?.['p:' + i], oud:belOud(p) }); });
+    bezit.push({ sleutel:i, stort:st, sym:esc((p.naam || '?').slice(0, 2).toUpperCase()), kl:BEL_KLEUR[(i + 1) % BEL_KLEUR.length], naam:p.naam, sub:'Handmatig · weekstand', w:+p.waarde || 0, inl:belSom(st), start:st[0]?.datum, hand:true, p, pts:R.per?.['p:' + i], oud:belOud(p) }); });
   const spark = (pts, kl) => { if(!pts || pts.length < 2) return '<span class="bel-klein">Nog geen verloop in deze periode</span>';
     const W = 240, Hh = 54, t0 = pts[0].t, t1 = pts.at(-1).t, mn = Math.min(...pts.map(x => x.v)), mx = Math.max(...pts.map(x => x.v));
     const X = t => (t - t0) / ((t1 - t0) || 1) * W, Y = v => Hh - 3 - (v - mn) / ((mx - mn) || 1) * (Hh - 6), xy = pts.map(x => X(x.t).toFixed(1) + ',' + Y(x.v).toFixed(1)).join(' '), id = 'bks' + Math.round(Math.random() * 1e6);
@@ -7387,7 +7414,7 @@ function tekenBelPaginaNu(){
       ${belStortForm(false)}
       <div class="knoppen">${i !== 'nieuw' ? `<button class="btn" data-bel-weg="${i}">Verwijderen</button>` : ''}<button class="btn" data-bel-annuleer="1">Annuleren</button><button class="pk-knop" data-bel-opslaan="hand">Opslaan</button></div></div>`;
   const kaart = b => {
-    const rp = b.hand && belPeriode === 'dag' ? null : b.pts?.length >= 2 && b.pts[0].v > 0 ? (b.w - b.pts[0].v) / b.pts[0].v * 100 : null, winst = b.inl ? b.w - b.inl : null, wp = b.inl ? winst / b.inl * 100 : null;
+    const rp = belPeriode === 'alles' && b.inl ? (b.w - b.inl) / b.inl * 100 : b.hand && belPeriode === 'dag' ? null : b.pts?.length >= 2 ? periodePct([b.pts[0], { t:Date.now(), v:b.w }], b.stort) : null, winst = b.inl ? b.w - b.inl : null, wp = b.inl ? winst / b.inl * 100 : null;
     const bezig = zicht && String(belBewerk) === String(b.sleutel), kl = rp == null ? 'var(--text-muted)' : rp >= 0 ? 'var(--green)' : 'var(--red)';
     return `<div class="card bel-kaart ${b.oud ? 'oud' : ''} ${bezig ? 'bewerkt' : ''}"><div class="bk-kop"><span class="bk-sym" style="background:${b.kl}">${b.sym}</span><span class="grow"><b>${esc(b.naam)}</b><small>${zicht ? b.sub : b.hand ? 'Handmatig' : 'Live koers'}</small></span></div>
       <div class="bk-waarde"><b>${zicht ? euroHeel(b.w) : verb}</b>${rp == null ? `<span class="bel-klein">— ${PER[belPeriode]}</span>` : pil(rp, PER[belPeriode])}</div>
@@ -7399,7 +7426,8 @@ function tekenBelPaginaNu(){
       ${zicht ? (bezig ? formVoor(b) : `<button class="btn bk-knop" data-bel-bewerk="${b.sleutel}">${ic('pen')} Aanpassen</button>`) : ''}</div>`;
   };
   { const met = bezit.filter(b => b.w > 0), v0 = met.reduce((n, b) => n + (b.pts?.length >= 2 ? b.pts[0].v : b.w), 0);  // periode-verandering: som van de startwaarden per belegging
-    if(met.length && v0 > 0 && met.some(b => b.pts?.length >= 2)) totPer = (met.reduce((n, b) => n + b.w, 0) - v0) / v0 * 100; }
+    const nieuw = met.reduce((n, b) => n + (b.pts?.length >= 2 ? stortTot(b.stort, Date.now()) - stortTot(b.stort, b.pts[0].t) : 0), 0);   // stortingen in de periode tellen niet als winst
+    if(met.length && v0 > 0 && met.some(b => b.pts?.length >= 2)) totPer = (met.reduce((n, b) => n + b.w, 0) - nieuw - v0) / v0 * 100; }
   const C = 2 * Math.PI * 58; let acc = 0; const deel = bezit.filter(b => b.w > 0);
   const ring = deel.map(b => { const f = b.w / (T.tot || 1), x = `<circle cx="80" cy="80" r="58" fill="none" stroke="${b.kl}" stroke-width="20" stroke-dasharray="${Math.max(0, f * C - 2).toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-acc * C).toFixed(1)}" transform="rotate(-90 80 80)"/>`; acc += f; return x; }).join('');
   const kort = n => n >= 1e4 ? '€ ' + nl(n / 1000, 1) + 'k' : euroHeel(n);
