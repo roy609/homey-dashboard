@@ -1126,15 +1126,15 @@ body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,
 .bel-grafiek svg { width:100%; height:90px; display:block; }
 .bel-grafiek2 { display:flex; flex-direction:column; gap:6px; }
 .bel-g-kop { display:flex; justify-content:space-between; align-items:center; gap:8px; }
-.bel-modus { margin:0; } .bel-modus button { min-height:28px; padding:0 12px; font-size:var(--fs-sm); }
+.bel-modus { margin:0; } .bel-modus button { min-height:42px; min-width:52px; padding:0 18px; font-size:var(--fs-md); font-weight:800; }
 .bel-g-vlak { display:grid; grid-template-columns:58px 1fr; gap:6px; }
 .bel-g-y { position:relative; } .bel-g-y span { position:absolute; right:0; transform:translateY(-50%); font-size:11px; color:var(--text-muted); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .bel-g-plot svg { width:100%; display:block; overflow:visible; }
 .bel-g-x { position:relative; height:16px; margin-left:64px; } .bel-g-x span { position:absolute; transform:translateX(-50%); font-size:11px; color:var(--text-muted); white-space:nowrap; }
 .bel-g-x span:first-child { transform:none; } .bel-g-x span:last-child { transform:translateX(-100%); }
-.bel-series { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
-.bel-serie { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-muted); font:inherit; font-size:12.5px; cursor:pointer; opacity:.55; }
-.bel-serie.on { opacity:1; color:var(--text-primary); } .bel-serie i { width:10px; height:10px; border-radius:50%; display:inline-block; } .bel-serie small { font-weight:700; }
+.bel-series { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+.bel-serie { display:inline-flex; align-items:center; gap:8px; padding:10px 15px; min-height:44px; border-radius:999px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-muted); font:inherit; font-size:15px; cursor:pointer; opacity:.55; }
+.bel-serie.on { opacity:1; color:var(--text-primary); } .bel-serie i { width:13px; height:13px; border-radius:50%; display:inline-block; } .bel-serie small { font-weight:700; }
 .bel-wk-in { display:flex; flex-direction:column; gap:6px; } .bel-week-rij input.stuks { font-weight:500; font-size:12.5px; padding:7px 12px; }
 .bel-form { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px; border-radius:12px; border:1px dashed var(--border2); }
 .bel-form label { font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px; }
@@ -1142,7 +1142,7 @@ body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,
 .bel-form .breed { grid-column:1/-1; }
 .bel-form .knoppen { grid-column:1/-1; display:flex; gap:8px; justify-content:flex-end; }
 .bel-klein { font-size:11.5px; color:var(--text-muted); }
-.bel-perioden { margin:0; } .bel-perioden button { min-height:34px; font-size:var(--fs-sm); }
+.bel-perioden { margin:0; } .bel-perioden button { min-height:46px; min-width:58px; padding:0 14px; font-size:var(--fs-md); font-weight:800; }
 .bel-uitleg { padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:var(--bg-inset); font-size:var(--fs-sm); color:var(--text-secondary); }
 .bel-uitleg summary { cursor:pointer; font-weight:700; color:var(--text-primary); }
 .bel-uitleg p { margin-top:8px; line-height:1.45; }
@@ -2017,9 +2017,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '141';
+const DASHBOARD_VERSIE = '142';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'142', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek staat standaard op % met alle lijnen aan.', 'Bitcoin en Ethereum ontbraken soms bij 1D, 1W en 1M: de koershistorie van CoinGecko werd te snel achter elkaar opgevraagd. Nu na elkaar, bewaard in de browser, en voor 1D/1W met de 7-daagse koerslijn als reserve. Elke belegging staat altijd in de legenda.', 'Nvidia toont bij 1D de koersverandering van je stuks, ook op de dag van aankoop.', 'Grotere knoppen voor de periode, €/% en de lijnen.' ] },
   { v:'141', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek heeft nu voor elke belegging een eigen lijn in de kleur van zijn kaart (Bitcoin, Ethereum, Monad, Nvidia en je handmatige beleggingen), in plaats van crypto en handmatig samengevoegd. Tik op een naam om de lijn aan of uit te zetten.', 'Ook beleggingen met nog maar één meetpunt (zoals Nvidia vlak na de aankoop) staan in de legenda met hun waarde; de lijn verschijnt zodra er een tweede punt is.' ] },
   { v:'140', datum:'20-11-2026', punten:[ 'Beleggingen: Nvidia staat erbij met een live koers (Finnhub, omgerekend naar euro). Vul via "Aanpassen" je aantal stuks en je aankopen in; Nvidia telt dan mee in het totaal, de verdeling, de grafiek en de dagwinst.', 'Finnhub geeft gratis geen koershistorie: het dashboard bewaart vanaf nu elke handelsdag de slotkoers, zodat de grafiek van Nvidia zich opbouwt. Op 1D zie je de stand ten opzichte van de vorige slotkoers.', 'Het testblok "Koersen via Homey" is weg.' ] },
   { v:'139', datum:'15-11-2026', punten:[ 'Auto: tijdens het laden staat bovenaan de pagina een groene laadbalk met het vermogen, van hoeveel naar hoeveel procent, hoe lang nog en hoe laat klaar. De balk loopt richting het laaddoel en verdwijnt als de auto niet laadt.' ] },
@@ -5757,7 +5758,7 @@ const belHandNoot = P => P && P.sinds ? `<p class="bel-klein">Tot ${new Date(P.s
 /* ── Grafiek met assen en meerdere reeksen ──
    Reeksen: Totaal, de handmatige beleggingen (bv. ING), Bitcoin en overige crypto (ETH/MON).
    Bron: Insights (vanaf de start van de logging) en daarvoor de weekstanden ("historie") per handmatige post. */
-let belSerieAan = null, belModus = 'eur';
+let belSerieAan = null, belModus = 'pct';                         // null = alle lijnen aan
 const BEL_SERIE_KLEUR = { totaal:'var(--text-primary)', hand:'#60A5FA', bitcoin:'#F7931A', crypto:'#A78BFA' };
 function belStap(log, t){                                   // laatste waarde op of vóór t (waarden worden alleen bij wijziging gelogd)
   if(!log || !log.ts?.length) return null; let lo = 0, hi = log.ts.length - 1, r = -1;
@@ -5766,13 +5767,22 @@ function belStap(log, t){                                   // laatste waarde op
 }
 /* Koershistorie per munt (CoinGecko), met tijdstippen. "alles" wordt altijd geladen: nodig voor de aankoopkoersen. */
 const muntHist = {}, MUNT_IDS = () => ['bitcoin', ...Object.values(MUNTEN).filter(isMunt).map(m => m.id)];
+/* Koershistorie per munt (CoinGecko). Wordt in de browser bewaard, zodat een herlaad niet alles opnieuw hoeft op te halen,
+   en na elkaar opgevraagd: CoinGecko gratis staat maar een paar verzoeken per minuut toe. Mislukt één munt, dan blijft zijn vorige reeks staan. */
+const MH_KEY = p => 'dashboard_munthist_' + p;
+for(const p of ['dag','week','maand','alles']){ try { const j = JSON.parse(localStorage.getItem(MH_KEY(p)) || 'null'); if(j?.data) muntHist[p] = { t:j.t, data:j.data }; } catch(e){} }
 async function laadMuntHist(periode){
-  const h = muntHist[periode]; if(h?.bezig || (h?.t && Date.now() - h.t < (h.data ? 15 : 2) * 60000)) return;   // mislukt: pas na 2 min opnieuw
-  muntHist[periode] = { ...(h || {}), bezig:true }; const data = {};
-  await Promise.all(MUNT_IDS().map(async id => { const st = new AbortController(), tm = setTimeout(() => st.abort(), 12000);
+  const h = muntHist[periode], vers = { dag:10, week:30, maand:120, alles:720 }[periode] || 30;
+  const compleet = h?.data && MUNT_IDS().every(id => h.data[id]?.length);
+  if(h?.bezig || (h?.t && Date.now() - h.t < (compleet ? vers : 1) * 60000)) return;
+  muntHist[periode] = { ...(h || {}), bezig:true }; const data = { ...(h?.data || {}) };
+  for(const id of MUNT_IDS()){ const st = new AbortController(), tm = setTimeout(() => st.abort(), 12000);
     try { const r = await fetch(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=eur&days=${BTC_DAGEN[periode]}`, { signal:st.signal, cache:'no-store' });
-      if(r.ok){ const j = await r.json(); data[id] = (j.prices || []).filter(x => x && x[1] > 0); } } catch(e){} finally { clearTimeout(tm); } }));
-  muntHist[periode] = { t:Date.now(), data:Object.keys(data).length ? data : (h?.data || null) };
+      if(r.ok){ const j = await r.json(), pr = (j.prices || []).filter(x => x && x[1] > 0); if(pr.length) data[id] = pr; } } catch(e){} finally { clearTimeout(tm); }
+    await new Promise(r => setTimeout(r, 1500)); }
+  muntHist[periode] = { t:Date.now(), data:Object.keys(data).length ? data : null };
+  try { localStorage.setItem(MH_KEY(periode), JSON.stringify(muntHist[periode])); } catch(e){}
+  if(!MUNT_IDS().every(id => data[id]?.length)) setTimeout(() => laadMuntHist(periode), 70000);   // ontbrekende munt na ruim een minuut opnieuw
   if(belOpen) tekenBelPaneel(); else tekenBelPagina();
 }
 /* Aantal munten op moment t: elke aankoop = bedrag / koers op die dag, daarna geschaald zodat het eindtotaal je huidige aantal is. */
@@ -5800,10 +5810,12 @@ function belReeksen(periode){
     const ak = Object.keys(MUNTEN).find(k => MUNTEN[k].aandeel && MUNTEN[k].symbool === id);
     if(ak){ const K = KOERS[ak], pr = periode === 'dag' && K?.vorige && K?.koers ? [[van, K.vorige], [nu, K.koers]] : aandeelPr(ak);   // 1D: t.o.v. vorige slotkoers
       if(pr.length < 2 || !(+aantal > 0)) return [];
+      if(periode === 'dag') return pr.map(([t, p]) => ({ t, v:+aantal * p }));                 // 1D: koersverandering van je stuks
       const bezit = muntBezitFn(stortingen, +aantal, pr), v0 = pr.filter(x => x[0] < van).at(-1);
       const sel = pr.filter(x => x[0] >= van); if(v0) sel.unshift([van, v0[1]]);
       return sel.map(([t, p]) => ({ t, v:bezit(t) * p })); }
-    const pr = M?.data?.[id]; if(!pr?.length || !(+aantal > 0)) return [];
+    const reserve = (periode === 'dag' || periode === 'week') ? (id === 'bitcoin' ? BTC?.week : KOERS[Object.keys(MUNTEN).find(k => MUNTEN[k].id === id)]?.week) : null;
+    const pr = M?.data?.[id]?.length ? M.data[id] : reserve; if(!pr?.length || !(+aantal > 0)) return [];
     const bezit = muntBezitFn(stortingen, +aantal, A?.data?.[id] || pr);
     return pr.filter(x => x[0] >= van).map(([t, p]) => ({ t, v:bezit(t) * p }));
   };
@@ -5833,6 +5845,8 @@ function belReeksen(periode){
     { k:'btc', naam:'Bitcoin', kleur:'#F7931A', pts:per.btc || [] },
     ...Object.entries(MUNTEN).map(([k, m]) => ({ k:'c:' + k, naam:m.naam, kleur:m.kleur, pts:per['c:' + k] || [] })),
     ...d.posten.map((p, i) => ({ k:'p:' + i, naam:p.naam || 'Belegging', kleur:BEL_KLEUR[(i + 1) % BEL_KLEUR.length], pts:per['p:' + i] || [] })) ]
+    .map(r => { if(r.pts.length) return r; const w = r.k === 'btc' ? (BTC && +d.btc > 0 ? d.btc * BTC.koers : 0) : r.k.startsWith('c:') ? muntWaarde(d, r.k.slice(2)) : +d.posten[+r.k.slice(2)]?.waarde || 0;
+      return { ...r, pts:w > 0 ? [{ t:nu, v:w }] : [] }; })
     .filter(r => r.pts.length >= 1);
   return { reeksen, sinds:null, laden:!M?.data, per };
 }
@@ -5843,7 +5857,7 @@ function belAsStappen(min, max, n){
   return r;
 }
 function belGrafiekAssen(reeksen, o){
-  const aan = belSerieAan || new Set(['totaal']), zicht = o.zicht, pct = belModus === 'pct' || !zicht;
+  const aan = belSerieAan || new Set(reeksen.map(r => r.k)), zicht = o.zicht, pct = belModus === 'pct' || !zicht;
   const lijnbaar = reeksen.filter(r => r.pts.length >= 2);
   const zicht_r = lijnbaar.filter(r => aan.has(r.k) && !(pct && r.k === 'totaal')); if(!zicht_r.length) zicht_r.push(lijnbaar.find(r => r.k !== 'totaal') || lijnbaar[0]);
   const lijnen = zicht_r.map(r => { const b = r.pts[0].v; return { ...r, p:r.pts.map(x => ({ t:x.t, v:pct ? (b ? (x.v - b) / b * 100 : 0) : x.v })) }; });
@@ -5867,7 +5881,7 @@ function belGrafiekAssen(reeksen, o){
     </svg>`;
   const yLab = ticks.map(v => `<span style="top:${(Y(v) / H * 100).toFixed(2)}%">${zicht || pct ? yTxt(v) : '••'}</span>`).join('');
   const xLab = xTicks.map((t, i) => `<span style="left:${(i * 25)}%">${xFmt(t)}</span>`).join('');
-  const chips = reeksen.map(r => { const a = r.pts[0].v, b = r.pts[r.pts.length - 1].v, ch = r.k === 'totaal' ? belTotalen().rend : a ? (b - a) / a * 100 : null;
+  const chips = reeksen.map(r => { const a = r.pts[0].v, b = r.pts[r.pts.length - 1].v, ch = r.k === 'totaal' ? belTotalen().rend : a && r.pts.length > 1 ? (b - a) / a * 100 : null;
     return `<button class="bel-serie ${aan.has(r.k) ? 'on' : ''}" data-bel-serie="${r.k}"><i style="background:${r.kleur}"></i>${esc(r.naam)}${zicht ? ` <b>${euroHeel(b)}</b>` : ''}${typeof ch === 'number' ? ` <small class="${ch >= 0 ? 'bel-op' : 'bel-neer'}">${pctTekst(ch)}</small>` : ''}</button>`; }).join('');
   return `<div class="bel-grafiek2"><div class="bel-g-kop"><span class="bel-klein">${esc(o.label)}</span>
       <div class="segment bel-modus">${zicht ? `<button class="${!pct ? 'on' : ''}" data-bel-modus="eur">€</button>` : ''}<button class="${pct ? 'on' : ''}" data-bel-modus="pct">%</button></div></div>
@@ -5922,14 +5936,17 @@ async function laadAandelen(){
 let KOERS = {};
 const muntData = (d, k) => (d.crypto && d.crypto[k]) || { aantal:0, stortingen:[] };
 const muntWaarde = (d, k) => KOERS[k] ? (+muntData(d, k).aantal || 0) * KOERS[k].koers : 0;
+/* CoinGecko-sparkline: 7 dagen, ongeveer elk uur; laatste punt = laatste update. Reserve voor 1D/1W als de koershistorie niet lukt. */
+function spark7(x){ const p = (x?.sparkline_in_7d?.price || []).filter(v => v > 0), n = p.length, eind = Date.parse(x?.last_updated) || Date.now();
+  return n > 1 ? p.map((v, i) => [eind - (n - 1 - i) * (7 * 864e5 / (n - 1)), v]) : null; }
 async function laadBtc(){
   const haal = async (u) => { const st = new AbortController(), t = setTimeout(() => st.abort(), 12000);
     try { const r = await fetch(u, { signal:st.signal, cache:'no-store' }); if(!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); } finally { clearTimeout(t); } };
   try {
     const j = await haal('https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=bitcoin,' + Object.values(MUNTEN).filter(isMunt).map(m => m.id).join(',') + '&sparkline=true&price_change_percentage=24h');
-    const b = j.find(x => x.id === 'bitcoin') || j[0]; BTC = { koers:b.current_price, pct:b.price_change_percentage_24h, reeks:(b.sparkline_in_7d?.price || []).slice(-24), t:Date.now() };
+    const b = j.find(x => x.id === 'bitcoin') || j[0]; BTC = { koers:b.current_price, pct:b.price_change_percentage_24h, reeks:(b.sparkline_in_7d?.price || []).slice(-24), week:spark7(b), t:Date.now() };
     for(const [k, m] of Object.entries(MUNTEN).filter(([, m]) => isMunt(m))){ const x = j.find(y => y.id === m.id);
-      if(x) KOERS[k] = { koers:x.current_price, pct:x.price_change_percentage_24h, reeks:(x.sparkline_in_7d?.price || []).slice(-24), t:Date.now() }; }
+      if(x) KOERS[k] = { koers:x.current_price, pct:x.price_change_percentage_24h, reeks:(x.sparkline_in_7d?.price || []).slice(-24), week:spark7(x), t:Date.now() }; }
     belFout = null;
   } catch(e){
     try { const j = await haal('https://api.bitvavo.com/v2/ticker/24h?market=BTC-EUR');
@@ -6568,7 +6585,7 @@ document.addEventListener('click', e => {
   if(belOpen && (e.target === $('belPaneel') || e.target.closest('[data-bel-sluit]'))) return sluitBeleg();
   if(e.target.closest('[data-beleg]')) return goPage('beleg', document.querySelector('.nav-item[data-page="beleg"]'));
   const bp = e.target.closest('[data-bel-periode]'); if(bp){ belPeriode = bp.dataset.belPeriode; return tekenBelPaneel(); }
-  const bs = e.target.closest('[data-bel-serie]'); if(bs){ const a = new Set(belSerieAan || ['totaal']); a.has(bs.dataset.belSerie) ? a.delete(bs.dataset.belSerie) : a.add(bs.dataset.belSerie); belSerieAan = a.size ? a : null; return tekenBelPaneel(); }
+  const bs = e.target.closest('[data-bel-serie]'); if(bs){ const a = new Set(belSerieAan || belReeksen(belPeriode).reeksen.map(r => r.k)); a.has(bs.dataset.belSerie) ? a.delete(bs.dataset.belSerie) : a.add(bs.dataset.belSerie); belSerieAan = a.size ? a : null; return tekenBelPaneel(); }
   const bm = e.target.closest('[data-bel-modus]'); if(bm){ belModus = bm.dataset.belModus; return tekenBelPaneel(); }
   const bb = e.target.closest('[data-bel-bewerk]'); if(bb){ const bw = bb.dataset.belBewerk; belBewerk = bw === 'btc' || bw === 'nieuw' || bw.startsWith('c:') ? bw : +bw; belZichtTot = Date.now() + BEL_ZICHT_MS;
     const dd = belData(), bron = belBewerk === 'btc' ? belStort(dd, true) : String(belBewerk).startsWith('c:') ? (muntData(dd, belBewerk.slice(2)).stortingen || []) : belBewerk === 'nieuw' ? [] : belStort(dd.posten[belBewerk] || {});
