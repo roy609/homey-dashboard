@@ -970,6 +970,8 @@ body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,
   border:1px solid rgba(245,165,36,.6); background:rgba(245,165,36,.12); color:var(--amber); }
 .rdw-chip svg { width:15px; height:15px; flex-shrink:0; }
 .rdw-chip.rood { border-color:rgba(239,68,68,.55); background:var(--red-dim); color:var(--red); }
+.afval-chip { cursor:default; } .afval-chip.nu { border-color:var(--amber-border, rgba(245,165,36,.55)); background:var(--amber-dim); color:var(--amber); }
+.afval-chip .afval-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; vertical-align:middle; }
 .rdw-chip small { display:block; font-size:10.5px; opacity:.8; }
 .rdw-chip .pk-chip-tekst { line-height:1.15; }
 .rdw-melding { padding:12px 14px; border-radius:14px; border:1px solid var(--border2); background:var(--bg-inset); }
@@ -1410,7 +1412,7 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <div class="top-eind"><span class="pill demo" id="status"><i></i><span id="statusTekst">Demo</span></span></div></div>
       <div class="top-meldingen"><button class="bel-chip" id="belChip" data-slot="beleg" aria-label="Beleggingen"></button>
         <div class="pakje-blok" id="pakjeBlok"><button class="pakje-chip" id="pakjeChip" hidden data-pakjes="1"></button><button class="pakje-plus" data-pakje-plus="1" aria-label="Pakje toevoegen" title="Pakje toevoegen"><span data-icon="pakket"></span><b>+</b></button></div>
-        <span class="rdw-chips" id="rdwChips"></span><span class="rdw-chips" id="notionChip"></span><span class="rdw-chips" id="bandChip"></span></div>
+        <span class="rdw-chips" id="rdwChips"></span><span class="rdw-chips" id="notionChip"></span><span class="rdw-chips" id="bandChip"></span><span class="rdw-chips" id="afvalChip"></span></div>
     </div>
     <div class="board">
       <!-- Links: huiskaart (energie, klok, weer) en variabelen -->
@@ -2017,9 +2019,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '143';
+const DASHBOARD_VERSIE = '144';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'144', datum:'21-11-2026', punten:[ 'Afval: bovenin verschijnt een melding als er vandaag of morgen afval wordt opgehaald, met de soort (GFT, PMD, papier, rest…) en een gekleurd bolletje. Vanaf 16:00 de dag ervoor en tot 12:00 op de dag zelf valt hij extra op. Gegevens van de app Trashchecker in Homey, elk half uur bijgewerkt.' ] },
   { v:'143', datum:'20-11-2026', punten:[ 'Beleggingen: de koershistorie van Bitcoin, Ethereum en Monad komt nu van Bitvavo (ruime limiet, alle munten tegelijk) met CoinGecko als reserve. Daardoor hebben ze weer op elk tabblad een lijn en een percentage.', 'Alles begint nu bij je eerste aankoop en gaat tot 2 jaar terug. Bij Alles tonen de lijnen, namen en kaarten je rendement op je inleg, gelijk aan "Sinds begin".', 'Percentages in de grafiek, bij de namen en op de kaarten tellen een bijkoop of storting binnen de periode niet meer als winst (Bitcoin stond bij Alles bijvoorbeeld op +96% doordat je tweede aankoop meetelde). Totaal staat daardoor nu ook als lijn in de %-weergave.' ] },
   { v:'142', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek staat standaard op % met alle lijnen aan.', 'Bitcoin en Ethereum ontbraken soms bij 1D, 1W en 1M: de koershistorie van CoinGecko werd te snel achter elkaar opgevraagd. Nu na elkaar, bewaard in de browser, en voor 1D/1W met de 7-daagse koerslijn als reserve. Elke belegging staat altijd in de legenda.', 'Nvidia toont bij 1D de koersverandering van je stuks, ook op de dag van aankoop.', 'Grotere knoppen voor de periode, €/% en de lijnen.' ] },
   { v:'141', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek heeft nu voor elke belegging een eigen lijn in de kleur van zijn kaart (Bitcoin, Ethereum, Monad, Nvidia en je handmatige beleggingen), in plaats van crypto en handmatig samengevoegd. Tik op een naam om de lijn aan of uit te zetten.', 'Ook beleggingen met nog maar één meetpunt (zoals Nvidia vlak na de aankoop) staan in de legenda met hun waarde; de lijn verschijnt zodra er een tweede punt is.' ] },
@@ -2250,6 +2253,7 @@ const ICONS = {
   chat:'<path d="M10 3.5c.6 3.6 2.4 5.4 6 6-3.6.6-5.4 2.4-6 6-.6-3.6-2.4-5.4-6-6 3.6-.6 5.4-2.4 6-6z"/><path d="M18 14.5c.3 1.7 1.1 2.5 2.8 2.8-1.7.3-2.5 1.1-2.8 2.8-.3-1.7-1.1-2.5-2.8-2.8 1.7-.3 2.5-1.1 2.8-2.8z"/>',
   ververs:'<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
   plug:'<path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8z"/>',
+  afval:'<path d="M4 7h16M10 3h4M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6"/>',
 };
 const ic = n => `<svg viewBox="0 0 24 24">${ICONS[n] || ICONS.bulb}</svg>`;
 document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = ic(el.dataset.icon));
@@ -5299,7 +5303,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenBandChip(); tekenNotion(); tekenKerst(); tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenBandChip(); tekenAfvalChip(); tekenNotion(); tekenKerst(); tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -7221,6 +7225,7 @@ verversVariabelen(); setInterval(verversVariabelen, POLL_VARIABELEN_MS);
 laadEnergie(true); setInterval(() => laadEnergie(true), 5 * 60000);   // grafieken elke 5 minuten
 laadRegen(); setInterval(laadRegen, 5 * 60000);
 laadBtc(); setInterval(laadBtc, 5 * 60000);
+setTimeout(laadAfval, 6000); setInterval(laadAfval, 30 * 60000);   // afval vandaag/morgen (Trashchecker)
 setTimeout(laadAandelen, 4000); setInterval(laadAandelen, 5 * 60000);   // Nvidia e.d. via Finnhub                             // bitcoinkoers (CoinGecko)                        // Buienradar: regen komende 2 uur
 laadZones().then(() => { tekenLinks(); tekenLampenOverzicht(); }); laadMoods(); setInterval(() => { laadZones(); laadMoods(); }, 10 * 60000);
 setInterval(() => { if($('page-systeem').classList.contains('on')) laadSysteem(true); }, 5 * 60000);   // namen van ruimtes en moods
@@ -7624,6 +7629,50 @@ function bandWisselInfo(){
   const af = d.afspraak && d.afspraak.naar === doel.naar ? d.afspraak : null;
   const afDagen = af ? Math.round((bwDag(af.datum) - vandaag) / 864e5) : null;
   return { d, naar:doel.naar, doel:doel.t, dagen, af, afDagen };
+}
+/* ── Afval (app Trashchecker): chip bovenin als er vandaag of morgen iets wordt opgehaald.
+   De app heeft geen apparaat; het dashboard vraagt zijn voorwaardekaart "Afval wordt opgehaald" (vandaag/morgen, per soort). ── */
+const AFVAL = { app:'homey:app:com.trashchecker', kaart:'days_to_collect',
+  soorten:{ GFT:['GFT','#4CAF50'], PMD:['PMD','#F59E0B'], PLASTIC:['Plastic','#F59E0B'], PAPIER:['Papier','#3B82F6'], REST:['Restafval','#9CA3AF'],
+            GLAS:['Glas','#14B8A6'], TEXTIEL:['Textiel','#A78BFA'], KCA:['Klein chemisch afval','#EF4444'], SNOEI:['Snoeiafval','#84CC16'],
+            GROF:['Grof afval','#A8A29E'], KERSTBOOM:['Kerstboom','#22C55E'] } };
+var afvalStand = null, afvalBezig = false;   // var: tekenAfvalChip() kan al bij het opstarten lopen
+async function kaartVoorwaarde(uri, kaart, args = {}){
+  let fout;
+  for(const kid of [`${uri}:${kaart}`, kaart]){
+    try { const j = await homey(`/api/manager/flow/flowcardcondition/${encodeURIComponent(uri)}/${encodeURIComponent(kid)}/run`,
+            { method:'POST', body:JSON.stringify({ args }) });
+          return j === true || j?.result === true; }
+    catch(e){ fout = e; if(!/404/.test(e.message)) break; }
+  }
+  throw fout;
+}
+async function laadAfval(){
+  if(afvalBezig) return;
+  if(DEMO()){ afvalStand = { vandaag:[], morgen:['GFT'], dag:new Date().toDateString(), t:Date.now() }; return tekenAfvalChip(); }
+  afvalBezig = true;
+  try {
+    const stand = { vandaag:[], morgen:[], dag:new Date().toDateString(), t:Date.now() }, vraag = (when, trash_type) => kaartVoorwaarde(AFVAL.app, AFVAL.kaart, { when, trash_type });
+    for(const [when, k] of [['today','vandaag'], ['tomorrow','morgen']]){
+      if(!(await vraag(when, 'ANY'))) continue;                              // eerst "iets", pas dan per soort
+      for(const soort of Object.keys(AFVAL.soorten)){ try { if(await vraag(when, soort)) stand[k].push(soort); } catch(e){} }
+      if(!stand[k].length) stand[k].push('ANY');
+    }
+    afvalStand = stand;
+  } catch(e){ afvalStand = { fout:String(e.message || e), vandaag:[], morgen:[], dag:new Date().toDateString(), t:Date.now() }; }
+  finally { afvalBezig = false; }
+  tekenAfvalChip();
+}
+function tekenAfvalChip(){
+  const el = $('afvalChip'); if(!el) return;
+  const S = afvalStand;
+  if(!S || S.dag !== new Date().toDateString()){ el.innerHTML = ''; if(S && !afvalBezig) laadAfval(); return; }   // nieuwe dag: opnieuw vragen
+  const naam = k => k === 'ANY' ? 'Afval' : AFVAL.soorten[k]?.[0] || k, dot = k => `<i class="afval-dot" style="background:${AFVAL.soorten[k]?.[1] || 'var(--text-muted)'}"></i>`;
+  const lijst = a => a.map(k => dot(k) + esc(naam(k))).join(' + '), uur = new Date().getHours();
+  let html = '';
+  if(S.vandaag.length) html = `<span class="rdw-chip afval-chip ${uur < 12 ? 'nu' : ''}" title="Wordt vandaag opgehaald">${ic('afval')}<span class="pk-chip-tekst"><span>Vandaag: ${lijst(S.vandaag)}</span><small>${uur < 12 ? 'container aan de straat' : 'vandaag opgehaald'}</small></span></span>`;
+  if(S.morgen.length) html += `<span class="rdw-chip afval-chip ${uur >= 16 ? 'nu' : ''}" title="Wordt morgen opgehaald">${ic('afval')}<span class="pk-chip-tekst"><span>Morgen: ${lijst(S.morgen)}</span><small>${uur >= 16 ? 'zet de container vanavond buiten' : 'wordt morgen opgehaald'}</small></span></span>`;
+  el.innerHTML = html;
 }
 function tekenBandChip(){
   const el = $('bandChip'); if(!el) return;
