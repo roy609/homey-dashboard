@@ -980,7 +980,28 @@ body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,
 .afval-chip.nu .afval-dot { box-shadow:0 0 0 1.5px #fff; }
 @keyframes afvalPuls { 0%,100% { box-shadow:0 0 0 0 color-mix(in srgb, var(--ak) 55%, transparent); } 50% { box-shadow:0 0 0 7px color-mix(in srgb, var(--ak) 0%, transparent), 0 0 18px 2px color-mix(in srgb, var(--ak) 45%, transparent); } }
 @media (prefers-reduced-motion:reduce){ .afval-chip.nu { animation:none; } }
-.afval-chip .afval-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+button.afval-chip { cursor:pointer; font-family:inherit; }
+.afval-chip.rustig { --ak:#6B7280; font-size:12.5px; font-weight:600; padding:3px 13px 3px 4px; }
+.afval-chip.rustig .afval-ico { width:24px; height:24px; } .afval-chip.rustig .afval-ico svg { width:14px; height:14px; }
+.ak-kop { display:flex; align-items:center; gap:8px; margin:4px 0 6px; } .ak-kop h3 { margin:0; font-size:1rem; flex:1; text-transform:capitalize; }
+.ak-nav { width:40px; height:40px; border-radius:10px; border:1px solid var(--border); background:var(--bg-inset); color:var(--text); font:inherit; font-size:20px; cursor:pointer; }
+.ak-nav:disabled { opacity:.3; cursor:default; }
+.ak-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; }
+.ak-wd { text-align:center; font-size:11px; font-weight:700; color:var(--text-muted); padding:2px 0; text-transform:uppercase; }
+.ak-dag { min-height:58px; border-radius:10px; background:var(--bg-inset); border:1px solid transparent; padding:4px; display:flex; flex-direction:column; gap:3px; font-size:12px; }
+.ak-dag.leeg { background:none; } .ak-dag.voorbij { opacity:.4; }
+.ak-dag.vandaag { border-color:var(--amber); } .ak-dag .ak-nr { font-weight:700; font-size:12px; color:var(--text-muted); }
+.ak-dag.vandaag .ak-nr { color:var(--amber); }
+.ak-dag .ak-pil { border-radius:6px; padding:1px 5px; font-size:10.5px; font-weight:700; color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.35); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ak-soorten { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:6px; }
+.ak-soort { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; background:var(--bg-inset); border:1px solid var(--border); }
+.ak-soort .afval-dot { width:14px; height:14px; margin:0; flex-shrink:0; }
+.ak-soort b { display:block; font-size:13px; } .ak-soort small { display:block; font-size:11.5px; color:var(--text-muted); }
+.ak-lijst .lp-rij { min-height:48px; } .ak-lijst .ak-datum { width:92px; flex-shrink:0; font-weight:700; font-size:13px; text-transform:capitalize; }
+.ak-lijst .grow { font-weight:600; } .ak-lijst .afval-dot { margin-right:6px; }
+.ak-lijst .ak-over { font-size:11.5px; color:var(--text-muted); white-space:nowrap; }
+.ak-sectie { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:14px 0 6px; }
+.afval-dot, .afval-chip .afval-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:middle; }
 .rdw-chip small { display:block; font-size:10.5px; opacity:.8; }
 .rdw-chip .pk-chip-tekst { line-height:1.15; }
 .rdw-melding { padding:12px 14px; border-radius:14px; border:1px solid var(--border2); background:var(--bg-inset); }
@@ -1625,6 +1646,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
   </div>
 </div>
 
+<div class="overlay" id="afvalPaneel">
+  <div class="modal lp" role="dialog" aria-label="Afvalkalender">
+    <div class="lp-kop">
+      <div class="ico green" data-icon="afval"></div>
+      <div class="grow"><h2>Afvalkalender</h2><div class="card-sub" id="akSub"></div></div>
+      <button class="lp-knop" data-ak-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div class="lp-lijst" id="akInhoud"></div>
+  </div>
+</div>
+
 <div class="overlay" id="notionPaneel">
   <div class="modal lp" role="dialog" aria-label="Taken uit Notion">
     <div class="lp-kop">
@@ -2028,9 +2060,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '144';
+const DASHBOARD_VERSIE = '145';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'145', datum:'21-11-2026', punten:[ 'Afvalkalender: tik op de afvalmelding bovenin voor een maandkalender met alle ophaaldagen per soort (bladeren per maand), de eerstvolgende datum per soort en een lijst met de komende ophaaldagen.', 'Staat er vandaag of morgen niets, dan toont de melding rustig wanneer de volgende ophaaldag is.' ] },
   { v:'144', datum:'21-11-2026', punten:[ 'Afval: bovenin verschijnt een melding als er vandaag of morgen afval wordt opgehaald, met de soort (GFT, PMD, papier, rest…) en een gekleurd bolletje. De melding heeft de kleur van de afvalsoort; vanaf 16:00 de dag ervoor en tot 12:00 op de dag zelf is hij helemaal gevuld en pulseert hij zacht. Gegevens van de app Trashchecker in Homey, elk half uur bijgewerkt.' ] },
   { v:'143', datum:'20-11-2026', punten:[ 'Beleggingen: de koershistorie van Bitcoin, Ethereum en Monad komt nu van Bitvavo (ruime limiet, alle munten tegelijk) met CoinGecko als reserve. Daardoor hebben ze weer op elk tabblad een lijn en een percentage.', 'Alles begint nu bij je eerste aankoop en gaat tot 2 jaar terug. Bij Alles tonen de lijnen, namen en kaarten je rendement op je inleg, gelijk aan "Sinds begin".', 'Percentages in de grafiek, bij de namen en op de kaarten tellen een bijkoop of storting binnen de periode niet meer als winst (Bitcoin stond bij Alles bijvoorbeeld op +96% doordat je tweede aankoop meetelde). Totaal staat daardoor nu ook als lijn in de %-weergave.' ] },
   { v:'142', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek staat standaard op % met alle lijnen aan.', 'Bitcoin en Ethereum ontbraken soms bij 1D, 1W en 1M: de koershistorie van CoinGecko werd te snel achter elkaar opgevraagd. Nu na elkaar, bewaard in de browser, en voor 1D/1W met de 7-daagse koerslijn als reserve. Elke belegging staat altijd in de legenda.', 'Nvidia toont bij 1D de koersverandering van je stuks, ook op de dag van aankoop.', 'Grotere knoppen voor de periode, €/% en de lijnen.' ] },
@@ -6647,6 +6680,9 @@ document.addEventListener('click', e => {
   if(e.target.closest('[data-rdw-ok]')) return rdwAfvinken(e.target.closest('[data-rdw-ok]').dataset.rdwOk);
   if(e.target.closest('[data-rdw-terug]')) return rdwTerug();
   if(e.target.closest('[data-rdw]')) return openRdw();
+  if(akOpen && (e.target === $('afvalPaneel') || e.target.closest('[data-ak-sluit]'))) return sluitAfvalPaneel();
+  const akm = e.target.closest('[data-ak-maand]'); if(akm){ akMaand = Math.max(0, akMaand + Number(akm.dataset.akMaand)); return tekenAfvalPaneel(); }
+  if(e.target.closest('[data-afval="open"]')) return openAfvalPaneel();
   if(bnwOpen && (e.target === $('bandPaneel') || e.target.closest('[data-bw-sluit]'))) return sluitBandPaneel();
   const bwk = e.target.closest('[data-bw]'); if(bwk) return bandWisselActie(bwk.dataset.bw);
   if(ntOpen && (e.target === $('notionPaneel') || e.target.closest('[data-nt-sluit]'))) return sluitNotion();
@@ -6730,6 +6766,7 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && sgOpen) return sluitStoring();
   if(e.key === 'Escape' && lkOpen) return sluitLk();
   if(e.key === 'Escape' && rdwOpen) return sluitRdw();
+  if(e.key === 'Escape' && akOpen) return sluitAfvalPaneel();
   if(e.key === 'Escape' && bnwOpen) return sluitBandPaneel();
   if(e.key === 'Escape' && ntOpen) return sluitNotion();
   if(e.key === 'Escape' && bgOpen) return sluitBeelden();
@@ -7656,11 +7693,41 @@ async function kaartVoorwaarde(uri, kaart, args = {}){
   }
   throw fout;
 }
+function afvalDagKey(d){ const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; }
+function afvalKalenderVan(lijst){                       // [{type, dates:[...]}] → { 'YYYY-MM-DD': ['GFT', ...] }
+  if(!Array.isArray(lijst)) return null;
+  const k = {};
+  for(const a of lijst){
+    const t = String(a?.type || '').toUpperCase(); if(!t || !Array.isArray(a.dates)) continue;
+    for(const d of a.dates){ const x = new Date(d); if(isNaN(x)) continue; const key = afvalDagKey(x); (k[key] ||= []).includes(t) || k[key].push(t); }
+  }
+  return Object.keys(k).length ? k : null;
+}
+async function haalAfvalKalender(){
+  try { const k = afvalKalenderVan(await homey('/api/app/com.trashchecker/trashcollectiondays')); if(k) return { k, bron:'app' }; } catch(e){}
+  try { const t = await homey('/api/manager/flowtoken/flowtoken/' + encodeURIComponent('homey:app:com.trashchecker:trash_collection_token_advancedcollectiondates'));
+        const k = afvalKalenderVan(typeof t?.value === 'string' ? JSON.parse(t.value) : t?.value); if(k) return { k, bron:'token' }; } catch(e){}
+  return null;
+}
+function afvalDemoKalender(){
+  const k = {}, d0 = new Date(); d0.setHours(12, 0, 0, 0);
+  for(let i = -20; i < 100; i++){
+    const d = new Date(d0); d.setDate(d0.getDate() + i); const w = Math.floor((d - new Date(2026, 0, 5)) / 6048e5), wd = d.getDay(), t = [];
+    if(wd === 1 && w % 2 === 0) t.push('GFT'); if(wd === 1 && w % 2 === 1) t.push('REST');
+    if(wd === 4 && w % 2 === 0) t.push('PMD'); if(wd === 3 && w % 4 === 1) t.push('PAPIER');
+    if(t.length) k[afvalDagKey(d)] = t;
+  }
+  return k;
+}
 async function laadAfval(){
   if(afvalBezig) return;
-  if(DEMO()){ afvalStand = { vandaag:[], morgen:['GFT'], dag:new Date().toDateString(), t:Date.now() }; return tekenAfvalChip(); }
+  const nu = new Date(), morgen = new Date(nu); morgen.setDate(nu.getDate() + 1);
+  const uitKalender = (k, bron) => ({ vandaag:[...(k[afvalDagKey(nu)] || [])], morgen:[...(k[afvalDagKey(morgen)] || [])], kalender:k, bron, dag:nu.toDateString(), t:Date.now() });
+  if(DEMO()){ afvalStand = uitKalender(afvalDemoKalender(), 'demo'); return tekenAfvalChip(); }
   afvalBezig = true;
   try {
+    const kal = await haalAfvalKalender();
+    if(kal){ afvalStand = uitKalender(kal.k, kal.bron); return; }
     const stand = { vandaag:[], morgen:[], dag:new Date().toDateString(), t:Date.now() }, vraag = (when, trash_type) => kaartVoorwaarde(AFVAL.app, AFVAL.kaart, { when, trash_type });
     for(const [when, k] of [['today','vandaag'], ['tomorrow','morgen']]){
       if(!(await vraag(when, 'ANY'))) continue;                              // eerst "iets", pas dan per soort
@@ -7669,8 +7736,7 @@ async function laadAfval(){
     }
     afvalStand = stand;
   } catch(e){ afvalStand = { fout:String(e.message || e), vandaag:[], morgen:[], dag:new Date().toDateString(), t:Date.now() }; }
-  finally { afvalBezig = false; }
-  tekenAfvalChip();
+  finally { afvalBezig = false; tekenAfvalChip(); }
 }
 function tekenAfvalChip(){
   const el = $('afvalChip'); if(!el) return;
@@ -7680,11 +7746,56 @@ function tekenAfvalChip(){
   const lijst = a => a.map(k => dot(k) + esc(naam(k))).join(' + '), uur = new Date().getHours();
   const kl = k => AFVAL.soorten[k]?.[1] || '#9CA3AF';
   const stijl = a => { const c = a.map(kl); return `--ak:${c[0]};--ak-bg:${c.length > 1 ? `linear-gradient(110deg, ${c.map((x, i) => `${x} ${Math.round(i / (c.length - 1) * 100)}%`).join(', ')})` : c[0]}`; };
-  const icoon = `<span class="afval-ico">${ic('afval')}</span>`;
+  const icoon = `<span class="afval-ico">${ic('afval')}</span>`, kal = !!S.kalender, tag = kal ? 'button' : 'span', klik = kal ? ' data-afval="open"' : '';
   let html = '';
-  if(S.vandaag.length) html = `<span class="rdw-chip afval-chip ${uur < 12 ? 'nu' : ''}" style="${stijl(S.vandaag)}" title="Wordt vandaag opgehaald">${icoon}<span class="pk-chip-tekst"><span>Vandaag: ${lijst(S.vandaag)}</span><small>${uur < 12 ? 'container aan de straat' : 'vandaag opgehaald'}</small></span></span>`;
-  if(S.morgen.length) html += `<span class="rdw-chip afval-chip ${uur >= 16 ? 'nu' : ''}" style="${stijl(S.morgen)}" title="Wordt morgen opgehaald">${icoon}<span class="pk-chip-tekst"><span>Morgen: ${lijst(S.morgen)}</span><small>${uur >= 16 ? 'zet de container vanavond buiten' : 'wordt morgen opgehaald'}</small></span></span>`;
+  if(S.vandaag.length) html = `<${tag} class="rdw-chip afval-chip ${uur < 12 ? 'nu' : ''}"${klik} style="${stijl(S.vandaag)}" title="Wordt vandaag opgehaald">${icoon}<span class="pk-chip-tekst"><span>Vandaag: ${lijst(S.vandaag)}</span><small>${uur < 12 ? 'container aan de straat' : 'vandaag opgehaald'}</small></span></${tag}>`;
+  if(S.morgen.length) html += `<${tag} class="rdw-chip afval-chip ${uur >= 16 ? 'nu' : ''}"${klik} style="${stijl(S.morgen)}" title="Wordt morgen opgehaald">${icoon}<span class="pk-chip-tekst"><span>Morgen: ${lijst(S.morgen)}</span><small>${uur >= 16 ? 'zet de container vanavond buiten' : 'wordt morgen opgehaald'}</small></span></${tag}>`;
+  if(!html && kal){                                        // niets vandaag/morgen: rustig de eerstvolgende ophaaldag
+    const v = afvalKomend(S.kalender, 1)[0];
+    if(v) html = `<button class="rdw-chip afval-chip rustig" data-afval="open" style="${stijl(v.soorten)}" title="Afvalkalender">${icoon}<span class="pk-chip-tekst"><span>Afval ${afvalDagTekst(v.d)}: ${lijst(v.soorten)}</span><small>${afvalOver(v.d)} · kalender</small></span></button>`;
+  }
   el.innerHTML = html;
+  if(akOpen) tekenAfvalPaneel();
+}
+var akOpen = false, akMaand = 0;   // akMaand: 0 = deze maand, 1 = volgende ...
+function afvalVandaag0(){ const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+function afvalKomend(k, n = 99){
+  const v = afvalDagKey(afvalVandaag0());
+  return Object.keys(k || {}).filter(x => x >= v).sort().slice(0, n).map(x => { const [j, m, d] = x.split('-').map(Number); return { d:new Date(j, m - 1, d), soorten:k[x] }; });
+}
+function afvalDagenTot(d){ return Math.round((new Date(d).setHours(0, 0, 0, 0) - afvalVandaag0()) / 864e5); }
+function afvalOver(d){ const n = afvalDagenTot(d); return n === 0 ? 'vandaag' : n === 1 ? 'morgen' : n === 2 ? 'overmorgen' : `over ${n} dagen`; }
+function afvalDagTekst(d){ const n = afvalDagenTot(d); return n === 0 ? 'vandaag' : n === 1 ? 'morgen' : d.toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' }); }
+function openAfvalPaneel(){ akOpen = true; akMaand = 0; $('afvalPaneel').classList.add('on'); tekenAfvalPaneel(); }
+function sluitAfvalPaneel(){ akOpen = false; $('afvalPaneel').classList.remove('on'); }
+function tekenAfvalPaneel(){
+  const S = afvalStand, el = $('akInhoud'); if(!el) return;
+  const K = S?.kalender;
+  $('akSub').textContent = K ? `Trashchecker${S.bron === 'demo' ? ' (demo)' : ''} · bijgewerkt ${new Date(S.t).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' })}` : '';
+  if(!K){ el.innerHTML = `<div class="lp-rij"><div class="grow">De volledige kalender kon niet uit Homey worden opgehaald.<br><small class="card-sub">${esc(S?.fout || 'Alleen vandaag en morgen zijn beschikbaar.')}</small></div></div>`; return; }
+  const kl = k => AFVAL.soorten[k]?.[1] || '#9CA3AF', nm = k => AFVAL.soorten[k]?.[0] || k;
+  const dot = k => `<i class="afval-dot" style="background:${kl(k)}"></i>`;
+  const komend = afvalKomend(K), v0 = afvalVandaag0();
+  // maandkalender
+  const m0 = new Date(v0.getFullYear(), v0.getMonth() + akMaand, 1), dagen = new Date(m0.getFullYear(), m0.getMonth() + 1, 0).getDate(), start = (m0.getDay() + 6) % 7;
+  const laatste = komend.length ? komend[komend.length - 1].d : v0, maxMaand = (laatste.getFullYear() - v0.getFullYear()) * 12 + laatste.getMonth() - v0.getMonth();
+  let cel = ['ma','di','wo','do','vr','za','zo'].map(w => `<div class="ak-wd">${w}</div>`).join('') + '<div class="ak-dag leeg"></div>'.repeat(start);
+  for(let i = 1; i <= dagen; i++){
+    const d = new Date(m0.getFullYear(), m0.getMonth(), i), s = K[afvalDagKey(d)] || [], dt = d - v0;
+    cel += `<div class="ak-dag ${dt === 0 ? 'vandaag' : dt < 0 ? 'voorbij' : ''}"><span class="ak-nr">${i}</span>${s.map(k => `<span class="ak-pil" style="background:${kl(k)}">${esc(nm(k))}</span>`).join('')}</div>`;
+  }
+  const maandNaam = m0.toLocaleDateString('nl-NL', { month:'long', year:'numeric' });
+  // volgende per soort
+  const perSoort = {};
+  for(const x of komend) for(const k of x.soorten) (perSoort[k] ||= []).push(x.d);
+  const soorten = Object.keys(perSoort).sort((a, b) => perSoort[a][0] - perSoort[b][0]);
+  const soortHtml = soorten.map(k => { const [a, b] = perSoort[k];
+    return `<div class="ak-soort">${dot(k)}<div class="grow"><b>${esc(nm(k))}</b><small>${afvalDagenTot(a) <= 2 ? afvalOver(a) : afvalDagTekst(a) + ' · ' + afvalOver(a)}${b ? `<br>daarna ${b.toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' })}` : ''}</small></div></div>`; }).join('');
+  const lijstHtml = komend.slice(0, 12).map(x => `<div class="lp-rij"><span class="ak-datum">${x.d.toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' })}</span><div class="grow">${x.soorten.map(k => dot(k) + esc(nm(k))).join(' &nbsp; ')}</div><span class="ak-over">${afvalOver(x.d)}</span></div>`).join('');
+  el.innerHTML = `<div class="ak-sectie" style="margin-top:0">Eerstvolgende per soort</div><div class="ak-soorten">${soortHtml || '<div class="card-sub">Geen ophaaldagen bekend.</div>'}</div>
+    <div class="ak-kop"><button class="ak-nav" data-ak-maand="-1" ${akMaand <= 0 ? 'disabled' : ''} aria-label="Vorige maand">‹</button><h3>${maandNaam}</h3><button class="ak-nav" data-ak-maand="1" ${akMaand >= Math.max(0, maxMaand) ? 'disabled' : ''} aria-label="Volgende maand">›</button></div>
+    <div class="ak-grid">${cel}</div>
+    <div class="ak-sectie">Komende ophaaldagen</div><div class="ak-lijst" style="display:flex;flex-direction:column;gap:6px">${lijstHtml}</div>`;
 }
 function tekenBandChip(){
   const el = $('bandChip'); if(!el) return;
