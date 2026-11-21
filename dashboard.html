@@ -970,8 +970,17 @@ body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,
   border:1px solid rgba(245,165,36,.6); background:rgba(245,165,36,.12); color:var(--amber); }
 .rdw-chip svg { width:15px; height:15px; flex-shrink:0; }
 .rdw-chip.rood { border-color:rgba(239,68,68,.55); background:var(--red-dim); color:var(--red); }
-.afval-chip { cursor:default; } .afval-chip.nu { border-color:var(--amber-border, rgba(245,165,36,.55)); background:var(--amber-dim); color:var(--amber); }
-.afval-chip .afval-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:3px; vertical-align:middle; }
+.afval-chip { cursor:default; --ak:#9CA3AF; gap:9px; padding:5px 16px 5px 5px; font-size:14px; font-weight:700; color:var(--text);
+  border:1.5px solid color-mix(in srgb, var(--ak) 75%, transparent); background:color-mix(in srgb, var(--ak) 20%, rgba(0,0,0,.25)); }
+.afval-chip .afval-ico { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--ak-bg, var(--ak)); color:#fff; flex-shrink:0; }
+.afval-chip .afval-ico svg { width:17px; height:17px; }
+.afval-chip small { font-size:11.5px; font-weight:600; opacity:.9; }
+.afval-chip.nu { background:var(--ak-bg, var(--ak)); border-color:rgba(255,255,255,.55); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.35); animation:afvalPuls 2.4s ease-in-out infinite; }
+.afval-chip.nu .afval-ico { background:rgba(255,255,255,.22); }
+.afval-chip.nu .afval-dot { box-shadow:0 0 0 1.5px #fff; }
+@keyframes afvalPuls { 0%,100% { box-shadow:0 0 0 0 color-mix(in srgb, var(--ak) 55%, transparent); } 50% { box-shadow:0 0 0 7px color-mix(in srgb, var(--ak) 0%, transparent), 0 0 18px 2px color-mix(in srgb, var(--ak) 45%, transparent); } }
+@media (prefers-reduced-motion:reduce){ .afval-chip.nu { animation:none; } }
+.afval-chip .afval-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:middle; }
 .rdw-chip small { display:block; font-size:10.5px; opacity:.8; }
 .rdw-chip .pk-chip-tekst { line-height:1.15; }
 .rdw-melding { padding:12px 14px; border-radius:14px; border:1px solid var(--border2); background:var(--bg-inset); }
@@ -2022,7 +2031,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '144';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'144', datum:'21-11-2026', punten:[ 'Afval: bovenin verschijnt een melding als er vandaag of morgen afval wordt opgehaald, met de soort (GFT, PMD, papier, rest…) en een gekleurd bolletje. Vanaf 16:00 de dag ervoor en tot 12:00 op de dag zelf valt hij extra op. Gegevens van de app Trashchecker in Homey, elk half uur bijgewerkt.' ] },
+  { v:'144', datum:'21-11-2026', punten:[ 'Afval: bovenin verschijnt een melding als er vandaag of morgen afval wordt opgehaald, met de soort (GFT, PMD, papier, rest…) en een gekleurd bolletje. De melding heeft de kleur van de afvalsoort; vanaf 16:00 de dag ervoor en tot 12:00 op de dag zelf is hij helemaal gevuld en pulseert hij zacht. Gegevens van de app Trashchecker in Homey, elk half uur bijgewerkt.' ] },
   { v:'143', datum:'20-11-2026', punten:[ 'Beleggingen: de koershistorie van Bitcoin, Ethereum en Monad komt nu van Bitvavo (ruime limiet, alle munten tegelijk) met CoinGecko als reserve. Daardoor hebben ze weer op elk tabblad een lijn en een percentage.', 'Alles begint nu bij je eerste aankoop en gaat tot 2 jaar terug. Bij Alles tonen de lijnen, namen en kaarten je rendement op je inleg, gelijk aan "Sinds begin".', 'Percentages in de grafiek, bij de namen en op de kaarten tellen een bijkoop of storting binnen de periode niet meer als winst (Bitcoin stond bij Alles bijvoorbeeld op +96% doordat je tweede aankoop meetelde). Totaal staat daardoor nu ook als lijn in de %-weergave.' ] },
   { v:'142', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek staat standaard op % met alle lijnen aan.', 'Bitcoin en Ethereum ontbraken soms bij 1D, 1W en 1M: de koershistorie van CoinGecko werd te snel achter elkaar opgevraagd. Nu na elkaar, bewaard in de browser, en voor 1D/1W met de 7-daagse koerslijn als reserve. Elke belegging staat altijd in de legenda.', 'Nvidia toont bij 1D de koersverandering van je stuks, ook op de dag van aankoop.', 'Grotere knoppen voor de periode, €/% en de lijnen.' ] },
   { v:'141', datum:'20-11-2026', punten:[ 'Beleggingen: de grafiek heeft nu voor elke belegging een eigen lijn in de kleur van zijn kaart (Bitcoin, Ethereum, Monad, Nvidia en je handmatige beleggingen), in plaats van crypto en handmatig samengevoegd. Tik op een naam om de lijn aan of uit te zetten.', 'Ook beleggingen met nog maar één meetpunt (zoals Nvidia vlak na de aankoop) staan in de legenda met hun waarde; de lijn verschijnt zodra er een tweede punt is.' ] },
@@ -7669,9 +7678,12 @@ function tekenAfvalChip(){
   if(!S || S.dag !== new Date().toDateString()){ el.innerHTML = ''; if(S && !afvalBezig) laadAfval(); return; }   // nieuwe dag: opnieuw vragen
   const naam = k => k === 'ANY' ? 'Afval' : AFVAL.soorten[k]?.[0] || k, dot = k => `<i class="afval-dot" style="background:${AFVAL.soorten[k]?.[1] || 'var(--text-muted)'}"></i>`;
   const lijst = a => a.map(k => dot(k) + esc(naam(k))).join(' + '), uur = new Date().getHours();
+  const kl = k => AFVAL.soorten[k]?.[1] || '#9CA3AF';
+  const stijl = a => { const c = a.map(kl); return `--ak:${c[0]};--ak-bg:${c.length > 1 ? `linear-gradient(110deg, ${c.map((x, i) => `${x} ${Math.round(i / (c.length - 1) * 100)}%`).join(', ')})` : c[0]}`; };
+  const icoon = `<span class="afval-ico">${ic('afval')}</span>`;
   let html = '';
-  if(S.vandaag.length) html = `<span class="rdw-chip afval-chip ${uur < 12 ? 'nu' : ''}" title="Wordt vandaag opgehaald">${ic('afval')}<span class="pk-chip-tekst"><span>Vandaag: ${lijst(S.vandaag)}</span><small>${uur < 12 ? 'container aan de straat' : 'vandaag opgehaald'}</small></span></span>`;
-  if(S.morgen.length) html += `<span class="rdw-chip afval-chip ${uur >= 16 ? 'nu' : ''}" title="Wordt morgen opgehaald">${ic('afval')}<span class="pk-chip-tekst"><span>Morgen: ${lijst(S.morgen)}</span><small>${uur >= 16 ? 'zet de container vanavond buiten' : 'wordt morgen opgehaald'}</small></span></span>`;
+  if(S.vandaag.length) html = `<span class="rdw-chip afval-chip ${uur < 12 ? 'nu' : ''}" style="${stijl(S.vandaag)}" title="Wordt vandaag opgehaald">${icoon}<span class="pk-chip-tekst"><span>Vandaag: ${lijst(S.vandaag)}</span><small>${uur < 12 ? 'container aan de straat' : 'vandaag opgehaald'}</small></span></span>`;
+  if(S.morgen.length) html += `<span class="rdw-chip afval-chip ${uur >= 16 ? 'nu' : ''}" style="${stijl(S.morgen)}" title="Wordt morgen opgehaald">${icoon}<span class="pk-chip-tekst"><span>Morgen: ${lijst(S.morgen)}</span><small>${uur >= 16 ? 'zet de container vanavond buiten' : 'wordt morgen opgehaald'}</small></span></span>`;
   el.innerHTML = html;
 }
 function tekenBandChip(){
