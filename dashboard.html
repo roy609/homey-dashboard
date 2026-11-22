@@ -2060,9 +2060,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '145';
+const DASHBOARD_VERSIE = '146';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'146', datum:'22-11-2026', punten:[ 'Huisfoto bij "Droog na sneeuw" (KNMI): bij 1 °C of kouder blijft het sneeuwbeeld staan, maar zonder vallende sneeuw. Is het warmer, dan volgt de foto de verwachting voor vandaag. Voorheen viel er ten onrechte sneeuw zolang KNMI die tekst vasthield.' ] },
   { v:'145', datum:'21-11-2026', punten:[ 'Afvalkalender: tik op de afvalmelding bovenin voor een maandkalender met alle ophaaldagen per soort (bladeren per maand), de eerstvolgende datum per soort en een lijst met de komende ophaaldagen.', 'Staat er vandaag of morgen niets, dan toont de melding rustig wanneer de volgende ophaaldag is.' ] },
   { v:'144', datum:'21-11-2026', punten:[ 'Afval: bovenin verschijnt een melding als er vandaag of morgen afval wordt opgehaald, met de soort (GFT, PMD, papier, rest…) en een gekleurd bolletje. De melding heeft de kleur van de afvalsoort; vanaf 16:00 de dag ervoor en tot 12:00 op de dag zelf is hij helemaal gevuld en pulseert hij zacht. Gegevens van de app Trashchecker in Homey, elk half uur bijgewerkt.' ] },
   { v:'143', datum:'20-11-2026', punten:[ 'Beleggingen: de koershistorie van Bitcoin, Ethereum en Monad komt nu van Bitvavo (ruime limiet, alle munten tegelijk) met CoinGecko als reserve. Daardoor hebben ze weer op elk tabblad een lijn en een percentage.', 'Alles begint nu bij je eerste aankoop en gaat tot 2 jaar terug. Bij Alles tonen de lijnen, namen en kaarten je rendement op je inleg, gelijk aan "Sinds begin".', 'Percentages in de grafiek, bij de namen en op de kaarten tellen een bijkoop of storting binnen de periode niet meer als winst (Bitcoin stond bij Alles bijvoorbeeld op +96% doordat je tweede aankoop meetelde). Totaal staat daardoor nu ook als lijn in de %-weergave.' ] },
@@ -4652,8 +4653,11 @@ function omstandigheden(){
   const maand = new Date().getMonth() + 1;
   const seizoen = maand >= 3 && maand <= 5 ? 'lente' : maand >= 6 && maand <= 8 ? 'zomer' : maand >= 9 && maand <= 11 ? 'herfst' : 'winter';
   const nu = String(cap(w,'recap') ?? '').toLowerCase(), vandaag = String(cap(w,'expected_today_recap') ?? '').toLowerCase().replace(/_/g, ' ');
-  const tekst = nu || vandaag;
   const droog = /droog/.test(nu);
+  const temp = typeof cap(w,'current_temp') === 'number' ? cap(w,'current_temp') : null;
+  // "Droog na sneeuw": bij 1 °C of kouder sneeuwbeeld zonder vallende sneeuw (kan nog liggen), anders de verwachting voor vandaag
+  const naSneeuw = droog && /sneeuw|winterse/.test(nu), gevallen = naSneeuw && temp != null && temp <= 1;
+  const tekst = naSneeuw && !gevallen ? vandaag : (nu || vandaag);
   let weer = 'helder';
   const ijzel = /ijzel|ijsregen|gladheid/.test(tekst), onweer = !droog && /onweer/.test(tekst);
   if(/sneeuw|winterse/.test(tekst)) weer = 'sneeuw';
@@ -4662,7 +4666,7 @@ function omstandigheden(){
   else if(zichtMist(w)) weer = 'mist';                                     // recap zegt bv. "Zwaar bewolkt", maar het zicht is 1 km
   else if(/half|wisselend|opklaring/.test(tekst)) weer = 'half';
   else if(/bewolkt|grijs|betrokken/.test(tekst)) weer = 'bewolkt';
-  const zwaar = weer === 'sneeuw' && /zware|hevige|flinke|veel|sneeuwdek|cm/.test(tekst + ' ' + String(cap(w,'expected') ?? '').toLowerCase());
+  const zwaar = weer === 'sneeuw' && !gevallen && /zware|hevige|flinke|veel|sneeuwdek|cm/.test(tekst + ' ' + String(cap(w,'expected') ?? '').toLowerCase());
   // "Droog na (mot)regen": straat alleen nog nat bij een luchtvochtigheid van 85% of meer (KNMI houdt die tekst soms uren vast)
   const vocht = cap(w,'humidity');
   let natNa = droog && /regen|bui/.test(nu) && typeof vocht === 'number' && vocht >= 85;
@@ -4671,11 +4675,10 @@ function omstandigheden(){
     weer = /bewolkt|grijs|betrokken/.test(vandaag) ? 'bewolkt' : /half|wisselend|opklaring/.test(vandaag) ? 'half' : 'bewolkt';
     natNa = true;
   }
-  const temp = typeof cap(w,'current_temp') === 'number' ? cap(w,'current_temp') : null;
   const vorst = (ijzel || (temp != null && temp <= 0)) && weer !== 'sneeuw';    // ijzel: vorstbeeld
-  const NAAM = { helder:'Zonnig', half:'Half bewolkt', bewolkt:'Bewolkt', regen:'Regen', sneeuw:zwaar ? 'Veel sneeuw' : 'Lichte sneeuw', mist:'Mist' };
+  const NAAM = { helder:'Zonnig', half:'Half bewolkt', bewolkt:'Bewolkt', regen:'Regen', sneeuw:gevallen ? 'Droog na sneeuw' : zwaar ? 'Veel sneeuw' : 'Lichte sneeuw', mist:'Mist' };
   const SEIZ = { lente:'Lente', zomer:'Zomer', herfst:'Herfst', winter:'Winter' };
-  return { seizoen, weer, zwaar, natNa, vorst, onweer, temp, zon:zonStand(),
+  return { seizoen, weer, zwaar, gevallen, natNa, vorst, onweer, temp, zon:zonStand(),
            label:[SEIZ[seizoen], ijzel ? 'IJzel' : vorst ? 'Vorst' : natNa ? 'Nat' : onweer ? 'Onweer' : NAAM[weer], temp != null ? Math.round(temp) + '°' : ''].filter(Boolean).join(' · ') };
 }
 
@@ -4693,7 +4696,7 @@ function weerLagen(o, donker, kant = 'voor', pre = 'w'){
   }
   if(o.weer === 'mist') r.push(vol(`url(#${pre}Mist)`));
   if(o.weer === 'regen') r.push(vol(`url(#${pre}Regen)`, 'class="w-neerslag"'));
-  if(o.weer === 'sneeuw') r.push(vol(`url(#${pre}Sneeuw1)`, 'class="w-neerslag"')
+  if(o.weer === 'sneeuw' && !o.gevallen) r.push(vol(`url(#${pre}Sneeuw1)`, 'class="w-neerslag"')
     + vol(`url(#${pre}Sneeuw2)`, `class="w-neerslag" ${o.zwaar ? '' : 'opacity=".6"'}`)
     + (o.zwaar ? vol(`url(#${pre}Sneeuw3)`, 'class="w-neerslag"') : ''));
   return { basis:B.src, kleur:B.kleur, sleutel:B.sleutel, lagen:r.join('') };
