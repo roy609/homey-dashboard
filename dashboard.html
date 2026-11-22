@@ -981,7 +981,7 @@ body[data-kerst="c"] .kerst-kaart { background:linear-gradient(135deg, rgba(255,
 @keyframes afvalPuls { 0%,100% { box-shadow:0 0 0 0 color-mix(in srgb, var(--ak) 55%, transparent); } 50% { box-shadow:0 0 0 7px color-mix(in srgb, var(--ak) 0%, transparent), 0 0 18px 2px color-mix(in srgb, var(--ak) 45%, transparent); } }
 @media (prefers-reduced-motion:reduce){ .afval-chip.nu { animation:none; } }
 button.afval-chip { cursor:pointer; font-family:inherit; }
-.afval-chip.rustig { --ak:#6B7280; font-size:12.5px; font-weight:600; padding:3px 13px 3px 4px; }
+.afval-chip.rustig { --ak:#6B7280; color:var(--text-muted); font-size:12.5px; font-weight:600; padding:3px 13px 3px 4px; }
 .afval-chip.rustig .afval-ico { width:24px; height:24px; } .afval-chip.rustig .afval-ico svg { width:14px; height:14px; }
 .ak-kop { display:flex; align-items:center; gap:8px; margin:4px 0 6px; } .ak-kop h3 { margin:0; font-size:1rem; flex:1; text-transform:capitalize; }
 .ak-nav { width:40px; height:40px; border-radius:10px; border:1px solid var(--border); background:var(--bg-inset); color:var(--text); font:inherit; font-size:20px; cursor:pointer; }
@@ -2063,7 +2063,7 @@ const CONFIG = {
 const DASHBOARD_VERSIE = '146';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
-  { v:'146', datum:'22-11-2026', punten:[ 'Huisfoto bij "Droog na sneeuw" (KNMI): bij 1 °C of kouder blijft het sneeuwbeeld staan, maar zonder vallende sneeuw. Is het warmer, dan volgt de foto de verwachting voor vandaag. Voorheen viel er ten onrechte sneeuw zolang KNMI die tekst vasthield.' ] },
+  { v:'146', datum:'22-11-2026', punten:[ 'Huisfoto bij "Droog na sneeuw" (KNMI): bij 1 °C of kouder blijft het sneeuwbeeld staan, maar zonder vallende sneeuw. Is het warmer, dan volgt de foto de verwachting voor vandaag. Voorheen viel er ten onrechte sneeuw zolang KNMI die tekst vasthield.', 'Afvalmelding: zolang er vandaag en morgen niets wordt opgehaald, is de melding grijs. Pas als er vandaag of morgen iets wordt opgehaald, krijgt hij de kleur van de afvalsoort.' ] },
   { v:'145', datum:'21-11-2026', punten:[ 'Afvalkalender: tik op de afvalmelding bovenin voor een maandkalender met alle ophaaldagen per soort (bladeren per maand), de eerstvolgende datum per soort en een lijst met de komende ophaaldagen.', 'Staat er vandaag of morgen niets, dan toont de melding rustig wanneer de volgende ophaaldag is.' ] },
   { v:'144', datum:'21-11-2026', punten:[ 'Afval: bovenin verschijnt een melding als er vandaag of morgen afval wordt opgehaald, met de soort (GFT, PMD, papier, rest…) en een gekleurd bolletje. De melding heeft de kleur van de afvalsoort; vanaf 16:00 de dag ervoor en tot 12:00 op de dag zelf is hij helemaal gevuld en pulseert hij zacht. Gegevens van de app Trashchecker in Homey, elk half uur bijgewerkt.' ] },
   { v:'143', datum:'20-11-2026', punten:[ 'Beleggingen: de koershistorie van Bitcoin, Ethereum en Monad komt nu van Bitvavo (ruime limiet, alle munten tegelijk) met CoinGecko als reserve. Daardoor hebben ze weer op elk tabblad een lijn en een percentage.', 'Alles begint nu bij je eerste aankoop en gaat tot 2 jaar terug. Bij Alles tonen de lijnen, namen en kaarten je rendement op je inleg, gelijk aan "Sinds begin".', 'Percentages in de grafiek, bij de namen en op de kaarten tellen een bijkoop of storting binnen de periode niet meer als winst (Bitcoin stond bij Alles bijvoorbeeld op +96% doordat je tweede aankoop meetelde). Totaal staat daardoor nu ook als lijn in de %-weergave.' ] },
@@ -7755,7 +7755,7 @@ function tekenAfvalChip(){
   if(S.morgen.length) html += `<${tag} class="rdw-chip afval-chip ${uur >= 16 ? 'nu' : ''}"${klik} style="${stijl(S.morgen)}" title="Wordt morgen opgehaald">${icoon}<span class="pk-chip-tekst"><span>Morgen: ${lijst(S.morgen)}</span><small>${uur >= 16 ? 'zet de container vanavond buiten' : 'wordt morgen opgehaald'}</small></span></${tag}>`;
   if(!html && kal){                                        // niets vandaag/morgen: rustig de eerstvolgende ophaaldag
     const v = afvalKomend(S.kalender, 1)[0];
-    if(v) html = `<button class="rdw-chip afval-chip rustig" data-afval="open" style="${stijl(v.soorten)}" title="Afvalkalender">${icoon}<span class="pk-chip-tekst"><span>Afval ${afvalDagTekst(v.d)}: ${lijst(v.soorten)}</span><small>${afvalOver(v.d)} · kalender</small></span></button>`;
+    if(v) html = `<button class="rdw-chip afval-chip rustig" data-afval="open" title="Afvalkalender">${icoon}<span class="pk-chip-tekst"><span>Afval ${afvalDagTekst(v.d)}: ${lijst(v.soorten)}</span><small>${afvalOver(v.d)} · kalender</small></span></button>`;
   }
   el.innerHTML = html;
   if(akOpen) tekenAfvalPaneel();
