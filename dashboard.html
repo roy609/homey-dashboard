@@ -300,6 +300,60 @@ svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; s
 /* Achtertuin-foto */
 .achter-kaart { padding:0; overflow:hidden; margin-bottom:14px; }
 /* Tuinfoto op de helft van de breedte (= een kwart van het oppervlak), bediening ernaast */
+/* Vijver */
+.a-vijver { cursor:pointer; } .a-vijver .vy-vlak { fill:transparent; } .a-vijver:hover .vy-vlak { fill:rgba(84,191,240,.12); }
+.a-vijver .vy-label rect { fill:rgba(10,20,30,.62); stroke:rgba(140,210,255,.55); stroke-width:1.5; }
+.a-vijver .vy-label text { fill:#fff; font:700 26px system-ui, sans-serif; } .a-vijver .vy-label svg { color:#8CD2FF; }
+.vy-kop { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.vy-kop h1 { display:flex; align-items:center; gap:10px; }
+.vy-acties { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.vy-grid { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:14px; align-items:start; }
+.vy-kol { display:flex; flex-direction:column; gap:14px; min-width:0; }
+.vy-duo { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:stretch; }
+@media (max-width:1000px){ .vy-grid { grid-template-columns:1fr; } }
+@media (max-width:700px){ .vy-duo { grid-template-columns:1fr; } }
+.vy-groot { font-size:2.6rem; font-weight:800; letter-spacing:-.03em; line-height:1.05; }
+.vy-groot small { font-size:1rem; font-weight:600; color:var(--text-muted); margin-left:4px; }
+.vy-sub { font-size:var(--fs-sm, 13px); color:var(--text-muted); }
+.vy-band { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; font-weight:800; font-size:15px; align-self:flex-start; }
+.vy-band.rood { background:var(--red-dim); color:var(--red); } .vy-band.oranje { background:var(--amber-dim); color:var(--amber); }
+.vy-band.groen { background:var(--green-dim); color:var(--green); } .vy-band.blauw { background:var(--blue-dim); color:var(--blue); } .vy-band.grijs { background:var(--bg-inset); color:var(--text-muted); }
+.vy-feiten { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13.5px; margin-top:6px; }
+.vy-feiten dt { color:var(--text-muted); } .vy-feiten dd { margin:0; font-weight:600; }
+.vy-tabel { width:100%; border-collapse:collapse; font-size:13.5px; margin-top:4px; }
+.vy-tabel td, .vy-tabel th { padding:7px 6px; border-bottom:1px solid var(--border); text-align:left; }
+.vy-tabel th { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); font-weight:700; }
+.vy-tabel td.w { font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; } .vy-tabel td.d { color:var(--text-muted); font-size:12px; }
+.vy-st { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; background:var(--text-muted); }
+.vy-st.ok { background:var(--green); } .vy-st.let { background:var(--amber); } .vy-st.slecht { background:var(--red); }
+.vy-melding { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; font-size:13.5px; }
+.vy-melding.rood { background:var(--red-dim); } .vy-melding.oranje { background:var(--amber-dim); } .vy-melding.blauw { background:var(--blue-dim); }
+.vy-melding b { display:block; }
+.vy-taak { display:flex; gap:10px; align-items:flex-start; padding:9px 4px; border-bottom:1px solid var(--border); cursor:pointer; font-size:13.5px; }
+.vy-taak:last-child { border-bottom:0; }
+.vy-taak .vink { width:24px; height:24px; flex-shrink:0; border-radius:7px; border:2px solid var(--border2); display:grid; place-items:center; color:#fff; }
+.vy-taak.klaar .vink { background:var(--green); border-color:var(--green); } .vy-taak.klaar span.t { text-decoration:line-through; color:var(--text-muted); }
+.vy-taak small { display:block; color:var(--text-muted); font-size:12px; }
+.vy-toev { display:grid; grid-template-columns:1fr auto; gap:2px 10px; padding:9px 2px; border-bottom:1px solid var(--border); font-size:13.5px; }
+.vy-toev:last-child { border-bottom:0; } .vy-toev b { font-size:14px; } .vy-toev .wanneer { color:var(--text-muted); font-size:12.5px; grid-column:1/-1; }
+.vy-toev .laatst { font-size:12px; color:var(--text-muted); text-align:right; white-space:nowrap; }
+.vy-log { display:flex; align-items:center; gap:10px; padding:8px 2px; border-bottom:1px solid var(--border); font-size:13.5px; }
+.vy-log:last-child { border-bottom:0; }
+.vy-log .grow { flex:1; min-width:0; }
+.vy-log .ico { width:34px; height:34px; } .vy-log .ico svg { width:18px; height:18px; }
+.vy-log .wanneer { font-size:12px; color:var(--text-muted); white-space:nowrap; }
+.vy-log button { border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-muted); border-radius:9px; min-width:38px; height:34px; font:inherit; font-size:12px; cursor:pointer; }
+.vy-log button.zeker { background:var(--red-dim); color:var(--red); border-color:var(--red); }
+.vy-spark { width:100%; height:auto; display:block; margin-top:6px; }
+.vy-spark path.l { fill:none; stroke:var(--blue); stroke-width:2.2; } .vy-spark path.v { fill:var(--blue); opacity:.12; } .vy-spark text { fill:var(--text-muted); font-size:11px; }
+#vijverPaneel .bel-form select, #vijverPaneel .bel-form textarea { min-height:40px; padding:0 10px; border-radius:10px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-primary); font:inherit; }
+#vijverPaneel .bel-form textarea { padding:8px 10px; min-height:60px; resize:vertical; }
+#vijverPaneel .bel-form { border:0; padding:4px 0 0; grid-template-columns:repeat(4, minmax(0,1fr)); }
+#vijverPaneel .bel-form .half { grid-column:span 2; } #vijverPaneel .bel-form label { justify-content:flex-end; }
+#vijverPaneel .modal { width:min(640px,94vw); max-height:92vh; overflow:auto; }
+#vijverPaneel .bel-form label em { font-style:normal; opacity:.75; }
+.vy-opslag { font-size:12px; color:var(--text-muted); margin-top:8px; }
+.vy-opslag.let { color:var(--amber); }
 .tuin-indeling { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; }
 .tuin-rechts { min-width:0; }
 @media (max-width:800px){ .tuin-indeling { grid-template-columns:1fr; } }
@@ -1546,6 +1600,20 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
     </div>
   </section>
 
+  <section class="page" id="page-vijver">
+    <div class="statusbar vy-kop">
+      <div class="row" style="gap:10px"><button class="btn" data-page="tuin" aria-label="Terug naar de tuin">‹ Tuin</button><h1><span class="ico blue" data-icon="vis"></span>Vijver</h1></div>
+      <div class="vy-acties">
+        <button class="btn primary" data-vy="voer-snel"><span data-icon="vis"></span>Gevoerd</button>
+        <button class="btn" data-vy="test">+ Meting</button>
+        <button class="btn" data-vy="toev">+ Toevoeging</button>
+        <button class="btn" data-vy="onderh">+ Onderhoud</button>
+        <button class="btn" data-vy="inst" aria-label="Vijverinstellingen">Instellingen</button>
+      </div>
+    </div>
+    <div class="vy-grid" id="vyInhoud"></div>
+  </section>
+
   <!-- ═══════════ AUTO ═══════════ -->
   <section class="page" id="page-beleg">
     <div class="statusbar"><h1>Beleggingen</h1><span class="pill" id="belStand"><i></i><span>–</span></span></div>
@@ -1643,6 +1711,17 @@ input[type=range] { width:100%; height:var(--tap); accent-color:var(--amber); cu
       <button class="lp-knop" data-bw-sluit="1" aria-label="Sluiten" data-icon="kruis"></button>
     </div>
     <div id="bwInhoud" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<div class="overlay" id="vijverPaneel">
+  <div class="modal lp" role="dialog" aria-label="Vijver">
+    <div class="lp-kop">
+      <div class="ico blue" data-icon="vis"></div>
+      <div class="grow"><h2 id="vyFormTitel">Vijver</h2><div class="card-sub" id="vyFormSub"></div></div>
+      <button class="lp-knop" data-vy="sluit" aria-label="Sluiten" data-icon="kruis"></button>
+    </div>
+    <div id="vyForm"></div>
   </div>
 </div>
 
@@ -2060,9 +2139,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '146';
+const DASHBOARD_VERSIE = '147';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'147', datum:'25-11-2026', punten:[ 'Nieuwe vijverpagina: tik op de vijver in de achtertuinfoto (of op het temperatuurlabel bij de vijver).', 'Watertemperatuur (van een sensor die je kiest bij Instellingen, of je laatste handmatige meting), met voeradvies voor goudvissen op basis van de watertemperatuur: wel of niet voeren, welk voer, hoe vaak en een indicatie van de hoeveelheid.', 'Waterwaarden (pH, KH, GH, nitriet, nitraat, ammonium, zuurstof) met streefwaarden en kleurstatus, en wanneer de volgende test zinvol is.', 'Seizoenstaken per maand om af te vinken, meldingen bij vorst en hitte, en een overzicht wanneer je welke toevoeging gebruikt (met wanneer je die voor het laatst gebruikte).', 'Logboek voor metingen, voeren, toevoegingen en onderhoud. Wordt bewaard in Homey zodra de variabele Vijver-logboek (dashboard) bestaat, anders alleen op deze tablet.' ] },
   { v:'146', datum:'22-11-2026', punten:[ 'Huisfoto bij "Droog na sneeuw" (KNMI): bij 1 °C of kouder blijft het sneeuwbeeld staan, maar zonder vallende sneeuw. Is het warmer, dan volgt de foto de verwachting voor vandaag. Voorheen viel er ten onrechte sneeuw zolang KNMI die tekst vasthield.', 'Afvalmelding: zolang er vandaag en morgen niets wordt opgehaald, is de melding grijs. Pas als er vandaag of morgen iets wordt opgehaald, krijgt hij de kleur van de afvalsoort.' ] },
   { v:'145', datum:'21-11-2026', punten:[ 'Afvalkalender: tik op de afvalmelding bovenin voor een maandkalender met alle ophaaldagen per soort (bladeren per maand), de eerstvolgende datum per soort en een lijst met de komende ophaaldagen.', 'Staat er vandaag of morgen niets, dan toont de melding rustig wanneer de volgende ophaaldag is.' ] },
   { v:'144', datum:'21-11-2026', punten:[ 'Afval: bovenin verschijnt een melding als er vandaag of morgen afval wordt opgehaald, met de soort (GFT, PMD, papier, rest…) en een gekleurd bolletje. De melding heeft de kleur van de afvalsoort; vanaf 16:00 de dag ervoor en tot 12:00 op de dag zelf is hij helemaal gevuld en pulseert hij zacht. Gegevens van de app Trashchecker in Homey, elk half uur bijgewerkt.' ] },
@@ -2239,6 +2319,10 @@ const ICONS = {
   palet:'<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="14.5" cy="7" r="1.2"/>',
   menu:'<path d="M3 6h18M3 12h18M3 18h18"/>',
   home:'<path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-7h6v7"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  lijst:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  tool:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  vis:'<path d="M3 12c3.2-4.6 9.6-5.6 14-2.4L21 7v10l-4-2.6C12.6 17.6 6.2 16.6 3 12z"/><circle cx="8" cy="11.2" r=".9" fill="currentColor"/>',
   tree:'<path d="M12 22v-6"/><path d="M12 2 5 12h4l-3 4h12l-3-4h4z"/>',
   moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>',
   gear:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
@@ -3901,6 +3985,7 @@ function achterSvg(){
     <defs>${kleurFilter('awKleur', W.kleur)}${neerslagDefs('aw')}</defs>
     <image href="${W.basis}" width="1536" height="1024" preserveAspectRatio="none" filter="url(#awKleur)"/>
     ${W.lagen}${TOON_ACHTER_APPARATEN ? gloed.join('') + bev : ''}
+    ${vijverHotspot()}
     <g class="f-weer-knop" data-beelden="achter"><rect x="1100" y="955" width="430" height="64" fill="transparent"/><text x="1510" y="1000" class="f-weer" style="text-anchor:end">${esc(o.label)} ⓘ</text></g>
   </svg>`;
 }
@@ -3911,7 +3996,7 @@ function tekenAchtertuin(){
   const el = $('achterKaart'); if(!el) return;
   const st = [...CONFIG.achtertuin.lampen.map(l => { const d = dev(l.id); return d ? [cap(d,'onoff'), cap(d,'dim'), cap(d,'light_hue'), d.available].join(',') : '-'; }),
               ...CONFIG.achtertuin.beveiliging.map(b => { const d = dev(b.id); return d ? [cap(d,'alarm_contact'), cap(d,'alarm_motion'), cap(d,'onoff')].join(',') : '-'; })];
-  const sleutel = [isDonker(), omstandigheden().label, Math.floor(Date.now() / 9e5), ...st].join('|');
+  const sleutel = [isDonker(), omstandigheden().label, Math.floor(Date.now() / 9e5), vyLabel(), ...st].join('|');
   if(sleutel === achterSleutel && $('achterSvg')) return;
   achterSleutel = sleutel; el.innerHTML = achterSvg();
 }
@@ -5348,7 +5433,7 @@ function demoSysteem(){
            geheugen:{ total:4e9, free:1.45e9 }, opslag:{ total:32e9, free:21.6e9 }, flows:fl, aflows:af, apps, update:null };
 }
 
-function tekenAlles(){ tekenBandChip(); tekenAfvalChip(); tekenNotion(); tekenKerst(); tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); tekenEnergieLive(); }
+function tekenAlles(){ tekenBandChip(); tekenAfvalChip(); tekenNotion(); tekenKerst(); tekenPakjes(); rdwOpruimen(); tekenRdw(); tekenAuto(); tekenCameras(); tekenRadioPaneel(); tekenBewegingPaneel(); tekenStofPaneel(); if(mdOpen) tekenMediaPaneel(); tekenMuziek(); if($('page-systeem')?.classList.contains('on')) tekenSysteem(); tekenLampPaneel(); tekenLinks(); tekenTegels(); tekenZoneGroep(); tekenKlimaat(); tekenTuin(); if($('page-vijver')?.classList.contains('on')) tekenVijver(); tekenEnergieLive(); }
 
 /* ═════════════════════════════════════════════
    BEDIENEN
@@ -6683,6 +6768,8 @@ document.addEventListener('click', e => {
   if(e.target.closest('[data-rdw-ok]')) return rdwAfvinken(e.target.closest('[data-rdw-ok]').dataset.rdwOk);
   if(e.target.closest('[data-rdw-terug]')) return rdwTerug();
   if(e.target.closest('[data-rdw]')) return openRdw();
+  const vyk = e.target.closest('[data-vy]');
+  if(vyk || e.target === $('vijverPaneel')) return vijverKlik(vyk ? vyk.dataset.vy : 'sluit', vyk);
   if(akOpen && (e.target === $('afvalPaneel') || e.target.closest('[data-ak-sluit]'))) return sluitAfvalPaneel();
   const akm = e.target.closest('[data-ak-maand]'); if(akm){ akMaand = Math.max(0, akMaand + Number(akm.dataset.akMaand)); return tekenAfvalPaneel(); }
   if(e.target.closest('[data-afval="open"]')) return openAfvalPaneel();
@@ -6769,6 +6856,7 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && sgOpen) return sluitStoring();
   if(e.key === 'Escape' && lkOpen) return sluitLk();
   if(e.key === 'Escape' && rdwOpen) return sluitRdw();
+  if(e.key === 'Escape' && $('vijverPaneel')?.classList.contains('on')) return vijverKlik('sluit');
   if(e.key === 'Escape' && akOpen) return sluitAfvalPaneel();
   if(e.key === 'Escape' && bnwOpen) return sluitBandPaneel();
   if(e.key === 'Escape' && ntOpen) return sluitNotion();
@@ -7217,12 +7305,14 @@ function klok(){
   $('datum').textContent = nu.toLocaleDateString('nl-NL', { weekday:'long', day:'numeric', month:'long' });
 }
 function goPage(id, el){
+  if(id === 'vijver') el = document.querySelector('.nav-item[data-page="tuin"]');
   if(id !== 'beleg' && $('page-beleg')?.classList.contains('on')){ belZichtTot = 0; belBewerk = null; }
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + id));
   document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.toggle('active', n === el));
   if(id === 'energie'){ if(!eVandaag()){ ePer = { soort:'dag', off:0 }; REEKS = { p1:[], zon:[], gas:[], imp:[], exp:[] }; energieGeladen = 0; } tekenEPer(); laadEnergie(); }
   if(id === 'systeem'){ laadSysteem(); testLocatie(); }
   if(id === 'auto') tekenAuto();
+  if(id === 'vijver'){ tekenVijver(); vyLaadSensorHist(); document.querySelector('main')?.scrollTo?.(0, 0); }
   if(id === 'beleg' && !belZicht()) return goPage('home', document.querySelector('.nav-item[data-page="home"]'));
   if(id === 'beleg'){ tekenBelPagina(); if(!BTC || Date.now() - BTC.t > 60000) laadBtc(); }
   if(id === 'camera') startCamera(); else if(!camGrootId) stopCamera();
@@ -7800,6 +7890,299 @@ function tekenAfvalPaneel(){
     <div class="ak-grid">${cel}</div>
     <div class="ak-sectie">Komende ophaaldagen</div><div class="ak-lijst" style="display:flex;flex-direction:column;gap:6px">${lijstHtml}</div>`;
 }
+
+/* ═════════════════════════════════════════════
+   VIJVER (goudvissen)
+   Gegevens (instellingen + logboek) in de Homey-variabele "Vijver-logboek (dashboard)" (tekst, JSON).
+   Bestaat die nog niet, dan alleen in localStorage op deze tablet.
+═════════════════════════════════════════════ */
+var VY_NAAM = 'Vijver-logboek (dashboard)', VY_KEY = 'dashboard_vijver', VY_MAX = 600;
+var VY_VIJVER = 'M806 392 L846 350 L1008 418 L1022 520 L992 552 L955 543 L868 500 L815 430 Z';   // vijver in de achtertuinfoto (1536×1024)
+var vyBron = null, vyCache = null, vyFout = null, vyDemoData = null, vyForm = null, vyWeg = null, vyHist = { id:null, t:0, r:[] };
+var vyVar = () => Object.values(VARS || {}).find(v => v?.name === VY_NAAM && v.type === 'string') || null;
+var vyGetal = x => { if(x == null || x === '') return null; const n = Number(String(x).replace(',', '.')); return isFinite(n) ? n : null; };
+var vyNl = (n, d = 1) => typeof n === 'number' ? n.toLocaleString('nl-NL', { minimumFractionDigits:d, maximumFractionDigits:d }) : '–';
+function vyLeeg(){ return { inst:{}, log:[], taken:{} }; }
+function vyDemo(){
+  if(vyDemoData) return vyDemoData;
+  const n = Date.now(), d = x => n - x * 864e5, id = () => Math.random().toString(36).slice(2, 9);
+  return vyDemoData = { inst:{ liter:6000, vissen:9, lengte:14 }, taken:{}, log:[
+    { id:id(), t:d(.2), s:'voer', soort:'Tarwekiem', g:2 },
+    { id:id(), t:d(1.1), s:'test', w:{ temp:8.6, ph:7.6, kh:5, gh:9, no2:0.05, no3:20, nh4:0.1 } },
+    { id:id(), t:d(3), s:'onderh', a:'Bladeren uit de vijver geschept' },
+    { id:id(), t:d(9), s:'onderh', a:'Pomp lager gezet / waterval uit' },
+    { id:id(), t:d(16), s:'test', w:{ temp:11.2, ph:7.8, kh:6, gh:10, no2:0, no3:15, nh4:0.05, o2:9 } },
+    { id:id(), t:d(24), s:'onderh', a:'Bladnet geplaatst' },
+    { id:id(), t:d(40), s:'toev', cat:'bact', p:'Filterbacteriën', q:'250 ml' },
+    { id:id(), t:d(41), s:'onderh', a:'Filter gereinigd' },
+    { id:id(), t:d(55), s:'toev', cat:'water', p:'Waterverbeteraar', q:'60 ml' },
+    { id:id(), t:d(55), s:'onderh', a:'Water ververst', q:'10%' },
+  ] };
+}
+function vyData(){
+  if(DEMO()) return vyDemo();
+  const v = vyVar(); let tekst = v?.value || '';
+  if(!tekst) try { tekst = localStorage.getItem(VY_KEY) || ''; } catch(e){}
+  if(vyCache && vyCache.tekst === tekst) return vyCache.d;
+  let d = vyLeeg(); try { const j = JSON.parse(tekst); if(j && Array.isArray(j.log)) d = { inst:j.inst || {}, log:j.log, taken:j.taken || {} }; } catch(e){}
+  vyCache = { tekst, d }; return d;
+}
+async function vyBewaar(d){
+  d.log.sort((a, b) => b.t - a.t); d.log = d.log.slice(0, VY_MAX);
+  if(DEMO()){ vyDemoData = d; return tekenVijver(); }
+  const tekst = JSON.stringify(d);
+  try { localStorage.setItem(VY_KEY, tekst); } catch(e){}
+  const v = vyVar();
+  if(v){ v.value = tekst; try { await zetVar(v.id, tekst); vyFout = null; } catch(e){ vyFout = e.message; } }
+  vyCache = null; tekenVijver();
+}
+
+/* Watertemperatuur: sensor (instellingen) > handmatige meting van max. 3 dagen oud */
+function vySensor(){ const id = vyData().inst.sensor; const d = id ? dev(id) : null; return d && typeof cap(d, 'measure_temperature') === 'number' ? d : null; }
+function vyTemp(){
+  if(DEMO()) return { v:7.8, bron:'sensor', naam:'Vijversensor (demo)', min:7.1, max:8.9 };
+  const s = vySensor();
+  if(s){ const r = vyHist.id === s.id ? vyHist.r.filter(p => p.t > Date.now() - 864e5) : [];
+    return { v:cap(s, 'measure_temperature'), bron:'sensor', naam:s.name, min:r.length ? Math.min(...r.map(p => p.v)) : null, max:r.length ? Math.max(...r.map(p => p.v)) : null, weg:s.available === false }; }
+  const m = vyData().log.find(e => e.s === 'test' && typeof e.w?.temp === 'number');
+  if(m && Date.now() - m.t < 3 * 864e5) return { v:m.w.temp, bron:'meting', t:m.t };
+  return m ? { v:null, bron:'oud', t:m.t, oud:m.w.temp } : { v:null, bron:'geen' };
+}
+async function vyLaadSensorHist(){
+  const s = vySensor(); if(!s || DEMO() || (vyHist.id === s.id && Date.now() - vyHist.t < 10 * 60000)) return;
+  try { vyHist = { id:s.id, t:Date.now(), r:await insight(s.id, 'measure_temperature', 'last7Days') }; tekenVijver(); } catch(e){ vyHist = { id:s.id, t:Date.now(), r:[] }; }
+}
+
+/* Voeradvies goudvissen naar watertemperatuur. pct = indicatie voer per dag in % van het lichaamsgewicht. */
+var VY_VOER = [
+  { tot:5,   band:'Niet voeren', kl:'blauw',  pct:0,     keer:0, voer:'—', tekst:'Winterrust: de spijsvertering ligt stil. Voer blijft liggen en vervuilt het water.' },
+  { tot:10,  band:'Heel weinig', kl:'blauw',  pct:.0025, keer:.4, voer:'Tarwekiem (licht verteerbaar)', tekst:'Hooguit om de 2 à 3 dagen een klein beetje, alleen als de vissen actief aan de oppervlakte zoeken.' },
+  { tot:15,  band:'Licht voeren', kl:'groen', pct:.005,  keer:1, voer:'Tarwekiem of licht verteerbaar mengvoer', tekst:'1× per dag een kleine portie, bij voorkeur rond het middaguur als het water het warmst is.' },
+  { tot:20,  band:'Normaal voeren', kl:'groen', pct:.01, keer:2, voer:'Basisvoer (stick/korrel)', tekst:'2× per dag; zoveel als ze in 3 à 5 minuten opeten.' },
+  { tot:25,  band:'Volop voeren', kl:'groen', pct:.015,  keer:3, voer:'Basis- of groeivoer', tekst:'2 à 3× per dag kleine porties; zoveel als ze in 3 à 5 minuten opeten. Restjes weghalen.' },
+  { tot:28,  band:'Minder voeren', kl:'oranje', pct:.0075, keer:1, voer:'Licht verteerbaar voer', tekst:'Warm water bevat minder zuurstof. 1× per dag, ’s ochtends, en zorg voor extra beluchting.' },
+  { tot:99,  band:'Bijna niet voeren', kl:'rood', pct:.0025, keer:.5, voer:'Licht verteerbaar voer', tekst:'Hittestress: hooguit een heel klein beetje. Extra beluchting en schaduw zijn nu belangrijker.' },
+];
+var vyVoerBand = t => typeof t === 'number' ? VY_VOER.find(b => t < b.tot) : null;
+var vyVisGewicht = l => 0.017 * Math.pow(l, 3);          // indicatie gewicht goudvis (g) bij lengte l (cm)
+
+/* Waterwaarden: [sleutel, naam, eenheid, decimalen, beoordeling, streef] */
+var VY_WAARDEN = [
+  ['temp','Temperatuur','°C',1, v => v < 4 || v > 28 ? 'let' : 'ok', '4–25 °C'],
+  ['ph','pH','',1, v => v < 6.5 || v > 9 ? 'slecht' : v < 7 || v > 8.5 ? 'let' : 'ok', '7,0–8,5'],
+  ['kh','KH','°dH',0, v => v < 4 ? 'slecht' : v < 6 ? 'let' : 'ok', '6–10 °dH'],
+  ['gh','GH','°dH',0, v => v < 6 ? 'let' : v > 20 ? 'let' : 'ok', '8–14 °dH'],
+  ['no2','Nitriet (NO₂)','mg/l',2, v => v > .3 ? 'slecht' : v > .1 ? 'let' : 'ok', '< 0,1 mg/l'],
+  ['no3','Nitraat (NO₃)','mg/l',0, v => v > 50 ? 'slecht' : v > 25 ? 'let' : 'ok', '< 25 mg/l'],
+  ['nh4','Ammonium (NH₄)','mg/l',2, v => v > .5 ? 'slecht' : v > .25 ? 'let' : 'ok', '< 0,25 mg/l'],
+  ['o2','Zuurstof (O₂)','mg/l',0, v => v < 4 ? 'slecht' : v < 6 ? 'let' : 'ok', '> 6 mg/l'],
+];
+var VY_TOEV = [
+  { cat:'water', naam:'Waterverbeteraar', wanneer:'Bij elke toevoeging van kraanwater (bijvullen of verversen): bindt chloor en zware metalen.' },
+  { cat:'bact',  naam:'Filterbacteriën', wanneer:'In het voorjaar zodra het water boven ± 10 °C komt, en na filterreiniging of een behandeling met medicijnen.', min:10 },
+  { cat:'slib',  naam:'Slibverwijderaar', wanneer:'Voorjaar en najaar bij een watertemperatuur boven ± 10 °C (werkt met bacteriën).', min:10 },
+  { cat:'kh',    naam:'KH-verhoger', wanneer:'Alleen als de KH onder 6 °dH zakt; voorkomt grote pH-schommelingen.' },
+  { cat:'algen', naam:'Algenbestrijding', wanneer:'Bij groen water eerst de oorzaak aanpakken (te veel voer, te weinig planten of schaduw, UV-C-lamp). Middelen alleen kort gebruiken en nooit bij weinig zuurstof.' },
+  { cat:'zout',  naam:'Vijverzout', wanneer:'Niet standaard. Alleen tijdelijk bij ziekte of een nitrietpiek; let op: niet alle planten kunnen er tegen.' },
+  { cat:'med',   naam:'Medicijnen', wanneer:'Alleen bij een vastgestelde ziekte. UV-C uit tijdens de behandeling en geen bacteriën tegelijk toevoegen.' },
+];
+var VY_ONDERH = ['Water ververst','Bijgevuld','Filter gereinigd','UV-C-lamp vervangen','Slib verwijderd','Planten gesnoeid','Draadalg verwijderd','Bladnet geplaatst','Bladnet verwijderd','Bladeren uit de vijver geschept','Pomp lager gezet / waterval uit','Pomp weer normaal / waterval aan','Overig'];
+var VY_VOERSOORT = ['Tarwekiem','Basisvoer','Groeivoer','Kleurvoer','Overig'];
+/* Seizoenstaken per maand (0 = januari) */
+var VY_TAKEN = {
+  winter:[['wak','Wak ijsvrij houden','Met een ijsvrijhouder of luchtsteen; ijs nooit stukslaan (drukgolf schaadt de vissen).'],['nietvoer','Niet voeren onder 5 °C',''],['pomp','Pomp laag / waterval uit','Zo blijft de warmere laag op de bodem ongemoeid.'],['sneeuw','Sneeuw van het ijs vegen','Laat licht door voor de planten.']],
+  0:'winter', 1:'winter', 11:'winter',
+  2:[['bladnetweg','Bladnet weghalen',''],['filteraan','Filter en pomp weer normaal opstarten','Filtermateriaal spoelen in vijverwater, niet in kraanwater.'],['test','Waterwaarden testen',''],['voerstart','Pas voeren boven 10 °C','Begin met licht verteerbaar voer.']],
+  3:[['bact','Filterbacteriën toevoegen (vanaf ± 10 °C)',''],['uvc','UV-C-lamp vervangen of aanzetten','De lamp verliest na ± 1 seizoen zijn werking.'],['planten','Waterplanten terugknippen en verdelen',''],['slib','Een deel van het slib verwijderen','Niet alles tegelijk.']],
+  4:[['bijplant','Waterplanten aanvullen','Streef naar 1/3 tot de helft bedekking.'],['test','Waterwaarden elke 2 weken testen',''],['voer','Overstappen op normaal voer (> 15 °C)','']],
+  zomer:[['schaduw','Schaduw: 1/3 van de vijver bedekt',''],['bijvul','Verdamping bijvullen','Met waterverbeteraar bij kraanwater.'],['lucht','Extra beluchting bij > 25 °C','Vooral ’s nachts daalt de zuurstof.'],['alg','Draadalg verwijderen',''],['test','Waterwaarden elke 2 weken testen',''],['ververs','10% water verversen per 2 weken','']],
+  5:'zomer', 6:'zomer', 7:'zomer',
+  8:[['bladnet','Bladnet klaarleggen / plaatsen',''],['planten','Afgestorven plantdelen weghalen',''],['lichtvoer','Licht voer zodra het water onder 15 °C komt','']],
+  9:[['bladnet','Bladnet plaatsen',''],['slib','Slib deels verwijderen',''],['filter','Filter een laatste keer reinigen',''],['uvcuit','UV-C uit voor de winter','']],
+  10:[['stopvoer','Stoppen met voeren onder 5 °C',''],['pomp','Pomp lager zetten / waterval uit',''],['bladeren','Bladeren uit de vijver halen',''],['ijsvrij','IJsvrijhouder of luchtpomp klaarleggen','']],
+};
+var vyTaken = m => { const t = VY_TAKEN[m]; return Array.isArray(t) ? t : VY_TAKEN[t] || []; };
+var vyMaandKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}`; };
+var vyDagen = t => Math.floor((Date.now() - t) / 864e5);
+var vyGeleden = t => { const n = vyDagen(t); return n <= 0 ? 'vandaag' : n === 1 ? 'gisteren' : `${n} dagen geleden`; };
+var vyTijd = t => new Date(t).toLocaleString('nl-NL', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+
+/* Tikvlak + temperatuurlabel op de vijver in de achtertuinfoto */
+function vyLabel(){                                     // ook bruikbaar vóórdat dit deel van het script geladen is
+  try { if(!VY_VIJVER) return ''; const T = vyTemp(); return typeof T.v === 'number' ? `${vyNl(T.v)}°` : 'Vijver'; } catch(e){ return ''; }
+}
+function vijverHotspot(){
+  const lbl = vyLabel(); if(!lbl) return '';
+  const w = 70 + lbl.length * 15;
+  return `<g class="a-vijver" data-page="vijver" role="button" aria-label="Naar de vijverpagina"><title>Vijver</title>
+    <path class="vy-vlak" d="${VY_VIJVER}"/>
+    <g class="vy-label" transform="translate(${905 - w / 2} 425)"><rect width="${w}" height="46" rx="23"/>
+      <g transform="translate(12 9)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS.vis}</svg></g>
+      <text x="48" y="32">${esc(lbl)}</text></g></g>`;
+}
+
+function vySpark(r){
+  if(!r || r.length < 2) return '';
+  const W = 300, H = 64, t0 = r[0].t, t1 = r[r.length - 1].t || t0 + 1;
+  const mn = Math.min(...r.map(p => p.v)), mx = Math.max(...r.map(p => p.v)), sp = Math.max(1, mx - mn);
+  const x = t => 4 + (t - t0) / Math.max(1, t1 - t0) * (W - 40), y = v => 6 + (mx - v) / sp * (H - 14);
+  const l = r.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
+  return `<svg class="vy-spark" viewBox="0 0 ${W} ${H}"><path class="v" d="${l} L${x(t1)} ${H} L${x(t0)} ${H} Z"/><path class="l" d="${l}"/>
+    <text x="${W - 2}" y="12" text-anchor="end">${vyNl(mx)}°</text><text x="${W - 2}" y="${H - 2}" text-anchor="end">${vyNl(mn)}°</text></svg>`;
+}
+
+function tekenVijver(){
+  const el = $('vyInhoud'); if(!el) return;
+  const D = vyData(), I = D.inst || {}, T = vyTemp(), B = vyVoerBand(T.v), nu = new Date(), m = nu.getMonth();
+  const vandaag = new Date(); vandaag.setHours(0, 0, 0, 0);
+  const gevoerd = D.log.filter(e => e.s === 'voer' && e.t >= vandaag.getTime());
+  const kaarten = [];
+
+  // 1. watertemperatuur
+  const tempBron = T.bron === 'sensor' ? `Sensor: ${esc(T.naam)}${T.weg ? ' · <span style="color:var(--red)">onbereikbaar</span>' : ''}`
+    : T.bron === 'meting' ? `Handmatig gemeten ${vyGeleden(T.t)}`
+    : T.bron === 'oud' ? `Laatste meting ${vyGeleden(T.t)}: ${vyNl(T.oud)} °C (te oud voor advies)`
+    : 'Nog geen sensor of meting. Kies een sensor bij Instellingen of voeg een meting toe.';
+  const sparkR = T.bron === 'sensor' ? (DEMO() ? Array.from({ length:42 }, (_, i) => ({ t:Date.now() - (41 - i) * 4 * 36e5, v:8.2 + Math.sin(i / 3) * .7 - i * .03 })) : vyHist.r)
+    : D.log.filter(e => e.s === 'test' && typeof e.w?.temp === 'number').slice(0, 12).reverse().map(e => ({ t:e.t, v:e.w.temp }));
+  kaarten.push(`<div class="card"><div class="row" style="gap:10px"><div class="ico blue" data-icon="thermo">${ic('thermo')}</div><div class="grow"><div class="card-title">Watertemperatuur</div><div class="vy-sub">${tempBron}</div></div></div>
+    <div class="vy-groot">${typeof T.v === 'number' ? vyNl(T.v) : '–'}<small>°C</small></div>
+    ${T.min != null ? `<div class="vy-sub">Afgelopen 24 uur: ${vyNl(T.min)}° – ${vyNl(T.max)}°</div>` : ''}
+    ${vySpark(sparkR)}${sparkR?.length > 1 ? `<div class="vy-sub">${T.bron === 'sensor' ? 'Afgelopen 7 dagen' : 'Laatste metingen'}</div>` : ''}</div>`);
+
+  // 2. voeradvies
+  let hoeveel = '';
+  if(B && B.pct > 0 && I.vissen > 0 && I.lengte > 0){
+    const dag = I.vissen * vyVisGewicht(I.lengte) * B.pct, keer = B.keer >= 1 ? dag / B.keer : dag;
+    hoeveel = `<dt>Hoeveelheid</dt><dd>± ${vyNl(dag, dag < 10 ? 1 : 0)} g per dag${B.keer > 1 ? ` (± ${vyNl(keer, keer < 10 ? 1 : 0)} g per keer)` : ''} <span class="vy-sub">indicatie</span></dd>`;
+  } else if(B && B.pct > 0) hoeveel = `<dt>Hoeveelheid</dt><dd class="vy-sub">Vul aantal vissen en lengte in bij Instellingen</dd>`;
+  const keerTekst = !B ? '' : B.keer === 0 ? 'niet' : B.keer < 1 ? 'om de 2 à 3 dagen' : `${B.keer}× per dag`;
+  kaarten.push(`<div class="card"><div class="row" style="gap:10px"><div class="ico green">${ic('vis')}</div><div class="grow"><div class="card-title">Voeradvies</div><div class="vy-sub">Goudvissen, op basis van de watertemperatuur</div></div></div>
+    ${B ? `<span class="vy-band ${B.kl}">${B.band}</span><div style="font-size:14px">${B.tekst}</div>
+      <dl class="vy-feiten"><dt>Voer</dt><dd>${B.voer}</dd><dt>Hoe vaak</dt><dd>${keerTekst}</dd>${hoeveel}
+      <dt>Vandaag</dt><dd>${gevoerd.length ? `${gevoerd.length}× gevoerd (laatst ${new Date(gevoerd[0].t).toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' })})` : 'nog niet gevoerd'}</dd></dl>`
+      : `<span class="vy-band grijs">Geen watertemperatuur</span><div class="vy-sub">Zonder actuele watertemperatuur kan ik geen voeradvies geven. Bij twijfel in de winter: niet voeren.</div>`}
+    <div class="vy-sub" style="margin-top:4px">Vuistregel: alles moet binnen 3 à 5 minuten op zijn. Liever te weinig dan te veel.</div></div>`);
+
+  // 3. meldingen + taken
+  const meld = [];
+  if(typeof T.v === 'number' && T.v < 4) meld.push(['blauw','Vorst in de vijver','Houd een wak open, niet voeren en de vissen zo min mogelijk storen.']);
+  if(typeof T.v === 'number' && T.v > 25) meld.push(['oranje','Warm water','Extra beluchting, schaduw en minder voeren. Voer ’s ochtends.']);
+  const laatsteTest = D.log.find(e => e.s === 'test' && e.w && Object.keys(e.w).some(k => k !== 'temp'));
+  const zomer = m >= 3 && m <= 9, testElke = zomer ? 14 : 42;
+  if(!laatsteTest) meld.push(['oranje','Nog geen watertest','Voeg een meting toe met een druppeltest of teststrip.']);
+  else if(vyDagen(laatsteTest.t) > testElke && (typeof T.v !== 'number' || T.v >= 8)) meld.push(['oranje','Tijd voor een watertest',`Laatste test ${vyGeleden(laatsteTest.t)}; ${zomer ? 'in het seizoen elke 2 weken' : 'buiten het seizoen ± elke 6 weken'}.`]);
+  if(laatsteTest) for(const [k, naam, eh, dec, oordeel] of VY_WAARDEN){ const v = laatsteTest.w[k]; if(typeof v === 'number' && oordeel(v) === 'slecht') meld.push(['rood', `${naam} te ${k === 'o2' || k === 'kh' || (k === 'ph' && v < 7) ? 'laag' : 'hoog'}`, `${vyNl(v, dec)} ${eh} bij de laatste test. Ververs een deel van het water en test opnieuw.`]); }
+  const bact = D.log.find(e => e.s === 'toev' && e.cat === 'bact');
+  if(m >= 2 && m <= 5 && typeof T.v === 'number' && T.v >= 10 && (!bact || vyDagen(bact.t) > 60)) meld.push(['blauw','Filterbacteriën','Het water is boven 10 °C: goed moment om filterbacteriën toe te voegen.']);
+  const mk = vyMaandKey(), klaar = D.taken?.[mk] || {};
+  const taken = vyTaken(m);
+  kaarten.push(`<div class="card"><div class="row" style="gap:10px"><div class="ico">${ic('check')}</div><div class="grow"><div class="card-title">Nu doen</div><div class="vy-sub">${nu.toLocaleDateString('nl-NL', { month:'long' })} · ${taken.filter(t => klaar[t[0]]).length} van ${taken.length} gedaan</div></div></div>
+    ${meld.map(([k, a, b]) => `<div class="vy-melding ${k}"><div><b>${a}</b>${b}</div></div>`).join('')}
+    <div>${taken.map(([k, a, b]) => `<div class="vy-taak ${klaar[k] ? 'klaar' : ''}" data-vy="taak" data-k="${k}"><span class="vink">${klaar[k] ? '✓' : ''}</span><div><span class="t">${a}</span>${b ? `<small>${b}</small>` : ''}</div></div>`).join('')}</div></div>`);
+
+  // 4. waterwaarden
+  const rijen = VY_WAARDEN.map(([k, naam, eh, dec, oordeel, streef]) => {
+    const e = D.log.find(x => x.s === 'test' && typeof x.w?.[k] === 'number');
+    const v = e?.w[k], st = typeof v === 'number' ? oordeel(v) : '';
+    return `<tr><td><span class="vy-st ${st}"></span>${naam}</td><td class="w">${typeof v === 'number' ? vyNl(v, dec) + (eh ? ' ' + eh : '') : '–'}</td><td class="d">${streef}</td><td class="d">${e ? vyGeleden(e.t) : ''}</td></tr>`;
+  }).join('');
+  kaarten.push(`<div class="card"><div class="row" style="gap:10px"><div class="ico blue">${ic('vis')}</div><div class="grow"><div class="card-title">Waterwaarden</div><div class="vy-sub">Laatst gemeten waarde per stof · groen = goed, oranje = in de gaten houden, rood = ingrijpen</div></div>
+      <button class="btn" data-vy="test">+ Meting</button></div>
+    <table class="vy-tabel"><tr><th>Waarde</th><th>Laatst</th><th>Streef</th><th>Gemeten</th></tr>${rijen}</table>
+    <div class="vy-sub" style="margin-top:6px">Nitriet en ammonium zijn giftig voor vissen; meestal een teken van een overbelast of net gereinigd filter of van te veel voer. Een lage KH geeft schommelende pH.</div></div>`);
+
+  // 5. toevoegingen
+  kaarten.push(`<div class="card"><div class="row" style="gap:10px"><div class="ico purple">${ic('plus')}</div><div class="grow"><div class="card-title">Toevoegingen</div><div class="vy-sub">Wanneer wat${I.liter ? ` · dosering volgens de verpakking voor ${Number(I.liter).toLocaleString('nl-NL')} liter` : ''}</div></div></div>
+    ${VY_TOEV.map(t => { const l = D.log.find(e => e.s === 'toev' && e.cat === t.cat);
+      return `<div class="vy-toev"><b>${t.naam}</b><span class="laatst">${l ? vyGeleden(l.t) : 'nog niet'}</span><span class="wanneer">${t.wanneer}</span></div>`; }).join('')}</div>`);
+
+  // 6. logboek
+  const ICO = { test:['blue','thermo'], voer:['green','vis'], toev:['purple','plus'], onderh:['','tool'] };
+  const omschr = e => e.s === 'test' ? 'Meting: ' + VY_WAARDEN.filter(w => typeof e.w?.[w[0]] === 'number').map(w => `${w[0] === 'temp' ? '' : w[1].replace(/ \(.*\)/, '') + ' '}${vyNl(e.w[w[0]], w[3])}${w[0] === 'temp' ? '°' : ''}`).join(' · ')
+    : e.s === 'voer' ? `Gevoerd: ${esc(e.soort || 'voer')}${e.g ? ` · ${vyNl(e.g, e.g < 10 ? 1 : 0)} g` : ''}`
+    : e.s === 'toev' ? `${esc(e.p || VY_TOEV.find(t => t.cat === e.cat)?.naam || 'Toevoeging')}${e.q ? ` · ${esc(e.q)}` : ''}`
+    : `${esc(e.a || 'Onderhoud')}${e.q ? ` · ${esc(e.q)}` : ''}`;
+  kaarten.push(`<div class="card"><div class="row" style="gap:10px"><div class="ico">${ic('lijst')}</div><div class="grow"><div class="card-title">Logboek</div><div class="vy-sub">${D.log.length} regels</div></div></div>
+    ${D.log.slice(0, 14).map(e => `<div class="vy-log"><div class="ico ${ICO[e.s]?.[0] || ''}">${ic(ICO[e.s]?.[1] || 'lijst')}</div><div class="grow">${omschr(e)}${e.n ? `<div class="vy-sub">${esc(e.n)}</div>` : ''}</div><span class="wanneer">${vyTijd(e.t)}</span><button data-vy="weg" data-id="${esc(e.id)}" class="${vyWeg === e.id ? 'zeker' : ''}" aria-label="Verwijderen">${vyWeg === e.id ? 'Zeker?' : '✕'}</button></div>`).join('') || '<div class="vy-sub">Nog niets vastgelegd.</div>'}
+    <div class="vy-opslag ${!DEMO() && !vyVar() || vyFout ? 'let' : ''}">${DEMO() ? 'Demo: voorbeeldgegevens.' : vyFout ? 'Opslaan in Homey mislukt: ' + esc(vyFout) : vyVar() ? 'Bewaard in Homey (variabele ' + VY_NAAM + ').' : 'Alleen op deze tablet bewaard: de Homey-variabele ' + VY_NAAM + ' bestaat nog niet.'}</div></div>`);
+
+  // 7. vijver
+  kaarten.push(`<div class="card"><div class="row" style="gap:10px"><div class="ico">${ic('gear')}</div><div class="grow"><div class="card-title">Mijn vijver</div></div><button class="btn" data-vy="inst">Wijzig</button></div>
+    <dl class="vy-feiten"><dt>Inhoud</dt><dd>${I.liter ? Number(I.liter).toLocaleString('nl-NL') + ' liter' : '–'}</dd><dt>Goudvissen</dt><dd>${I.vissen || '–'}${I.lengte ? ` · gem. ${I.lengte} cm` : ''}</dd>
+      <dt>Sensor</dt><dd>${DEMO() ? 'Vijversensor (demo)' : I.sensor ? esc(dev(I.sensor)?.name || 'niet gevonden') : 'geen'}</dd>
+      ${I.liter && I.vissen ? `<dt>Bezetting</dt><dd>${Math.round(I.liter / I.vissen).toLocaleString('nl-NL')} liter per vis <span class="vy-sub">(richtlijn ≥ 500)</span></dd>` : ''}</dl></div>`);
+
+  const [kTemp, kVoer, kTaken, kWater, kToev, kLog, kVijver] = kaarten;
+  el.innerHTML = `<div class="vy-kol"><div class="vy-duo">${kTemp}${kVoer}</div>${kWater}${kLog}</div><div class="vy-kol">${kTaken}${kToev}${kVijver}</div>`;
+  el.querySelectorAll('[data-icon]').forEach(x => { if(!x.innerHTML) x.innerHTML = ic(x.dataset.icon); });
+}
+
+/* Formulieren */
+function vyNuLokaal(){ const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); }
+function vijverForm(soort){
+  vyForm = soort;
+  const D = vyData(), I = D.inst || {}, B = vyVoerBand(vyTemp().v);
+  const tijd = `<label class="half">Datum en tijd<input type="datetime-local" name="t" value="${vyNuLokaal()}"></label>`;
+  const notitie = `<label class="breed">Notitie <em>(optioneel)</em><input name="n" maxlength="120"></label>`;
+  const knoppen = `<div class="knoppen"><button class="btn" data-vy="sluit">Annuleren</button><button class="btn primary" data-vy="opslaan">Opslaan</button></div>`;
+  let titel = '', sub = '', html = '';
+  if(soort === 'test'){
+    titel = 'Meting toevoegen'; sub = 'Vul alleen in wat je gemeten hebt';
+    html = VY_WAARDEN.map(([k, naam, eh, dec, , streef]) => `<label>${naam}${eh ? ` <em>(${eh})</em>` : ''}<input name="${k}" inputmode="decimal" placeholder="${streef}"></label>`).join('') + tijd + notitie;
+  } else if(soort === 'voer'){
+    let g = '';
+    if(B && B.pct > 0 && I.vissen > 0 && I.lengte > 0){ const dag = I.vissen * vyVisGewicht(I.lengte) * B.pct; g = vyNl(B.keer >= 1 ? dag / B.keer : dag, 1); }
+    titel = 'Voeren vastleggen'; sub = B ? `Advies nu: ${B.band.toLowerCase()} · ${B.voer}` : '';
+    html = `<label class="half">Soort voer<select name="soort">${VY_VOERSOORT.map(v => `<option ${B && B.voer.startsWith(v) ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label class="half">Hoeveelheid <em>(gram)</em><input name="g" inputmode="decimal" value="${g}"></label>` + tijd + notitie;
+  } else if(soort === 'toev'){
+    titel = 'Toevoeging vastleggen'; sub = I.liter ? `Dosering volgens de verpakking voor ${Number(I.liter).toLocaleString('nl-NL')} liter` : '';
+    html = `<label class="half">Soort<select name="cat">${VY_TOEV.map(t => `<option value="${t.cat}">${t.naam}</option>`).join('')}<option value="overig">Overig</option></select></label>
+      <label class="half">Product <em>(merk/naam)</em><input name="p" maxlength="60"></label><label class="half">Hoeveelheid<input name="q" maxlength="30" placeholder="bijv. 250 ml"></label>` + tijd + notitie;
+  } else if(soort === 'onderh'){
+    titel = 'Onderhoud vastleggen';
+    html = `<label class="half">Wat<select name="a">${VY_ONDERH.map(v => `<option>${v}</option>`).join('')}</select></label>
+      <label class="half">Hoeveel <em>(optioneel)</em><input name="q" maxlength="30" placeholder="bijv. 10% of 500 liter"></label>` + tijd + notitie;
+  } else if(soort === 'inst'){
+    titel = 'Mijn vijver'; sub = 'Voor de voerhoeveelheid en dosering';
+    const sensoren = Object.values(DEVS).filter(d => heeft(d, 'measure_temperature')).sort((a, b) => a.name.localeCompare(b.name, 'nl'));
+    html = `<label class="half">Inhoud <em>(liter)</em><input name="liter" inputmode="numeric" value="${I.liter ?? ''}"></label>
+      <label>Aantal goudvissen<input name="vissen" inputmode="numeric" value="${I.vissen ?? ''}"></label>
+      <label>Gem. lengte <em>(cm)</em><input name="lengte" inputmode="decimal" value="${I.lengte ?? ''}"></label>
+      <label class="breed">Temperatuursensor in de vijver<select name="sensor"><option value="">Geen (handmatige metingen)</option>${sensoren.map(d => `<option value="${esc(d.id)}" ${I.sensor === d.id ? 'selected' : ''}>${esc(d.name)}${d.zoneName ? ' · ' + esc(d.zoneName) : ''}</option>`).join('')}</select></label>`;
+  }
+  $('vyFormTitel').textContent = titel; $('vyFormSub').textContent = sub;
+  $('vyForm').innerHTML = `<form class="bel-form" onsubmit="return false">${html}${knoppen}</form><div class="fout" id="vyFormFout"></div>`;
+  $('vijverPaneel').classList.add('on');
+}
+function vijverOpslaan(){
+  const f = $('vyForm').querySelector('form'), v = n => f.elements[n]?.value?.trim() ?? '';
+  const D = JSON.parse(JSON.stringify(vyData())), id = Math.random().toString(36).slice(2, 9);
+  const t = v('t') ? new Date(v('t')).getTime() : Date.now(), n = v('n') || undefined;
+  if(vyForm === 'test'){
+    const w = {}; for(const [k] of VY_WAARDEN){ const g = vyGetal(v(k)); if(g != null) w[k] = g; }
+    if(!Object.keys(w).length){ $('vyFormFout').textContent = 'Vul minstens één waarde in.'; return; }
+    D.log.push({ id, t, s:'test', w, n });
+  } else if(vyForm === 'voer') D.log.push({ id, t, s:'voer', soort:v('soort'), g:vyGetal(v('g')) ?? undefined, n });
+  else if(vyForm === 'toev'){ const cat = v('cat'); D.log.push({ id, t, s:'toev', cat, p:v('p') || VY_TOEV.find(x => x.cat === cat)?.naam || 'Overig', q:v('q') || undefined, n }); }
+  else if(vyForm === 'onderh') D.log.push({ id, t, s:'onderh', a:v('a'), q:v('q') || undefined, n });
+  else if(vyForm === 'inst') D.inst = { liter:vyGetal(v('liter')), vissen:vyGetal(v('vissen')), lengte:vyGetal(v('lengte')), sensor:v('sensor') || null };
+  $('vijverPaneel').classList.remove('on'); vyForm = null;
+  vyBewaar(D); if(D.inst.sensor) vyLaadSensorHist();
+}
+function vijverKlik(a, el){
+  if(a === 'sluit'){ $('vijverPaneel').classList.remove('on'); vyForm = null; return; }
+  if(a === 'opslaan') return vijverOpslaan();
+  if(a === 'voer-snel') return vijverForm('voer');
+  if(['test','toev','onderh','inst'].includes(a)) return vijverForm(a);
+  if(a === 'taak'){ const D = JSON.parse(JSON.stringify(vyData())), mk = vyMaandKey(), k = el.dataset.k;
+    D.taken ||= {}; D.taken = { [mk]:{ ...(D.taken[mk] || {}) } }; D.taken[mk][k] = D.taken[mk][k] ? undefined : Date.now(); return vyBewaar(D); }
+  if(a === 'weg'){ const id = el.dataset.id;
+    if(vyWeg !== id){ vyWeg = id; clearTimeout(vijverKlik.t); vijverKlik.t = setTimeout(() => { vyWeg = null; tekenVijver(); }, 4000); return tekenVijver(); }
+    vyWeg = null; const D = JSON.parse(JSON.stringify(vyData())); D.log = D.log.filter(e => e.id !== id); return vyBewaar(D); }
+}
+
 function tekenBandChip(){
   const el = $('bandChip'); if(!el) return;
   const I = bandWisselInfo(); let html = '';
