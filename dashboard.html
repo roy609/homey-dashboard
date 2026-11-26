@@ -1246,6 +1246,8 @@ button.afval-chip { cursor:pointer; font-family:inherit; }
 .pk-rij .segment button { min-height:40px; }
 .pk-knop { min-height:40px; padding:0 16px; border-radius:10px; border:1px solid rgba(245,165,36,.6); background:rgba(245,165,36,.15); color:var(--amber); font:inherit; font-weight:700; cursor:pointer; }
 .pk-knop[disabled] { opacity:.5; }
+.pk-vervoerder { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-muted); }
+.pk-vervoerder select { flex:1; min-height:40px; padding:0 10px; border-radius:10px; border:1px solid var(--border2); background:var(--bg-inset); color:var(--text-primary); font:inherit; }
 .pk-melding { font-size:var(--fs-sm); color:var(--text-muted); min-height:1.2em; }
 .pk-melding.ok { color:var(--green); } .pk-melding.fout { color:var(--red); }
 .hk-auto { position:absolute; left:55%; top:52%; width:16%; height:22%; z-index:2; background:transparent; border:0; border-radius:14px; cursor:pointer; }
@@ -2139,9 +2141,10 @@ const CONFIG = {
 /* ═════════════════════════════════════════════
    INSTELLINGEN (bewaard in de browser, nooit in de code)
 ═════════════════════════════════════════════ */
-const DASHBOARD_VERSIE = '149';
+const DASHBOARD_VERSIE = '150';
 /* Wat is er nieuw — nieuwste bovenaan. Bij elke publicatie een regel erbij. */
 const WIJZIGINGEN = [
+  { v:'150', datum:'26-11-2026', punten:[ 'Pakjes: bij het toevoegen kies je nu de vervoerder (PostNL, DHL, DPD, GLS, UPS enz.). Het dashboard stelt er zelf een voor aan de hand van het volgnummer; herkent het die niet, dan staat hij op "Automatisch herkennen" en kun je hem zelf kiezen. Zo hoeft Parcel Tracker de vervoerder niet meer te raden.' ] },
   { v:'149', datum:'26-11-2026', punten:[ 'Pakjes: een los volgnummer wordt weer goed doorgegeven aan Parcel Tracker. Na een update van die app moet ook de vervoerder worden meegestuurd; het dashboard kiest nu "Automatisch herkennen". Lukt dat toch niet, dan probeert het dashboard het nummer als tekst door te geven.' ] },
   { v:'148', datum:'25-11-2026', punten:[ 'Beleggingen: een bedrag met een punt als decimaalteken (bijv. 1234.50) wordt nu goed gelezen; voorheen werd de punt weggelaten en werd het bedrag 100× te hoog. 1.234,50 en 1234,50 blijven werken.', 'Beleggingsgrafiek: losse uitschieters in de historie (meer dan 3× hoger of lager dan de punten eromheen) worden niet meer getekend, zodat een tijdelijke tikfout geen piek geeft.' ] },
   { v:'147', datum:'25-11-2026', punten:[ 'Nieuwe vijverpagina: tik op de vijver in de achtertuinfoto (of op het temperatuurlabel bij de vijver).', 'Watertemperatuur (van een sensor die je kiest bij Instellingen, of je laatste handmatige meting), met voeradvies voor goudvissen op basis van de watertemperatuur: wel of niet voeren, welk voer, hoe vaak en een indicatie van de hoeveelheid.', 'Waterwaarden (pH, KH, GH, nitriet, nitraat, ammonium, zuurstof) met streefwaarden en kleurstatus, en wanneer de volgende test zinvol is.', 'Seizoenstaken per maand om af te vinken, meldingen bij vorst en hitte, en een overzicht wanneer je welke toevoeging gebruikt (met wanneer je die voor het laatst gebruikte).', 'Logboek voor metingen, voeren, toevoegingen en onderhoud. Wordt bewaard in Homey zodra de variabele Vijver-logboek (dashboard) bestaat, anders alleen op deze tablet.' ] },
@@ -5703,6 +5706,20 @@ function sluitRegen(){ rgOpen = false; $('regenPaneel').classList.remove('on'); 
 ═════════════════════════════════════════════ */
 let pkOpen = false, pkVoor = null, pkBezig = false, pkMelding = null;
 const PK_APP = 'homey:app:be.parceltracker';
+/* Vervoerders voor "Volg een pakje" (id's uit de autocomplete van Parcel Tracker). Volgorde = keuzelijst. */
+const PK_VERVOERDERS = [['auto','Automatisch herkennen'],['postnl','PostNL'],['dhl_parcel_nl','DHL eCommerce (Benelux)'],['dhl','DHL (Express / internationaal)'],['dpd','DPD'],['gls','GLS'],['ups','UPS'],['amazon','Amazon'],['budbee','Budbee'],['trunkrs','Trunkrs'],['dynalogic','Dynalogic'],['ampere','Ampère (bol.com)'],['vinted_go','Vinted Go'],['fedex','FedEx'],['cainiao','Cainiao'],['track17','17TRACK']];
+let pkVervoerder = null, pkVervoerderHand = false;
+/* Gok de vervoerder aan het formaat van het volgnummer; onbekend = automatisch */
+function pakjeGokVervoerder(nr){
+  nr = String(nr || '').replace(/\s+/g, '').toUpperCase();
+  if(/^3S[A-Z0-9]{8,}$/.test(nr)) return 'postnl';
+  if(/^JVGL/.test(nr)) return 'dhl_parcel_nl';
+  if(/^(JJD|JD\d{18})/.test(nr) || /^\d{10}$/.test(nr)) return 'dhl';
+  if(/^1Z[0-9A-Z]{16}$/.test(nr)) return 'ups';
+  if(/^TBA\d{9,}$/.test(nr)) return 'amazon';
+  if(/^0\d{13}[A-Z]?$/.test(nr)) return 'dpd';
+  return 'auto';
+}
 function pakjesDev(){
   const P = CONFIG.pakjes || {};
   return (P.id && DEVS[P.id]) || Object.values(DEVS).find(d => heeft(d,'parcels_active')) || null;
@@ -5755,6 +5772,8 @@ function tekenPakjePaneelNu(){
     + `<div class="pk-toevoegen">
         <b>Pakje toevoegen</b>
         <textarea id="pkTekst" placeholder="Plak een volgnummer, trackinglink of de tekst van de verzendmail">${esc(tekstveld)}</textarea>
+        <label class="pk-vervoerder">Vervoerder
+          <select id="pkVervoerder">${PK_VERVOERDERS.map(([id, nm]) => `<option value="${id}" ${(pkVervoerder || 'auto') === id ? 'selected' : ''}>${nm}</option>`).join('')}</select></label>
         <div class="pk-rij">
           ${voor.length ? `<div class="segment" role="radiogroup" aria-label="Voor wie">${['', ...voor].map(v =>
             `<button role="radio" aria-checked="${pkVoor === v}" class="${pkVoor === v ? 'on' : ''}" data-pkvoor="${esc(v)}">${v ? esc(v) : 'Iedereen'}</button>`).join('')}</div>` : ''}
@@ -5764,6 +5783,10 @@ function tekenPakjePaneelNu(){
       </div>
       <button class="btn" data-pk-check="1">${ic('ververs')} Alle pakjes nu nakijken</button>`;
 }
+document.addEventListener('input', e => {
+  if(e.target.id === 'pkTekst' && !pkVervoerderHand){ pkVervoerder = pakjeGokVervoerder(e.target.value); const sel = $('pkVervoerder'); if(sel) sel.value = pkVervoerder; }
+});
+document.addEventListener('change', e => { if(e.target.id === 'pkVervoerder'){ pkVervoerder = e.target.value; pkVervoerderHand = true; } });
 function openPakjes(){ pkOpen = true; pkMelding = null; $('pakjePaneel').classList.add('on'); tekenPakjePaneel(); }
 function sluitPakjes(){ pkOpen = false; $('pakjePaneel').classList.remove('on'); }
 async function pakjeVolgen(){
@@ -5778,7 +5801,8 @@ async function pakjeVolgen(){
       // Lukt "Volg een pakje" niet, dan het nummer via "Volg de pakjes in een tekst" proberen.
       let gelukt = false, fout1 = null;
       if(kaalNummer){
-        try { await kaartUitvoeren(PK_APP, 'track_parcel', { number:tekst.replace(/\s+/g, '').toUpperCase(), carrier:{ id:'auto', name:'Automatisch herkennen' }, label:'', owner:pkVoor || '', postcode:'' }); gelukt = true; }
+        const vid = $('pkVervoerder')?.value || pakjeGokVervoerder(tekst), vnm = (PK_VERVOERDERS.find(v => v[0] === vid) || PK_VERVOERDERS[0])[1];
+        try { await kaartUitvoeren(PK_APP, 'track_parcel', { number:tekst.replace(/\s+/g, '').toUpperCase(), carrier:{ id:vid, name:vnm }, label:'', owner:pkVoor || '', postcode:'' }); gelukt = true; }
         catch(e){ fout1 = e; if(/403/.test(e.message)) throw e; }
       }
       if(!gelukt){
@@ -5787,13 +5811,13 @@ async function pakjeVolgen(){
       }
     }
     pkMelding = { soort:'ok', tekst:'Doorgegeven aan Parcel Tracker. Het pakje verschijnt zo in de lijst.' };
-    $('pkTekst').value = '';
+    $('pkTekst').value = ''; pkVervoerder = null; pkVervoerderHand = false;
     [4000, 15000, 30000].forEach(ms => setTimeout(verversApparaten, ms));
     // controle: zien we het pakje binnen een minuut terug in het overzicht?
     if(!DEMO()) setTimeout(() => {
       const na = Number(cap(pakjesDev(), 'parcels_active')) || 0;
       if(na <= voor && pkMelding?.soort === 'ok'){
-        pkMelding = { soort:'fout', tekst:'Het pakje is nog niet in het overzicht verschenen. Kijk in de Homey-app bij Parcel Tracker; bij PostNL is vaak de postcode nodig (in te stellen in de app).' };
+        pkMelding = { soort:'fout', tekst:'Het pakje is nog niet in het overzicht verschenen. Kies hierboven de juiste vervoerder en probeer het opnieuw. Bij PostNL en DHL is soms ook de postcode nodig (in te stellen in de app).' };
         tekenPakjePaneel(); tekenPakjes();
       }
     }, 60000);
